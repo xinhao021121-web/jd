@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#f4f6fb] text-[#1b2333] antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
+      sans-serif;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-[#e5e9f2] bg-white shadow-card;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-white hover:bg-primary-dark;
+  }
+
+  .btn-ghost {
+    @apply btn border border-[#e5e9f2] bg-white text-[#40495c] hover:border-[#c9d3e8] hover:text-[#1b2333];
+  }
+
+  .btn-link {
+    @apply text-sm text-primary underline-offset-4 hover:underline disabled:opacity-50;
+  }
+
+  .field {
+    @apply w-full rounded-xl border border-[#e5e9f2] bg-[#fbfcff] p-3 text-sm leading-6 text-[#1b2333] outline-none transition focus:border-primary focus:bg-white;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs;
+  }
+}

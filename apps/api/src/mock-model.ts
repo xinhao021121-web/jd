@@ -96,6 +96,12 @@ function suggestionLines(resume: string, jd: string): string[] {
 }
 
 const server = createServer((req, res) => {
+  if (req.method === 'GET' && req.url?.includes('/healthz')) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
   if (req.method !== 'POST' || !req.url?.includes('/chat/completions')) {
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'not found' }));
