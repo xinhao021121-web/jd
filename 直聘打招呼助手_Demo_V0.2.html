@@ -216,6 +216,50 @@
   }
   .toast.on{opacity:1;transform:translateX(-50%) translateY(-6px);}
 
+  /* ---------- 按 JD 改简历 ---------- */
+  .lock-bar{
+    display:flex;align-items:flex-start;gap:9px;background:#f4fcf7;border:1px solid #d8eede;
+    color:#166b35;border-radius:12px;padding:11px 14px;font-size:12.5px;margin-bottom:14px;
+  }
+  .tip-warn{
+    display:flex;align-items:flex-start;gap:9px;background:#fff8ec;border:1px solid #f2e2c4;
+    color:var(--warn);border-radius:12px;padding:11px 14px;font-size:12.5px;margin-bottom:14px;
+  }
+  .sug-group{margin-bottom:16px;}
+  .sug-group h3{
+    margin:0 0 9px;font-size:12.5px;color:var(--muted);font-weight:600;
+    display:flex;align-items:center;gap:8px;
+  }
+  .sug-card{
+    border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;
+    background:#fff;transition:.2s;
+  }
+  .sug-card:hover{border-color:#cfdcff;}
+  .sug-card.adopted{border-color:#bfe4cd;background:#fbfefc;}
+  .sug-head{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+  .sug-head input{width:15px;height:15px;accent-color:#2f6bff;cursor:pointer;flex:0 0 auto;}
+  .sug-head label{font-size:12.5px;color:var(--muted);cursor:pointer;}
+  .sug-diff{font-size:13px;line-height:1.75;}
+  .sug-diff .row{display:flex;gap:9px;margin-bottom:5px;}
+  .sug-diff .mark{
+    flex:0 0 auto;font-size:11px;padding:1px 7px;border-radius:6px;height:20px;line-height:18px;
+  }
+  .sug-diff .mark.before{background:#fdeeee;color:#b3261e;}
+  .sug-diff .mark.after{background:#e9f8ef;color:#15a34a;}
+  .sug-diff .txt{flex:1;min-width:0;word-break:break-word;}
+  .sug-diff .txt.del{color:#8a939f;text-decoration:line-through;text-decoration-color:#e0a9a6;}
+  .sug-reason{margin:8px 0 0;color:var(--faint);font-size:12px;}
+  .preview{
+    white-space:pre-wrap;font-size:12.5px;line-height:1.85;color:#26314a;
+    border:1px solid var(--line);border-radius:11px;padding:13px 15px;background:#fcfdff;
+    max-height:420px;overflow:auto;
+  }
+  .customs-list{display:flex;flex-direction:column;gap:8px;}
+  .custom-item{
+    display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:10px;
+    padding:9px 12px;font-size:12.5px;color:var(--muted);
+  }
+  .custom-item .ct{color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   @media (max-width:940px){
     .sidebar{width:72px;flex-basis:72px;}
     .sidebar .side-brand,
@@ -245,6 +289,7 @@
     <nav class="side-nav" id="nav">
       <button data-view="resume"><span class="ico">📄</span><span class="label">我的简历</span></button>
       <button data-view="generate" class="active"><span class="ico">✍️</span><span class="label">生成打招呼</span></button>
+      <button data-view="custom"><span class="ico">📝</span><span class="label">按 JD 改简历</span></button>
       <div class="side-divider"></div>
       <div class="side-group">后续规划</div>
       <button disabled title="规划中"><span class="ico">🕘</span><span class="label">话术历史</span></button>
@@ -352,6 +397,66 @@
     </footer>
   </section>
 
+  <section class="view" id="view-custom" hidden>
+    <div class="workspace">
+      <section class="col">
+        <div class="resume-bar" id="resumeBar2"></div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>目标岗位 JD</h2>
+            <div class="card-head-right">
+              <span class="count" id="jd2Count">0 字</span>
+              <button class="link" id="fillJd2">填入示例</button>
+            </div>
+          </div>
+          <textarea id="jd2" placeholder="粘贴目标岗位的 JD，用来判断哪些经历需要突出"></textarea>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" id="makeSuggest" disabled>生成改写建议</button>
+          <button class="btn ghost" id="clearCustom">清空</button>
+        </div>
+        <p class="hint-line" id="customHint"></p>
+      </section>
+
+      <section class="col">
+        <div class="card">
+          <div class="card-head">
+            <h2>改写建议</h2>
+            <span class="count" id="adoptCount">已采纳 0 条</span>
+          </div>
+          <div class="lock-bar">
+            <span>🔒</span>
+            <span><b>个人信息与教育经历已锁定</b>，本次改写只会作用于项目经历、实习 / 工作经历、自我评价、专业技能；未识别的小标题同样不会改动。</span>
+          </div>
+          <div class="empty" id="sugEmpty">
+            <div class="ico">🧩</div>
+            <p>粘贴 JD 后点击「生成改写建议」</p>
+            <p>每条建议都可以单独采纳或忽略</p>
+          </div>
+          <div id="sugList" hidden></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>定制简历预览</h2>
+            <button class="link" id="copyCustom">复制全文</button>
+          </div>
+          <div class="preview" id="customPreview">还没有生成改写建议</div>
+          <div class="actions right">
+            <button class="btn primary fixed" id="saveCustom" disabled>保存为定制版本</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>定制版本记录</h2></div>
+          <div class="customs-list" id="customsList"></div>
+          <p class="hint-line" id="customsEmpty">还没有定制版本</p>
+        </div>
+      </section>
+    </div>
+  </section>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -471,17 +576,22 @@ function formatTime(ts){
 const LS_RESUME = 'greet_demo_resume_v2';
 const LS_RESUME_AT = 'greet_demo_resume_at_v2';
 const LS_JD = 'greet_demo_jd_v2';
+const LS_CUSTOMS = 'greet_demo_customs_v1';
 const MIN_LEN = 20;
 
 const state = {
   resume: '',
   savedAt: 0,
+  jd: '',
+  customs: [],
+  suggestions: [],
   stats: {gen: 0, copy: 0, dirtyCopy: 0},
   edited: {}
 };
 
 const resumeEditor = $('resumeEditor');
 const jdEl = $('jd');
+const jd2El = $('jd2');
 const genBtn = $('generate');
 
 let toastTimer = null;
@@ -497,7 +607,8 @@ function persist(){
   try {
     localStorage.setItem(LS_RESUME, state.resume);
     localStorage.setItem(LS_RESUME_AT, String(state.savedAt));
-    localStorage.setItem(LS_JD, jdEl.value);
+    localStorage.setItem(LS_JD, state.jd);
+    localStorage.setItem(LS_CUSTOMS, JSON.stringify(state.customs));
   } catch (e) { /* 无痕模式等场景下不可用，忽略 */ }
 }
 
@@ -511,7 +622,7 @@ function switchView(name){
   for (let i = 0; i < btns.length; i++) {
     btns[i].classList.toggle('active', btns[i].dataset.view === name);
   }
-  $('pageTitle').textContent = name === 'resume' ? '我的简历' : '生成打招呼';
+  $('pageTitle').textContent = name === 'resume' ? '我的简历' : (name === 'custom' ? '按 JD 改简历' : '生成打招呼');
 }
 
 /* ---------------- 侧边栏收起 ---------------- */
@@ -570,8 +681,10 @@ function saveResume(){
   persist();
   renderSavedBar();
   renderResumeBar();
+  $('resumeBar2').innerHTML = $('resumeBar').innerHTML;
   refreshResumeEditor();
   refreshGenerateState();
+  refreshCustomState();
   toast('简历已保存，生成时会自动读取');
 }
 
@@ -601,7 +714,7 @@ function refreshGenerateState(){
 
 function buildResult(){
   const resume = state.resume;
-  const jd = jdEl.value;
+  const jd = state.jd;
   const jdSkills = extractSkills(jd);
   const resumeSkills = extractSkills(resume);
   const matched = jdSkills.filter((s) => resumeSkills.includes(s));
@@ -651,7 +764,7 @@ function chips(list, cls){
 function render(result){
   const box = $('matchBox');
   let html = '<div class="match-row"><span class="match-label">JD 关键要求</span><div class="chips">'
-    + chips(extractSkills(jdEl.value), 'none') + '</div></div>'
+    + chips(extractSkills(state.jd), 'none') + '</div></div>'
     + '<div class="match-row"><span class="match-label">简历已命中</span><div class="chips">'
     + chips(result.matched, 'ok') + '</div></div>';
   if (result.missing.length) {
@@ -685,7 +798,7 @@ function generate(){
     switchView('resume');
     return;
   }
-  if (count(jdEl.value) < MIN_LEN) {
+  if (count(state.jd) < MIN_LEN) {
     toast('请先粘贴岗位 JD（至少 ' + MIN_LEN + ' 字）');
     return;
   }
@@ -735,6 +848,290 @@ function renderStats(){
   $('statRate').textContent = s.copy ? Math.round((clean / s.copy) * 100) + '%' : '—';
 }
 
+/* ---------------- 按 JD 改简历 ---------------- */
+const EDITABLE_TITLES = ['项目经历','项目经验','工作经历','实习经历','实习经验','自我评价','个人优势','专业技能','技能特长','技能清单'];
+const HEADING_RE = /^\s*[【\[]?\s*(个人信息|基本信息|教育经历|教育背景|学历|项目经历|项目经验|工作经历|实习经历|实习经验|自我评价|个人优势|专业技能|技能特长|技能清单)\s*[】\]]?\s*[:：]?\s*$/;
+
+function isEditableTitle(title){
+  return EDITABLE_TITLES.indexOf(title) >= 0;
+}
+
+/** 把简历切成区块；未识别的小标题一律按 locked 处理 */
+function parseResume(text){
+  const blocks = [];
+  let cur = {title: '（简历开头）', kind: 'locked', lines: []};
+  blocks.push(cur);
+  (text || '').split('\n').forEach((line) => {
+    const m = line.match(HEADING_RE);
+    if (m) {
+      cur = {title: m[1], kind: isEditableTitle(m[1]) ? 'editable' : 'locked', lines: [line]};
+      blocks.push(cur);
+    } else {
+      cur.lines.push(line);
+    }
+  });
+  return blocks;
+}
+
+function pickTerm(pool){
+  const priority = ['高并发','分布式','性能优化','微服务','数据分析','产品设计'];
+  for (let i = 0; i < priority.length; i++) {
+    if (pool.indexOf(priority[i]) >= 0) return priority[i];
+  }
+  return pool[0] || '';
+}
+
+function buildResumeSuggestions(){
+  const blocks = parseResume(state.resume);
+  const jdSkills = extractSkills(state.jd);
+  const resumeSkills = extractSkills(state.resume);
+  const matched = jdSkills.filter((s) => resumeSkills.indexOf(s) >= 0);
+  const missing = jdSkills.filter((s) => resumeSkills.indexOf(s) < 0);
+  const term = pickTerm(matched);
+  const suggestions = [];
+
+  const push = (section, bi, li, before, after, reason) => {
+    suggestions.push({
+      id: 's' + suggestions.length,
+      section: section,
+      blockIndex: bi,
+      lineIndex: li,
+      before: before,
+      after: after,
+      reason: reason,
+      adopted: false
+    });
+  };
+
+  blocks.forEach((b, bi) => {
+    if (b.kind !== 'editable') return;
+    b.lines.forEach((line, li) => {
+      if (HEADING_RE.test(line)) return;
+      line.split(/(?<=[。；;])/).forEach((p) => {
+        const s = p.trim();
+        if (s.length < 8) return;
+        if (/\d+\s*(ms|%|万|倍)/.test(s) && term && s.indexOf(term) < 0) {
+          push(b.title, bi, li, s, s.replace(/[。]?$/, '') + '（' + term + '场景）',
+            '这句已有量化结果，但没有点出岗位关注的「' + term + '」，补一个标签即可，不改变事实');
+        }
+      });
+    });
+  });
+
+  const skillBlock = blocks.filter((b) => b.kind === 'editable' && /专业技能|技能特长|技能清单/.test(b.title))[0];
+  if (skillBlock) {
+    const listed = extractSkills(skillBlock.lines.join('\n'));
+    const candidates = resumeSkills.filter((s) => listed.indexOf(s) < 0);
+    const li = skillBlock.lines.findIndex((l) => l.trim() && !HEADING_RE.test(l));
+    if (candidates.length && li >= 0) {
+      const before = skillBlock.lines[li].trim();
+      push(skillBlock.title, blocks.indexOf(skillBlock), li, before,
+        before.replace(/\s*$/, '') + '、' + candidates.join('、'),
+        '「' + candidates.join('、') + '」在简历正文里有依据，但没有列进技能清单，补上让匹配更直接');
+    }
+  }
+
+  const selfBlock = blocks.filter((b) => b.kind === 'editable' && /自我评价|个人优势/.test(b.title))[0];
+  if (selfBlock && term) {
+    const body = selfBlock.lines.join('\n');
+    const li = selfBlock.lines.findIndex((l) => l.trim() && !HEADING_RE.test(l));
+    if (li >= 0 && !matched.some((t) => body.indexOf(t) >= 0)) {
+      const before = selfBlock.lines[li].trim();
+      push(selfBlock.title, blocks.indexOf(selfBlock), li, before,
+        before.replace(/[。]?$/, '') + '，熟悉' + matched.slice(0, 3).join('、') + '。',
+        '自我评价里没有出现岗位关注的关键词，点出来能让招聘方第一眼看到匹配点');
+    }
+  }
+
+  return {blocks: blocks, suggestions: suggestions, matched: matched, missing: missing};
+}
+
+/** 只改写可编辑区块，锁定区块原样输出 */
+function composeCustomResume(){
+  const blocks = parseResume(state.resume);
+  const adopted = state.suggestions.filter((s) => s.adopted);
+  return blocks.map((b, bi) => {
+    if (b.kind !== 'editable') return b.lines.join('\n');
+    const lines = b.lines.slice();
+    adopted.filter((s) => s.blockIndex === bi).forEach((s) => {
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].indexOf(s.before) >= 0) {
+          lines[i] = lines[i].replace(s.before, s.after);
+          break;
+        }
+      }
+    });
+    return lines.join('\n');
+  }).join('\n');
+}
+
+function renderPreview(){
+  const text = state.suggestions.length ? composeCustomResume() : '';
+  $('customPreview').textContent = text || '还没有生成改写建议';
+  const n = state.suggestions.filter((s) => s.adopted).length;
+  $('adoptCount').textContent = '已采纳 ' + n + ' 条';
+  $('saveCustom').disabled = n === 0;
+}
+
+function renderSuggestions(result){
+  const wrap = $('sugList');
+  $('sugEmpty').hidden = true;
+  wrap.hidden = false;
+
+  if (!result.suggestions.length) {
+    wrap.innerHTML = '<div class="empty"><div class="ico">🤔</div>'
+      + '<p>没有找到可以安全改写的点</p><p>简历与岗位的匹配度可能已经很好，或简历文本偏短</p></div>';
+    renderPreview();
+    return;
+  }
+
+  let html = '';
+  if (result.missing.length) {
+    html += '<div class="tip-warn"><span>⚠️</span><span>岗位要求的「'
+      + escapeHtml(result.missing.join('、')) + '」在简历里找不到依据，建议不要写入简历。</span></div>';
+  }
+
+  const titles = [];
+  const groups = {};
+  result.suggestions.forEach((s) => {
+    if (!groups[s.section]) { groups[s.section] = []; titles.push(s.section); }
+    groups[s.section].push(s);
+  });
+
+  html += titles.map((title) => (
+    '<div class="sug-group"><h3>' + escapeHtml(title)
+    + '<span class="chip none">' + groups[title].length + ' 条建议</span></h3>'
+    + groups[title].map((s) => (
+      '<div class="sug-card" data-id="' + s.id + '">'
+      + '<div class="sug-head"><input type="checkbox" id="cb-' + s.id + '">'
+      + '<label for="cb-' + s.id + '">采纳这条建议</label></div>'
+      + '<div class="sug-diff">'
+      + '<div class="row"><span class="mark before">原</span><span class="txt del">' + escapeHtml(s.before) + '</span></div>'
+      + '<div class="row"><span class="mark after">改</span><span class="txt">' + escapeHtml(s.after) + '</span></div>'
+      + '</div>'
+      + '<p class="sug-reason">' + escapeHtml(s.reason) + '</p>'
+      + '</div>'
+    )).join('')
+    + '</div>'
+  )).join('');
+
+  wrap.innerHTML = html;
+  renderPreview();
+}
+
+function saveCustom(){
+  const adopted = state.suggestions.filter((s) => s.adopted);
+  if (!adopted.length) return;
+  const firstLine = (state.jd.split('\n')[0] || '').trim();
+  state.customs.unshift({
+    id: Date.now(),
+    at: Date.now(),
+    title: (firstLine || '未命名岗位').slice(0, 26),
+    adopted: adopted.length,
+    text: composeCustomResume()
+  });
+  state.customs = state.customs.slice(0, 5);
+  persist();
+  renderCustoms();
+  toast('已保存为定制版本，原始简历未改动');
+}
+
+function renderCustoms(){
+  const list = $('customsList');
+  if (!state.customs.length) {
+    list.innerHTML = '';
+    $('customsEmpty').hidden = false;
+    return;
+  }
+  $('customsEmpty').hidden = true;
+  list.innerHTML = state.customs.map((c) => (
+    '<div class="custom-item">'
+    + '<span class="ct">' + escapeHtml(c.title) + '</span>'
+    + '<span>' + escapeHtml(formatTime(c.at)) + '</span>'
+    + '<span>采纳 ' + c.adopted + ' 条</span>'
+    + '<button class="link" data-copy="' + c.id + '">复制</button>'
+    + '</div>'
+  )).join('');
+}
+
+/** 生成页与改简历页共用同一份 JD */
+function syncJd(source){
+  state.jd = source.value;
+  if (source !== jdEl) jdEl.value = state.jd;
+  if (source !== jd2El) jd2El.value = state.jd;
+  refreshGenerateState();
+  refreshCustomState();
+  persist();
+}
+
+function refreshCustomState(){
+  const n = count(state.jd);
+  $('jd2Count').textContent = n + ' 字';
+  $('makeSuggest').disabled = !state.resume || n < MIN_LEN;
+  if (!state.resume) {
+    $('customHint').textContent = '还没有保存简历，先到「我的简历」填写并保存';
+  } else if (n < MIN_LEN) {
+    $('customHint').textContent = '粘贴目标岗位 JD 后即可生成改写建议（至少 ' + MIN_LEN + ' 字）';
+  } else {
+    $('customHint').textContent = '改写只会作用于经历、自我评价与技能，个人信息和教育经历不会被改动';
+  }
+}
+
+/* ---------------- 改简历页事件 ---------------- */
+$('makeSuggest').addEventListener('click', () => {
+  if (!state.resume) { toast('请先到「我的简历」保存简历'); switchView('resume'); return; }
+  if (count(state.jd) < MIN_LEN) { toast('请先粘贴岗位 JD'); return; }
+  const result = buildResumeSuggestions();
+  state.suggestions = result.suggestions;
+  renderSuggestions(result);
+});
+
+$('sugList').addEventListener('change', (e) => {
+  const cb = e.target.closest('input[type="checkbox"]');
+  if (!cb) return;
+  const card = cb.closest('.sug-card');
+  const item = state.suggestions.filter((s) => s.id === card.dataset.id)[0];
+  if (!item) return;
+  item.adopted = cb.checked;
+  card.classList.toggle('adopted', cb.checked);
+  renderPreview();
+});
+
+$('copyCustom').addEventListener('click', async () => {
+  const ok = await copyText(composeCustomResume());
+  toast(ok ? '定制简历已复制' : '复制失败，请手动选择');
+});
+
+$('saveCustom').addEventListener('click', saveCustom);
+
+$('customsList').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-copy]');
+  if (!btn) return;
+  const item = state.customs.filter((c) => String(c.id) === btn.dataset.copy)[0];
+  if (!item) return;
+  const ok = await copyText(item.text);
+  toast(ok ? '已复制该定制版本' : '复制失败，请手动选择');
+});
+
+$('jd2').addEventListener('input', () => syncJd(jd2El));
+
+$('fillJd2').addEventListener('click', () => {
+  jd2El.value = SAMPLE_JD;
+  syncJd(jd2El);
+});
+
+$('clearCustom').addEventListener('click', () => {
+  state.suggestions = [];
+  $('sugList').hidden = true;
+  $('sugEmpty').hidden = false;
+  $('customPreview').textContent = '还没有生成改写建议';
+  $('adoptCount').textContent = '已采纳 0 条';
+  $('saveCustom').disabled = true;
+});
+
+$('resumeBar2').addEventListener('click', (e) => {
+  if (e.target.closest('[data-goto="resume"]')) switchView('resume');
+});
 /* ---------------- 事件绑定 ---------------- */
 $('collapseBtn').addEventListener('click', () => {
   setCollapsed(!$('sidebar').classList.contains('collapsed'));
@@ -759,18 +1156,14 @@ $('revertResume').addEventListener('click', () => {
   toast('已还原为上次保存的内容');
 });
 
-jdEl.addEventListener('input', () => {
-  refreshGenerateState();
-  persist();
-});
+jdEl.addEventListener('input', () => syncJd(jdEl));
 
 genBtn.addEventListener('click', generate);
 $('regen').addEventListener('click', generate);
 
 $('fillJd').addEventListener('click', () => {
   jdEl.value = SAMPLE_JD;
-  refreshGenerateState();
-  persist();
+  syncJd(jdEl);
 });
 
 $('clearJd').addEventListener('click', () => {
@@ -825,16 +1218,23 @@ $('msgList').addEventListener('input', (e) => {
     const saved = localStorage.getItem(LS_RESUME);
     const at = localStorage.getItem(LS_RESUME_AT);
     const jd = localStorage.getItem(LS_JD);
+    const customs = localStorage.getItem(LS_CUSTOMS);
     if (saved) state.resume = saved;
     if (at) state.savedAt = Number(at) || 0;
-    if (jd) jdEl.value = jd;
+    if (jd) state.jd = jd;
+    if (customs) state.customs = JSON.parse(customs) || [];
   } catch (e) { /* 忽略 */ }
 
   resumeEditor.value = state.resume;
+  jdEl.value = state.jd;
+  jd2El.value = state.jd;
   renderSavedBar();
   renderResumeBar();
+  $('resumeBar2').innerHTML = $('resumeBar').innerHTML;
   refreshResumeEditor();
   refreshGenerateState();
+  refreshCustomState();
+  renderCustoms();
   renderStats();
   switchView(state.resume ? 'generate' : 'resume');
   try {

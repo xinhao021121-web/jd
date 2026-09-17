@@ -58,7 +58,7 @@ function loadDemo() {
   const navigator = {clipboard: {writeText: async () => {}}};
 
   const exported = eval(
-    match[1] + '\n;({buildResult, state, saveResume, generate, setCollapsed, resumeEditor, jdEl, SAMPLE_RESUME, SAMPLE_JD})'
+    match[1] + '\n;({buildResult, state, saveResume, generate, setCollapsed, resumeEditor, jdEl, jd2El, parseResume, buildResumeSuggestions, composeCustomResume, saveCustom, SAMPLE_RESUME, SAMPLE_JD})'
   );
   return Object.assign({els}, exported);
 }
@@ -90,20 +90,20 @@ test('内容过短时拒绝保存', () => {
 test('生成只读取已保存简历，未保存的编辑不生效', () => {
   const demo = saveAs();
   demo.resumeEditor.value = DESIGNER;
-  demo.jdEl.value = demo.SAMPLE_JD;
+  demo.state.jd = demo.SAMPLE_JD;
   assert.ok(demo.buildResult().matched.includes('Java'), '应仍基于已保存的简历生成');
 });
 
 test('没有保存简历时不允许生成', () => {
   const demo = loadDemo();
-  demo.jdEl.value = demo.SAMPLE_JD;
+  demo.state.jd = demo.SAMPLE_JD;
   demo.generate();
   assert.strictEqual(demo.state.stats.gen, 0, '缺简历时不应发起生成');
 });
 
 test('示例简历生成 3 条话术，命中关键要求且数据可溯源', () => {
   const demo = saveAs();
-  demo.jdEl.value = demo.SAMPLE_JD;
+  demo.state.jd = demo.SAMPLE_JD;
 
   const result = demo.buildResult();
   const joined = result.messages.map((m) => m.text).join(' ');
@@ -121,7 +121,7 @@ test('示例简历生成 3 条话术，命中关键要求且数据可溯源', ()
 
 test('简历与岗位不匹配时降级话术，不冒认技能', () => {
   const demo = saveAs(DESIGNER);
-  demo.jdEl.value = demo.SAMPLE_JD;
+  demo.state.jd = demo.SAMPLE_JD;
 
   const result = demo.buildResult();
   const joined = result.messages.map((m) => m.text).join(' ');
@@ -134,7 +134,7 @@ test('简历与岗位不匹配时降级话术，不冒认技能', () => {
 
 test('JD 中简历未覆盖的要求被标记为未覆盖', () => {
   const demo = saveAs();
-  demo.jdEl.value = '岗位要求：\n1. 3 年以上 Golang 开发经验，熟悉微服务\n2. 熟悉 Kubernetes 容器编排\n3. 熟悉 MySQL';
+  demo.state.jd = '岗位要求：\n1. 3 年以上 Golang 开发经验，熟悉微服务\n2. 熟悉 Kubernetes 容器编排\n3. 熟悉 MySQL';
   assert.ok(demo.buildResult().missing.includes('Go'), 'Golang 应被识别为未覆盖要求');
 });
 
@@ -148,4 +148,67 @@ test('侧边栏可以收起与展开', () => {
 
   demo.setCollapsed(false);
   assert.ok(!sidebar.classList.contains('collapsed'), '应展开侧边栏');
+});
+
+
+test('简历分区：指定区块可改写，个人信息与教育经历锁定', () => {
+  const demo = loadDemo();
+  const blocks = demo.parseResume(demo.SAMPLE_RESUME);
+  const editable = blocks.filter((b) => b.kind === 'editable').map((b) => b.title);
+  const locked = blocks.filter((b) => b.kind === 'locked').map((b) => b.title);
+
+  assert.ok(editable.includes('工作经历'), '工作经历应可改写');
+  assert.ok(editable.includes('专业技能'), '专业技能应可改写');
+  assert.ok(locked.includes('（简历开头）'), '开头个人信息应锁定');
+  assert.ok(locked.includes('教育背景'), '教育背景应锁定');
+});
+
+test('改写建议只落在可改写区块内', () => {
+  const demo = saveAs();
+  demo.state.jd = demo.SAMPLE_JD;
+  const result = demo.buildResumeSuggestions();
+
+  assert.ok(result.suggestions.length > 0, '应给出改写建议');
+  result.suggestions.forEach((s) => {
+    assert.ok(['项目经历', '工作经历', '实习经历', '自我评价', '专业技能'].includes(s.section),
+      '建议不应落在锁定区块：' + s.section);
+  });
+});
+
+test('采纳建议后，个人信息与教育经历保持原文', () => {
+  const demo = saveAs();
+  demo.state.jd = demo.SAMPLE_JD;
+  demo.state.suggestions = demo.buildResumeSuggestions().suggestions
+    .map((s) => Object.assign({}, s, {adopted: true}));
+
+  const composed = demo.composeCustomResume();
+  const before = demo.parseResume(demo.state.resume).filter((b) => b.kind === 'locked');
+  const after = demo.parseResume(composed).filter((b) => b.kind === 'locked');
+
+  assert.strictEqual(after.length, before.length, '锁定区块数量不应变化');
+  before.forEach((b, i) => {
+    assert.deepStrictEqual(after[i].lines, b.lines, '锁定区块内容不应改动：' + b.title);
+  });
+});
+
+test('没有采纳任何建议时，定制简历与原件一致', () => {
+  const demo = saveAs();
+  demo.state.jd = demo.SAMPLE_JD;
+  demo.state.suggestions = demo.buildResumeSuggestions().suggestions;
+
+  assert.strictEqual(demo.composeCustomResume(), demo.state.resume.trim());
+});
+
+test('保存定制版本不会覆盖原始简历', () => {
+  const demo = saveAs();
+  const original = demo.state.resume;
+  demo.state.jd = demo.SAMPLE_JD;
+  demo.state.suggestions = demo.buildResumeSuggestions().suggestions
+    .map((s) => Object.assign({}, s, {adopted: true}));
+
+  demo.saveCustom();
+
+  assert.strictEqual(demo.state.resume, original, '原始简历不应被改动');
+  assert.strictEqual(demo.state.customs.length, 1, '应留下一条定制版本记录');
+  assert.ok(demo.state.customs[0].text.includes('教育背景'), '定制版本应包含完整简历');
 });
