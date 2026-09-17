@@ -260,6 +260,22 @@
     padding:9px 12px;font-size:12.5px;color:var(--muted);
   }
   .custom-item .ct{color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  /* ---------- 定制简历存档 ---------- */
+  .archive-list{display:flex;flex-direction:column;gap:8px;margin:12px 0;}
+  .archive-item{
+    border:1px solid var(--line);border-radius:11px;padding:11px 13px;cursor:pointer;transition:.18s;
+  }
+  .archive-item:hover{border-color:#cfdcff;background:#fafbff;}
+  .archive-item.active{border-color:#b9cdff;background:#f5f8ff;}
+  .ai-title{
+    font-size:13.5px;color:var(--text);font-weight:500;margin-bottom:3px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .ai-meta{font-size:12px;color:var(--faint);}
+  .ai-note{
+    margin-top:7px;font-size:12px;color:var(--warn);background:var(--warnbg);
+    border-radius:7px;padding:4px 9px;display:inline-block;
+  }
   @media (max-width:940px){
     .sidebar{width:72px;flex-basis:72px;}
     .sidebar .side-brand,
@@ -288,8 +304,9 @@
     </div>
     <nav class="side-nav" id="nav">
       <button data-view="resume"><span class="ico">📄</span><span class="label">我的简历</span></button>
-      <button data-view="generate" class="active"><span class="ico">✍️</span><span class="label">生成打招呼</span></button>
       <button data-view="custom"><span class="ico">📝</span><span class="label">按 JD 改简历</span></button>
+      <button data-view="archive"><span class="ico">📁</span><span class="label">定制简历</span></button>
+      <button data-view="generate" class="active"><span class="ico">✍️</span><span class="label">生成打招呼</span></button>
       <div class="side-divider"></div>
       <div class="side-group">后续规划</div>
       <button disabled title="规划中"><span class="ico">🕘</span><span class="label">话术历史</span></button>
@@ -450,9 +467,49 @@
         </div>
 
         <div class="card">
-          <div class="card-head"><h2>定制版本记录</h2></div>
-          <div class="customs-list" id="customsList"></div>
-          <p class="hint-line" id="customsEmpty">还没有定制版本</p>
+          <div class="card-head">
+            <h2>定制简历</h2>
+            <button class="link" id="gotoArchive">去「定制简历」页查看</button>
+          </div>
+          <p class="hint-line" id="customsEmpty">保存后会单独存放在「定制简历」页，与原始简历分开</p>
+        </div>
+      </section>
+    </div>
+  </section>
+  <section class="view" id="view-archive" hidden>
+    <div class="workspace">
+      <section class="col">
+        <div class="card">
+          <div class="card-head">
+            <h2>定制简历</h2>
+            <span class="count" id="archiveCount">共 0 份</span>
+          </div>
+          <p class="hint-line">每份定制简历都是针对某个岗位 JD 生成的，只适合投递那个岗位，因此与原始简历分开存放</p>
+          <div class="archive-list" id="archiveList"></div>
+          <p class="hint-line" id="archiveEmpty">还没有定制简历，去「按 JD 改简历」生成一份</p>
+        </div>
+      </section>
+
+      <section class="col">
+        <div class="card">
+          <div class="card-head">
+            <h2>定制简历内容</h2>
+            <button class="link" id="copyArchive">复制全文</button>
+          </div>
+          <div class="empty" id="archiveDetailEmpty">
+            <div class="ico">📁</div>
+            <p>从左侧选择一份定制简历查看</p>
+          </div>
+          <div id="archiveDetail" hidden>
+            <div class="preview" id="archiveText"></div>
+            <div class="card-head" style="margin:16px 0 8px">
+              <h2>对应岗位 JD</h2>
+            </div>
+            <div class="preview" id="archiveJd"></div>
+            <div class="actions right">
+              <button class="btn ghost fixed" id="deleteArchive">删除这份</button>
+            </div>
+          </div>
         </div>
       </section>
     </div>
@@ -584,6 +641,7 @@ const state = {
   savedAt: 0,
   jd: '',
   customs: [],
+  selectedCustom: '',
   suggestions: [],
   stats: {gen: 0, copy: 0, dirtyCopy: 0},
   edited: {}
@@ -622,7 +680,9 @@ function switchView(name){
   for (let i = 0; i < btns.length; i++) {
     btns[i].classList.toggle('active', btns[i].dataset.view === name);
   }
-  $('pageTitle').textContent = name === 'resume' ? '我的简历' : (name === 'custom' ? '按 JD 改简历' : '生成打招呼');
+  $('pageTitle').textContent = name === 'resume' ? '我的简历'
+    : (name === 'custom' ? '按 JD 改简历'
+    : (name === 'archive' ? '定制简历' : '生成打招呼'));
 }
 
 /* ---------------- 侧边栏收起 ---------------- */
@@ -1027,31 +1087,19 @@ function saveCustom(){
     id: Date.now(),
     at: Date.now(),
     title: (firstLine || '未命名岗位').slice(0, 26),
+    jd: state.jd,
     adopted: adopted.length,
     text: composeCustomResume()
   });
-  state.customs = state.customs.slice(0, 5);
+  state.customs = state.customs.slice(0, 20);
+  state.selectedCustom = '';
   persist();
-  renderCustoms();
-  toast('已保存为定制版本，原始简历未改动');
+  renderArchive();
+  toast('已保存到「定制简历」，原始简历未改动');
 }
 
 function renderCustoms(){
-  const list = $('customsList');
-  if (!state.customs.length) {
-    list.innerHTML = '';
-    $('customsEmpty').hidden = false;
-    return;
-  }
-  $('customsEmpty').hidden = true;
-  list.innerHTML = state.customs.map((c) => (
-    '<div class="custom-item">'
-    + '<span class="ct">' + escapeHtml(c.title) + '</span>'
-    + '<span>' + escapeHtml(formatTime(c.at)) + '</span>'
-    + '<span>采纳 ' + c.adopted + ' 条</span>'
-    + '<button class="link" data-copy="' + c.id + '">复制</button>'
-    + '</div>'
-  )).join('');
+  renderArchive();
 }
 
 /** 生成页与改简历页共用同一份 JD */
@@ -1077,6 +1125,72 @@ function refreshCustomState(){
   }
 }
 
+/* ---------------- 定制简历存档 ---------------- */
+function renderArchive(){
+  const list = $('archiveList');
+  $('archiveCount').textContent = '共 ' + state.customs.length + ' 份';
+
+  if (!state.customs.length) {
+    list.innerHTML = '';
+    $('archiveEmpty').hidden = false;
+    state.selectedCustom = '';
+    renderArchiveDetail();
+    return;
+  }
+
+  $('archiveEmpty').hidden = true;
+  if (!state.customs.some((c) => String(c.id) === String(state.selectedCustom))) {
+    state.selectedCustom = state.customs[0].id;
+  }
+
+  list.innerHTML = state.customs.map((c) => (
+    '<div class="archive-item' + (String(c.id) === String(state.selectedCustom) ? ' active' : '') + '" data-id="' + c.id + '">'
+    + '<div class="ai-title">' + escapeHtml(c.title) + '</div>'
+    + '<div class="ai-meta">' + escapeHtml(formatTime(c.at)) + ' · 采纳 ' + c.adopted + ' 条 · ' + count(c.text) + ' 字</div>'
+    + '<div class="ai-note">仅适用于该岗位，投递其他岗位请重新生成</div>'
+    + '</div>'
+  )).join('');
+
+  renderArchiveDetail();
+}
+
+function renderArchiveDetail(){
+  const item = state.customs.filter((c) => String(c.id) === String(state.selectedCustom))[0];
+  $('archiveDetail').hidden = !item;
+  $('archiveDetailEmpty').hidden = !!item;
+  $('archiveText').textContent = item ? item.text : '';
+  $('archiveJd').textContent = item ? (item.jd || '（创建时未记录对应 JD）') : '';
+}
+
+function currentArchive(){
+  return state.customs.filter((c) => String(c.id) === String(state.selectedCustom))[0];
+}
+
+$('archiveList').addEventListener('click', (e) => {
+  const el = e.target.closest('.archive-item');
+  if (!el) return;
+  state.selectedCustom = el.dataset.id;
+  renderArchive();
+});
+
+$('copyArchive').addEventListener('click', async () => {
+  const item = currentArchive();
+  if (!item) { toast('请先选择一份定制简历'); return; }
+  const ok = await copyText(item.text);
+  toast(ok ? '定制简历已复制' : '复制失败，请手动选择');
+});
+
+$('deleteArchive').addEventListener('click', () => {
+  const item = currentArchive();
+  if (!item) return;
+  state.customs = state.customs.filter((c) => String(c.id) !== String(item.id));
+  state.selectedCustom = '';
+  persist();
+  renderArchive();
+  toast('已删除这份定制简历，原始简历未受影响');
+});
+
+$('gotoArchive').addEventListener('click', () => switchView('archive'));
 /* ---------------- 改简历页事件 ---------------- */
 $('makeSuggest').addEventListener('click', () => {
   if (!state.resume) { toast('请先到「我的简历」保存简历'); switchView('resume'); return; }
@@ -1103,15 +1217,6 @@ $('copyCustom').addEventListener('click', async () => {
 });
 
 $('saveCustom').addEventListener('click', saveCustom);
-
-$('customsList').addEventListener('click', async (e) => {
-  const btn = e.target.closest('[data-copy]');
-  if (!btn) return;
-  const item = state.customs.filter((c) => String(c.id) === btn.dataset.copy)[0];
-  if (!item) return;
-  const ok = await copyText(item.text);
-  toast(ok ? '已复制该定制版本' : '复制失败，请手动选择');
-});
 
 $('jd2').addEventListener('input', () => syncJd(jd2El));
 

@@ -212,3 +212,36 @@ test('保存定制版本不会覆盖原始简历', () => {
   assert.strictEqual(demo.state.customs.length, 1, '应留下一条定制版本记录');
   assert.ok(demo.state.customs[0].text.includes('教育背景'), '定制版本应包含完整简历');
 });
+
+
+test('定制简历单独存档，并记录对应岗位 JD', () => {
+  const demo = saveAs();
+  demo.state.jd = demo.SAMPLE_JD;
+  demo.state.suggestions = demo.buildResumeSuggestions().suggestions
+    .map((s) => Object.assign({}, s, {adopted: true}));
+
+  demo.saveCustom();
+
+  assert.strictEqual(demo.state.customs.length, 1, '应存下一份定制简历');
+  assert.ok(demo.state.customs[0].jd.includes('Java'), '应记录对应的岗位 JD');
+  assert.ok(demo.state.customs[0].text.includes('教育背景'), '定制简历应包含完整内容');
+});
+
+test('多份定制简历互不影响，原始简历始终不变', () => {
+  const demo = saveAs();
+  const original = demo.state.resume;
+
+  demo.state.jd = demo.SAMPLE_JD;
+  demo.state.suggestions = demo.buildResumeSuggestions().suggestions
+    .map((s) => Object.assign({}, s, {adopted: true}));
+  demo.saveCustom();
+
+  demo.state.jd = '岗位：数据平台开发工程师\n任职要求：熟悉 Python、数据分析、指标体系';
+  demo.state.suggestions = demo.buildResumeSuggestions().suggestions
+    .map((s) => Object.assign({}, s, {adopted: true}));
+  demo.saveCustom();
+
+  assert.strictEqual(demo.state.customs.length, 2, '应存下两份定制简历');
+  assert.notStrictEqual(demo.state.customs[0].jd, demo.state.customs[1].jd, '两份应各自绑定不同 JD');
+  assert.strictEqual(demo.state.resume, original, '原始简历不应被改动');
+});
