@@ -537,7 +537,8 @@ Java、Spring Boot、MySQL、Redis、Kafka、微服务、Docker / Kubernetes
 教育背景
 某某大学  计算机科学与技术  本科  2021 届`;
 
-const SAMPLE_JD = `岗位：Java 后端开发工程师（高级）
+const SAMPLE_JD = `公司：某电商科技有限公司
+岗位：Java 后端开发工程师（高级）
 
 岗位职责
 1. 负责核心业务系统的后端设计与开发，保障系统高可用
@@ -1079,14 +1080,45 @@ function renderSuggestions(result){
   renderPreview();
 }
 
+/** 从 JD 里提取「公司 · 岗位」作为记录名称，便于辨认对应的是哪个岗位 */
+function extractJdTitle(jd){
+  const lines = (jd || '').split('\n').map((l) => l.trim()).filter(Boolean);
+
+  const pick = (re) => {
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i].match(re);
+      if (m && m[1]) return m[1].trim().replace(/[（(].*?[)）]\s*$/, '').slice(0, 22);
+    }
+    return '';
+  };
+
+  let company = pick(/(?:公司名称|所属公司|公司|企业)\s*[:：]\s*([^\n，,。;；]{2,40})/);
+  let role = pick(/(?:职位名称|招聘岗位|岗位名称|岗位|职位)\s*[:：]\s*([^\n，,。;；]{2,40})/);
+
+  const COMPANY_WORD = /(有限公司|集团|科技|网络|信息|软件|数据|智能|银行|证券|研究院|工作室)/;
+  const ROLE_WORD = /(工程师|经理|专员|设计师|主管|总监|架构师|开发|运营|分析师|研究员)/;
+
+  if (!company) {
+    const hit = lines.slice(0, 6).filter((l) => COMPANY_WORD.test(l) && l.length <= 26)[0];
+    if (hit) company = hit.replace(/[（(].*?[)）]\s*$/, '').slice(0, 22);
+  }
+  if (!role) {
+    const hit = lines.slice(0, 8).filter((l) => ROLE_WORD.test(l) && !COMPANY_WORD.test(l) && l.length <= 26)[0];
+    if (hit) role = hit.replace(/[（(].*?[)）]\s*$/, '').slice(0, 22);
+  }
+
+  const parts = [company, role].filter(Boolean);
+  if (parts.length) return parts.join(' · ');
+  return (lines[0] || '未命名岗位').slice(0, 26);
+}
+
 function saveCustom(){
   const adopted = state.suggestions.filter((s) => s.adopted);
   if (!adopted.length) return;
-  const firstLine = (state.jd.split('\n')[0] || '').trim();
   state.customs.unshift({
     id: Date.now(),
     at: Date.now(),
-    title: (firstLine || '未命名岗位').slice(0, 26),
+    title: extractJdTitle(state.jd),
     jd: state.jd,
     adopted: adopted.length,
     text: composeCustomResume()
@@ -1095,7 +1127,7 @@ function saveCustom(){
   state.selectedCustom = '';
   persist();
   renderArchive();
-  toast('已保存到「定制简历」，原始简历未改动');
+  toast('已保存到「定制简历」：' + state.customs[0].title);
 }
 
 function renderCustoms(){
@@ -1145,7 +1177,7 @@ function renderArchive(){
 
   list.innerHTML = state.customs.map((c) => (
     '<div class="archive-item' + (String(c.id) === String(state.selectedCustom) ? ' active' : '') + '" data-id="' + c.id + '">'
-    + '<div class="ai-title">' + escapeHtml(c.title) + '</div>'
+    + '<div class="ai-title" title="' + escapeHtml(c.title) + '">' + escapeHtml(c.title) + '</div>'
     + '<div class="ai-meta">' + escapeHtml(formatTime(c.at)) + ' · 采纳 ' + c.adopted + ' 条 · ' + count(c.text) + ' 字</div>'
     + '<div class="ai-note">仅适用于该岗位，投递其他岗位请重新生成</div>'
     + '</div>'

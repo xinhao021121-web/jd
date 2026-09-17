@@ -58,7 +58,7 @@ function loadDemo() {
   const navigator = {clipboard: {writeText: async () => {}}};
 
   const exported = eval(
-    match[1] + '\n;({buildResult, state, saveResume, generate, setCollapsed, resumeEditor, jdEl, jd2El, parseResume, buildResumeSuggestions, composeCustomResume, saveCustom, SAMPLE_RESUME, SAMPLE_JD})'
+    match[1] + '\n;({buildResult, state, saveResume, generate, setCollapsed, resumeEditor, jdEl, jd2El, parseResume, buildResumeSuggestions, composeCustomResume, saveCustom, extractJdTitle, SAMPLE_RESUME, SAMPLE_JD})'
   );
   return Object.assign({els}, exported);
 }
@@ -244,4 +244,32 @@ test('多份定制简历互不影响，原始简历始终不变', () => {
   assert.strictEqual(demo.state.customs.length, 2, '应存下两份定制简历');
   assert.notStrictEqual(demo.state.customs[0].jd, demo.state.customs[1].jd, '两份应各自绑定不同 JD');
   assert.strictEqual(demo.state.resume, original, '原始简历不应被改动');
+});
+
+test('定制简历名称取自 JD 中的公司与岗位', () => {
+  const demo = loadDemo();
+
+  assert.strictEqual(
+    demo.extractJdTitle('公司：某电商科技有限公司\n岗位：Java 后端开发工程师（高级）'),
+    '某电商科技有限公司 · Java 后端开发工程师',
+    '应组合出「公司 · 岗位」'
+  );
+
+  assert.ok(
+    demo.extractJdTitle('招聘岗位：产品经理\n某智能科技有限公司').includes('产品经理'),
+    '缺少「公司：」标记时也应识别出岗位名'
+  );
+
+  assert.strictEqual(demo.extractJdTitle(''), '未命名岗位', '空 JD 应有兜底名称');
+});
+
+test('保存定制简历时使用解析出的名称', () => {
+  const demo = saveAs();
+  demo.state.jd = demo.SAMPLE_JD;
+  demo.state.suggestions = demo.buildResumeSuggestions().suggestions
+    .map((s) => Object.assign({}, s, {adopted: true}));
+
+  demo.saveCustom();
+
+  assert.strictEqual(demo.state.customs[0].title, '某电商科技有限公司 · Java 后端开发工程师');
 });
