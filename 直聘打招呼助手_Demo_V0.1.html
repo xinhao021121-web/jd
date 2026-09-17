@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>直聘打招呼助手 · 交互 Demo V0.1</title>
+<style>
+  :root{
+    --bg:#f4f6fb;
+    --card:#fff;
+    --line:#e5e9f2;
+    --text:#1b2333;
+    --muted:#6b7688;
+    --faint:#98a2b6;
+    --primary:#2f6bff;
+    --primary-dark:#1f52d6;
+    --ok:#15a34a;
+    --okbg:#e9f8ef;
+    --warn:#b45309;
+    --warnbg:#fdf3e3;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(20,30,60,.04), 0 10px 26px rgba(20,30,60,.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;background:var(--bg);color:var(--text);font-size:14px;line-height:1.65;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  .page{max-width:1240px;margin:0 auto;padding:26px 22px 44px;}
+
+  /* ---------- 顶部 ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .mark{
+    width:42px;height:42px;border-radius:12px;flex:0 0 auto;
+    background:linear-gradient(135deg,#2f6bff,#7b5cff);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;
+    box-shadow:0 6px 16px rgba(47,107,255,.28);
+  }
+  .brand h1{margin:0;font-size:19px;letter-spacing:.2px;}
+  .brand p{margin:2px 0 0;color:var(--muted);font-size:12.5px;}
+  .tag-demo{
+    background:#eef2ff;color:#3f4cbb;border:1px solid #dfe4ff;
+    padding:5px 11px;border-radius:999px;font-size:12px;white-space:nowrap;
+  }
+
+  /* ---------- 步骤条 ---------- */
+  .steps{
+    list-style:none;display:flex;gap:10px;flex-wrap:wrap;
+    margin:22px 0 18px;padding:0;
+  }
+  .steps li{
+    display:flex;align-items:center;gap:8px;color:var(--faint);
+    background:#fff;border:1px solid var(--line);border-radius:999px;
+    padding:7px 15px 7px 8px;font-size:12.5px;transition:.25s;
+  }
+  .steps li b{
+    width:20px;height:20px;border-radius:50%;background:#eef1f7;color:var(--faint);
+    display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;
+  }
+  .steps li.on{color:var(--primary);border-color:#c8d8ff;background:#f5f8ff;}
+  .steps li.on b{background:var(--primary);color:#fff;}
+  .steps li.done{color:var(--ok);border-color:#c9ecd7;background:#f4fcf7;}
+  .steps li.done b{background:var(--ok);color:#fff;}
+
+  /* ---------- 主区域 ---------- */
+  .workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:18px;align-items:start;}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px 18px;}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+  .card-head h2{margin:0;font-size:14.5px;font-weight:600;}
+  .card-head-right{display:flex;align-items:center;gap:12px;}
+  .count{color:var(--faint);font-size:12px;}
+  .link{
+    background:none;border:0;padding:0;color:var(--primary);cursor:pointer;
+    font-size:12.5px;font-family:inherit;
+  }
+  .link:hover{text-decoration:underline;}
+  .link[hidden]{display:none;}
+
+  textarea{
+    width:100%;min-height:186px;resize:vertical;border:1px solid var(--line);border-radius:10px;
+    padding:12px 13px;font-family:inherit;font-size:13px;line-height:1.7;color:var(--text);
+    background:#fcfdff;outline:none;transition:.2s;
+  }
+  textarea:focus{border-color:#b9cdff;background:#fff;box-shadow:0 0 0 3px rgba(47,107,255,.09);}
+  #jd{min-height:170px;}
+
+  .actions{display:flex;gap:10px;}
+  .btn{
+    border:0;border-radius:11px;padding:12px 20px;font-size:14px;font-family:inherit;
+    cursor:pointer;font-weight:500;transition:.2s;
+  }
+  .btn.primary{
+    flex:1;background:linear-gradient(135deg,#2f6bff,#5b7cff);color:#fff;
+    box-shadow:0 6px 16px rgba(47,107,255,.26);
+  }
+  .btn.primary:hover:not(:disabled){background:linear-gradient(135deg,#1f52d6,#4a6bff);}
+  .btn.primary:disabled{background:#d9e0ee;color:#93a0b8;box-shadow:none;cursor:not-allowed;}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--muted);}
+  .btn.ghost:hover{border-color:#cdd6e6;color:var(--text);}
+  .btn.small{padding:8px 15px;font-size:12.5px;border-radius:9px;background:#eef3ff;color:var(--primary);}
+  .btn.small:hover{background:#e2ebff;}
+  .hint-line{margin:0;color:var(--faint);font-size:12.5px;}
+
+  /* ---------- 结果区 ---------- */
+  .result-card{min-height:520px;display:flex;flex-direction:column;}
+  .empty{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:10px;color:var(--faint);text-align:center;padding:50px 20px;
+  }
+  .empty .ico{
+    width:58px;height:58px;border-radius:18px;background:#f1f4fb;
+    display:flex;align-items:center;justify-content:center;font-size:26px;
+  }
+  .empty p{margin:0;font-size:13px;}
+
+  .loading{flex:1;padding:8px 0;}
+  .skel{height:96px;border-radius:12px;background:linear-gradient(90deg,#f1f4fa 25%,#e7ecf6 37%,#f1f4fa 63%);
+    background-size:400% 100%;animation:shine 1.3s ease infinite;margin-bottom:12px;}
+  @keyframes shine{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
+  .loading p{color:var(--faint);font-size:12.5px;text-align:center;}
+
+  .match{border:1px solid var(--line);background:#fafbff;border-radius:12px;padding:12px 14px;margin-bottom:14px;}
+  .match-row{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+  .match-row + .match-row{margin-top:9px;padding-top:9px;border-top:1px dashed #e8ecf5;}
+  .match-label{color:var(--muted);font-size:12.5px;flex:0 0 84px;line-height:24px;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{font-size:12px;padding:3px 10px;border-radius:7px;line-height:1.5;}
+  .chip.ok{background:var(--okbg);color:var(--ok);}
+  .chip.warn{background:var(--warnbg);color:var(--warn);}
+  .chip.none{background:#f1f4fa;color:var(--faint);}
+
+  .msg-list{display:flex;flex-direction:column;gap:12px;}
+  .msg-card{border:1px solid var(--line);border-radius:13px;padding:13px 15px 11px;transition:.2s;background:#fff;}
+  .msg-card:hover{border-color:#cfdcff;box-shadow:0 6px 18px rgba(47,107,255,.08);}
+  .msg-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .msg-tag{font-size:11.5px;color:var(--primary);background:#eef3ff;padding:2px 9px;border-radius:6px;}
+  .wc{color:var(--faint);font-size:11.5px;}
+  .msg-body{
+    margin:0;font-size:13.5px;line-height:1.85;color:#26314a;outline:none;
+    border-radius:8px;padding:4px 6px;margin-left:-6px;transition:.2s;
+  }
+  .msg-body:focus{background:#f7f9ff;box-shadow:0 0 0 2px rgba(47,107,255,.12);}
+  .msg-foot{display:flex;align-items:center;gap:10px;margin-top:9px;}
+  .copied{color:var(--ok);font-size:12px;}
+  .edit-flag{color:var(--warn);font-size:12px;}
+  [hidden]{display:none !important;}
+
+  /* ---------- 底部统计 ---------- */
+  .stats{
+    margin-top:20px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:13px 18px;display:flex;align-items:center;gap:26px;flex-wrap:wrap;
+  }
+  .stats .title{color:var(--muted);font-size:12.5px;}
+  .stats .item{font-size:13px;color:var(--text);}
+  .stats .item b{font-size:16px;color:var(--primary);margin-right:3px;}
+  .stats .note{color:var(--faint);font-size:12px;margin-left:auto;}
+
+  @media (max-width:940px){
+    .workspace{grid-template-columns:minmax(0,1fr);}
+    .result-card{min-height:auto;}
+    .stats .note{margin-left:0;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">招</div>
+      <div>
+        <h1>直聘打招呼助手</h1>
+        <p>粘贴简历与 JD，生成可直接发送的打招呼话术</p>
+      </div>
+    </div>
+    <span class="tag-demo">交互 Demo · 话术由本地规则模拟生成</span>
+  </header>
+
+  <ol class="steps" id="steps">
+    <li data-step="1"><b>1</b>粘贴简历</li>
+    <li data-step="2"><b>2</b>粘贴 JD</li>
+    <li data-step="3"><b>3</b>生成话术</li>
+    <li data-step="4"><b>4</b>复制发送</li>
+  </ol>
+
+  <main class="workspace">
+    <section class="col">
+      <div class="card">
+        <div class="card-head">
+          <h2>简历内容</h2>
+          <div class="card-head-right">
+            <span class="count" id="resumeCount">0 字</span>
+            <button class="link" id="fillResume">填入示例</button>
+          </div>
+        </div>
+        <textarea id="resume" placeholder="把简历正文粘贴进来，包含工作经历、项目、技能即可，不必整理格式"></textarea>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>岗位 JD</h2>
+          <div class="card-head-right">
+            <span class="count" id="jdCount">0 字</span>
+            <button class="link" id="fillJd">填入示例</button>
+          </div>
+        </div>
+        <textarea id="jd" placeholder="把岗位职责与任职要求完整粘贴进来，硬性条件写得越全，生成越准"></textarea>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="generate" disabled>生成打招呼话术</button>
+        <button class="btn ghost" id="clear">清空</button>
+      </div>
+      <p class="hint-line" id="inputHint">两份内容都填写后即可生成（各至少 20 字）</p>
+    </section>
+
+    <section class="col">
+      <div class="card result-card">
+        <div class="card-head">
+          <h2>生成结果</h2>
+          <button class="link" id="regen" hidden>重新生成</button>
+        </div>
+
+        <div class="empty" id="emptyState">
+          <div class="ico">✍️</div>
+          <p>粘贴简历和 JD 后，点击「生成打招呼话术」</p>
+          <p>这里会给出 3 条可直接发送的候选话术</p>
+        </div>
+
+        <div class="loading" id="loadingState" hidden>
+          <div class="skel"></div>
+          <div class="skel"></div>
+          <div class="skel"></div>
+          <p>正在比对简历与岗位要求…</p>
+        </div>
+
+        <div id="resultState" hidden>
+          <div class="match" id="matchBox"></div>
+          <div class="msg-list" id="msgList"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="stats">
+    <span class="title">本次会话</span>
+    <span class="item"><b id="statGen">0</b>次生成</span>
+    <span class="item"><b id="statCopy">0</b>次复制</span>
+    <span class="item"><b id="statRate">—</b>零修改直接复制率</span>
+    <span class="note">该指标是 MVP 的核心验收标准，目标 ≥ 50%</span>
+  </footer>
+
+</div>
+
+<script>
+/* ---------------- 示例数据 ---------------- */
+const SAMPLE_RESUME = `李某某 | Java 后端开发工程师 | 3 年经验
+
+工作经历
+2023.06 - 至今  某电商科技有限公司  后端开发工程师
+- 负责订单中心核心链路开发，使用 Java、Spring Boot 搭建订单创建与履约服务
+- 主导订单查询接口性能优化，通过 Redis 缓存与 SQL 优化将 P99 响应时间从 800ms 降到 180ms
+- 参与微服务拆分，基于 Kafka 实现订单状态异步通知，日均处理消息 40 万条
+2021.07 - 2023.05  某信息服务公司  后端开发工程师
+- 使用 Java、MySQL 开发用户权益系统，支撑日均 20 万次调用
+- 参与系统容器化改造，基于 Docker 与 K8s 完成服务部署
+
+专业技能
+Java、Spring Boot、MySQL、Redis、Kafka、微服务、Docker / Kubernetes
+
+教育背景
+某某大学  计算机科学与技术  本科  2021 届`;
+
+const SAMPLE_JD = `岗位：Java 后端开发工程师（高级）
+
+岗位职责
+1. 负责核心业务系统的后端设计与开发，保障系统高可用
+2. 参与微服务架构演进，持续优化系统性能与稳定性
+3. 参与技术方案评审，推动技术难点攻关
+
+任职要求
+1. 3 年以上 Java 开发经验，熟悉 Spring Boot、MySQL、Redis
+2. 有高并发、分布式系统实践经验，熟悉消息队列（Kafka / RocketMQ）
+3. 熟悉 Docker、Kubernetes 等容器化技术
+4. 有大型电商或交易类系统经验者优先
+5. 具备良好的沟通能力与团队协作意识`;
+
+/* ---------------- 关键词库 ---------------- */
+const SKILLS = [
+  {name:'Java', kw:['java']},
+  {name:'Spring Boot', kw:['spring boot','springboot','spring']},
+  {name:'MySQL', kw:['mysql']},
+  {name:'Redis', kw:['redis']},
+  {name:'Kafka / 消息队列', kw:['kafka','rocketmq','消息队列']},
+  {name:'微服务', kw:['微服务']},
+  {name:'高并发', kw:['高并发']},
+  {name:'分布式', kw:['分布式']},
+  {name:'性能优化', kw:['性能优化','调优']},
+  {name:'Docker / K8s', kw:['docker','kubernetes','k8s','容器化','容器']},
+  {name:'Go', kw:['golang','go 语言','go语言']},
+  {name:'Python', kw:['python']},
+  {name:'前端（Vue / React）', kw:['vue','react','前端']},
+  {name:'数据分析', kw:['数据分析','bi 报表','指标体系']},
+  {name:'产品设计', kw:['产品设计','需求分析','原型设计','产品经理']},
+  {name:'项目管理', kw:['项目管理','跨部门协作','项目推进']},
+  {name:'用户研究', kw:['用户研究','用户调研','用户访谈']},
+  {name:'增长与转化', kw:['ab 测试','a/b 测试','留存','转化率','增长']}
+];
+
+/* ---------------- 小工具 ---------------- */
+const $ = (id) => document.getElementById(id);
+const count = (s) => [...(s || '').trim()].length;
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => (
+  {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+));
+
+function hasKeyword(text, kw){
+  const t = (text || '').toLowerCase();
+  const k = kw.toLowerCase();
+  if (/^[a-z0-9 +#./-]+$/.test(k)) {
+    const esc = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('(^|[^a-z0-9])' + esc + '([^a-z0-9]|$)', 'i').test(t);
+  }
+  return t.includes(k);
+}
+
+function extractSkills(text){
+  return SKILLS.filter((s) => s.kw.some((k) => hasKeyword(text, k))).map((s) => s.name);
+}
+
+function inferRole(text){
+  const t = (text || '').toLowerCase();
+  if (/产品经理|产品设计|需求分析/.test(t)) return '产品经理';
+  if (/数据分析|bi|指标体系/.test(t)) return '数据分析师';
+  if (/前端|vue|react/.test(t)) return '前端开发';
+  if (/java|golang|python|后端|服务端|微服务/.test(t)) return '后端开发';
+  return '相关方向';
+}
+
+function extractAchievements(resume){
+  const sentences = (resume || '')
+    .split(/[\n。；;]/)
+    .map((s) => s.replace(/^[-•\s]+/, '').trim())
+    .filter((s) => s.length >= 10);
+  const scored = sentences.filter((s) =>
+    /\d+\s*(%|ms|万|亿|倍)/.test(s) || /从\s*\d+.*(到|至|降到|提升到)/.test(s) || /提升|降低|优化|缩短/.test(s)
+  );
+  const list = scored.length ? scored : sentences;
+  return list.slice(0, 3);
+}
+
+function shorten(s, max){
+  if (!s) return '';
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max);
+  const i = Math.max(cut.lastIndexOf('，'), cut.lastIndexOf(','));
+  return (i > 12 ? cut.slice(0, i) : cut) + '…';
+}
+
+/* ---------------- 状态 ---------------- */
+const state = {
+  stats: {gen: 0, copy: 0, dirtyCopy: 0},
+  edited: {}
+};
+
+const resumeEl = $('resume');
+const jdEl = $('jd');
+const genBtn = $('generate');
+
+/* ---------------- 输入区交互 ---------------- */
+function setStep(n, mode){
+  const li = document.querySelector('.steps li[data-step="' + n + '"]');
+  li.classList.remove('on', 'done');
+  if (mode) li.classList.add(mode);
+}
+
+function saveDraft(){
+  try {
+    localStorage.setItem('greet_demo_resume', resumeEl.value);
+    localStorage.setItem('greet_demo_jd', jdEl.value);
+  } catch (e) { /* 忽略：无痕模式等场景下不可用 */ }
+}
+
+function refreshInputs(){
+  const r = count(resumeEl.value);
+  const j = count(jdEl.value);
+  $('resumeCount').textContent = r + ' 字';
+  $('jdCount').textContent = j + ' 字';
+  const ready = r >= 20 && j >= 20;
+  genBtn.disabled = !ready;
+  $('inputHint').textContent = ready
+    ? '内容已就绪，点击生成 3 条候选话术'
+    : '两份内容都填写后即可生成（各至少 20 字）';
+  setStep(1, r >= 20 ? 'done' : 'on');
+  setStep(2, r >= 20 ? (j >= 20 ? 'done' : 'on') : '');
+  saveDraft();
+}
+
+/* ---------------- 生成（本地模拟） ---------------- */
+function buildResult(){
+  const resume = resumeEl.value;
+  const jd = jdEl.value;
+  const jdSkills = extractSkills(jd);
+  const resumeSkills = extractSkills(resume);
+  const matched = jdSkills.filter((s) => resumeSkills.includes(s));
+  const missing = jdSkills.filter((s) => !resumeSkills.includes(s));
+  const years = (resume.match(/(\d{1,2})\s*年/) || [])[1] || '';
+  const role = inferRole(resume + ' ' + jd);
+  const achievements = extractAchievements(resume);
+  const achieve = shorten(achievements[0] || '', 64);
+
+  const core = (matched.length ? matched : resumeSkills).slice(0, 3).join('、') || '相关技能';
+  const focus = (matched.length ? matched : jdSkills).slice(0, 2).join('、') || '岗位方向';
+  const expText = (years ? years + '年' : '多年') + role;
+
+  const lowMatch = matched.length === 0;
+
+  const m1 = '您好，我有' + expText + '经验，' + core + '是我日常工作的主要部分。'
+    + (achieve ? achieve + '。' : '')
+    + (lowMatch
+        ? '看到岗位方向与我的经历不完全是同一方向，但希望有机会了解下具体需求，也方便您判断是否有可迁移的空间。'
+        : '看到岗位在找' + focus + '方向的人，我的经历和这个岗位比较对口，方便的话想和您具体聊聊。');
+
+  const m2 = lowMatch
+    ? '您好，我目前主要做' + core + '相关工作，和岗位要求的' + focus + '方向有差异，但希望能有机会了解一下具体需求，判断是否有可迁移的空间。'
+    : (achieve
+        ? '您好，' + achieve + '。岗位里提到的' + focus + '正好是我一直在做的方向，希望能有机会和您详细沟通一下。'
+        : '您好，我目前主要做' + core + '相关工作，和岗位要求的' + focus + '方向比较贴近，希望能有机会和您详细沟通一下。');
+
+  const m3 = lowMatch
+    ? '您好，' + expText + '，主要做' + core + '相关工作，希望能有机会了解一下岗位的具体需求，方便聊聊吗？'
+    : '您好，' + expText + '，熟悉' + core + '，和岗位要求比较匹配，方便聊聊吗？';
+
+  return {
+    matched: matched,
+    missing: missing,
+    lowMatch: lowMatch,
+    messages: [
+      {style: '技能匹配型', text: m1},
+      {style: '经历相关型', text: m2},
+      {style: '简短直接型', text: m3}
+    ]
+  };
+}
+
+function chips(list, cls){
+  if (!list.length) return '<span class="chip none">无</span>';
+  return list.map((s) => '<span class="chip ' + cls + '">' + escapeHtml(s) + '</span>').join('');
+}
+
+function render(result){
+  const box = $('matchBox');
+  let html = '<div class="match-row"><span class="match-label">JD 关键要求</span><div class="chips">'
+    + chips(extractSkills(jdEl.value), 'none') + '</div></div>'
+    + '<div class="match-row"><span class="match-label">简历已命中</span><div class="chips">'
+    + chips(result.matched, 'ok') + '</div></div>';
+  if (result.missing.length) {
+    html += '<div class="match-row"><span class="match-label">简历未覆盖</span><div class="chips">'
+      + chips(result.missing, 'warn') + '</div></div>';
+  }
+  if (result.lowMatch) {
+    html += '<div class="match-row"><span class="match-label">提示</span><div class="chips">'
+      + '<span class="chip warn">简历与该岗位直接匹配点较少，话术已尽量贴合，未编造简历中没有的经历</span></div></div>';
+  }
+  box.innerHTML = html;
+
+  const list = $('msgList');
+  list.innerHTML = result.messages.map((m, i) => (
+    '<article class="msg-card" data-index="' + i + '">'
+    + '<div class="msg-head"><span class="msg-tag">' + escapeHtml(m.style) + '</span>'
+    + '<span class="wc">' + count(m.text) + ' 字</span></div>'
+    + '<p class="msg-body" contenteditable="true" spellcheck="false">' + escapeHtml(m.text) + '</p>'
+    + '<div class="msg-foot">'
+    + '<button class="btn small copy">复制话术</button>'
+    + '<span class="copied" hidden>已复制</span>'
+    + '<span class="edit-flag" hidden>已编辑</span>'
+    + '</div></article>'
+  )).join('');
+
+  state.edited = {};
+}
+
+function generate(){
+  $('emptyState').hidden = true;
+  $('resultState').hidden = true;
+  $('loadingState').hidden = false;
+  genBtn.disabled = true;
+  $('regen').hidden = true;
+
+  window.setTimeout(() => {
+    const result = buildResult();
+    render(result);
+    $('loadingState').hidden = true;
+    $('resultState').hidden = false;
+    $('regen').hidden = false;
+    genBtn.disabled = false;
+    state.stats.gen += 1;
+    setStep(3, 'done');
+    renderStats();
+  }, 1300);
+}
+
+/* ---------------- 复制与统计 ---------------- */
+async function copyText(text){
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+    ta.remove();
+    return ok;
+  }
+}
+
+function renderStats(){
+  const s = state.stats;
+  $('statGen').textContent = s.gen;
+  $('statCopy').textContent = s.copy;
+  const clean = s.copy - s.dirtyCopy;
+  $('statRate').textContent = s.copy ? Math.round((clean / s.copy) * 100) + '%' : '—';
+}
+
+$('msgList').addEventListener('click', async (e) => {
+  const btn = e.target.closest('.copy');
+  if (!btn) return;
+  const card = btn.closest('.msg-card');
+  const body = card.querySelector('.msg-body');
+  const ok = await copyText(body.innerText.trim());
+  if (!ok) return;
+
+  const index = card.dataset.index;
+  state.stats.copy += 1;
+  if (state.edited[index]) state.stats.dirtyCopy += 1;
+  renderStats();
+
+  card.querySelector('.copied').hidden = false;
+  window.setTimeout(() => { card.querySelector('.copied').hidden = true; }, 1600);
+  setStep(4, 'done');
+});
+
+$('msgList').addEventListener('input', (e) => {
+  const body = e.target.closest('.msg-body');
+  if (!body) return;
+  const card = body.closest('.msg-card');
+  const index = card.dataset.index;
+  state.edited[index] = true;
+  card.querySelector('.edit-flag').hidden = false;
+  card.querySelector('.wc').textContent = count(body.innerText.trim()) + ' 字';
+});
+
+/* ---------------- 事件绑定 ---------------- */
+resumeEl.addEventListener('input', refreshInputs);
+jdEl.addEventListener('input', refreshInputs);
+genBtn.addEventListener('click', generate);
+$('regen').addEventListener('click', generate);
+
+$('fillResume').addEventListener('click', () => {
+  resumeEl.value = SAMPLE_RESUME;
+  refreshInputs();
+});
+
+$('fillJd').addEventListener('click', () => {
+  jdEl.value = SAMPLE_JD;
+  refreshInputs();
+});
+
+$('clear').addEventListener('click', () => {
+  resumeEl.value = '';
+  jdEl.value = '';
+  $('emptyState').hidden = false;
+  $('resultState').hidden = true;
+  $('loadingState').hidden = true;
+  $('regen').hidden = true;
+  setStep(3, '');
+  setStep(4, '');
+  refreshInputs();
+  resumeEl.focus();
+});
+
+/* ---------------- 初始化 ---------------- */
+(function init(){
+  try {
+    const r = localStorage.getItem('greet_demo_resume');
+    const j = localStorage.getItem('greet_demo_jd');
+    if (r) resumeEl.value = r;
+    if (j) jdEl.value = j;
+  } catch (e) { /* 忽略 */ }
+  refreshInputs();
+  renderStats();
+})();
+</script>
+</body>
+</html>
+
