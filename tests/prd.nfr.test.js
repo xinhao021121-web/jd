@@ -35,10 +35,11 @@ test('生成方式为单次调用 + 流式返回', () => {
 test('4.1 覆盖服务端代理下的隐私与密钥边界', () => {
   const security = section('### 4.1 安全与合规', '### 4.2 统计需求');
 
-  ['不落盘', '首次使用告知', '服务端环境变量', '限流', '每日配额', '成本'].forEach((keyword) => {
+  ['不落盘', '数据流向提示', '不弹窗', '不要求确认', '服务端环境变量', '限流', '每日配额', '成本'].forEach((keyword) => {
     assert.ok(security.includes(keyword), '4.1 应包含：' + keyword);
   });
   assert.ok(!security.includes('API Key 保存在本地'), '密钥不应再由前端本地保存');
+  assert.ok(!security.includes('并需使用者确认'), '数据流向不应改为强制确认弹窗');
 });
 
 test('部署地域与模型选型已确认为境外部署 + DeepSeek', () => {
@@ -54,7 +55,8 @@ test('5.1 中已敲定的决策标记为已确认', () => {
     '静态单页应用 + 轻量服务端代理',
     'DeepSeek（OpenAI 兼容接口，流式返回）',
     '单次调用完成，流式返回，不拆分多次请求',
-    '部署在境外，无需备案'
+    '部署在境外，无需备案',
+    '每 IP 每分钟 10 次、每日 100 次'
   ].forEach((item) => {
     assert.ok(pending.includes(item), '5.1 应记录已确认项：' + item);
   });
