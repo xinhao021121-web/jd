@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@zhipin/core": ["./packages/core/src/index.ts"],
+      "@zhipin/llm": ["./packages/llm/src/index.ts"],
+      "@zhipin/shared": ["./packages/shared/src/index.ts"]
+    }
+  },
+  "include": [
+    "packages/*/src/**/*.ts",
+    "apps/api/src/**/*.ts",
+    "apps/web/src/**/*.ts",
+    "apps/web/src/**/*.tsx",
+    "tests/**/*.ts",
+    "vitest.config.ts",
+    "playwright.config.ts"
+  ]
+}

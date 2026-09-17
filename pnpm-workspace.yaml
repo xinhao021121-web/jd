@@ -1,0 +1,9 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# esbuild（Vite / Vitest 的依赖）需要执行安装脚本以获得平台二进制
+onlyBuiltDependencies:
+  - esbuild
+allowBuilds:
+  esbuild: true
