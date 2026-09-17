@@ -46,6 +46,19 @@ pnpm typecheck    # tsc --noEmit
 
 首次跑端到端需要安装浏览器：`pnpm exec playwright install chromium`。
 
+## 质量回归（需要真实模型）
+
+`tests/samples/quality-samples.json` 里是 8 组简历 + JD 样本。配好真实密钥后运行：
+
+```bash
+# PowerShell
+$env:DEEPSEEK_API_KEY="sk-..."; pnpm quality:samples
+```
+
+脚本会把每组样本分别跑话术与改写建议，断言：话术 3 条且长度落在 100–160 字、数字与技能可溯源、无套话黑名单词、改写建议不越界且不引入新事实，并把逐条结论写到 `reports/质量回归_<时间>.md`（该目录默认不入库，需要留档时用 `git add -f`）。
+
+指向本地 mock 也能跑（`DEEPSEEK_BASE_URL=http://127.0.0.1:8788/v1`），用于验证脚本自身；mock 的模板话术偏短，会如实报出长度违规。
+
 ## 边界说明
 
 - 密钥只存在于服务端环境变量，前端代码与响应体里都不会出现；
