@@ -20,6 +20,7 @@ import { LlmUpstreamError } from '@zhipin/llm';
 import type { RateLimiter } from '../ratelimit';
 import { hashIp, type Logger } from '../logger';
 import { AsyncEventQueue } from '../streaming';
+import type { UsageGuard } from '../usage';
 
 export interface TaskRunOptions {
   signal?: AbortSignal;
@@ -51,6 +52,7 @@ export interface LlmRouteDeps {
   totalTimeoutMs?: number;
   now?: () => number;
   clientIp?: (c: Context) => string;
+  usage?: UsageGuard;
 }
 
 type StartOutcome = { ok: true } | { ok: false; code: ErrorCode };
@@ -88,6 +90,26 @@ export function registerLlmRoute(app: Hono, deps: LlmRouteDeps): void {
         { code: 'RATE_LIMITED', message: ERROR_MESSAGES.RATE_LIMITED },
         ERROR_HTTP_STATUS.RATE_LIMITED as 429
       );
+    }
+
+    // 全局单日用量：跨过硬上限直接拒绝，跨过告警阈值写一条告警日志（PRD 4.1）
+    if (deps.usage) {
+      const usage = deps.usage.check();
+      if (usage.exceeded) {
+        deps.logger.warn({ event: 'rate_limited', ipHash, errorType: 'DAILY_CAP' });
+        return c.json(
+          { code: 'RATE_LIMITED', message: ERROR_MESSAGES.RATE_LIMITED },
+          ERROR_HTTP_STATUS.RATE_LIMITED as 429
+        );
+      }
+      if (usage.alert) {
+        deps.logger.warn({
+          event: 'usage_alert',
+          ipHash,
+          errorType: 'DAILY_CALL_ALERT',
+          elapsedMs: deps.usage.snapshot().count
+        });
+      }
     }
 
     let payload: unknown;

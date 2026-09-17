@@ -4,6 +4,7 @@ import type { OutputEvent, StreamEvent } from '@zhipin/shared';
 import { createApp } from '../apps/api/src/app';
 import { createLogger } from '../apps/api/src/logger';
 import { createRateLimiter } from '../apps/api/src/ratelimit';
+import { createUsageGuard } from '../apps/api/src/usage';
 import type { TaskRunResult, TaskRunner } from '../apps/api/src/routes/llm';
 import { SAMPLE_JD, SAMPLE_RESUME } from './fixtures';
 
@@ -98,6 +99,7 @@ interface AppOptions {
   firstTokenTimeoutMs?: number;
   totalTimeoutMs?: number;
   logs?: string[];
+  usage?: { alertThreshold?: number; dailyCap?: number };
 }
 
 function buildApp(options: AppOptions = {}) {
@@ -112,7 +114,8 @@ function buildApp(options: AppOptions = {}) {
     }),
     logger: createLogger((line) => logs.push(line)),
     firstTokenTimeoutMs: options.firstTokenTimeoutMs,
-    totalTimeoutMs: options.totalTimeoutMs
+    totalTimeoutMs: options.totalTimeoutMs,
+    usage: options.usage ? createUsageGuard(options.usage) : undefined
   });
   return { app, calls, logs };
 }
@@ -276,6 +279,29 @@ describe('POST /api/llm', () => {
     const { app } = buildApp();
     expect((await app.request('/healthz')).status).toBe(200);
     expect((await app.request('/api/other')).status).toBe(404);
+  });
+
+  it('单日用量跨过上限后返回 429，且不消耗模型调用', async () => {
+    const { app, calls } = buildApp({ usage: { alertThreshold: 2, dailyCap: 2 } });
+    const body = { task: 'greeting', resume: SAMPLE_RESUME, jd: SAMPLE_JD };
+
+    expect((await post(app, body, '7.7.7.1')).status).toBe(200);
+    expect((await post(app, body, '7.7.7.2')).status).toBe(200);
+
+    const blocked = await post(app, body, '7.7.7.3');
+    expect(blocked.status).toBe(429);
+    expect(await blocked.json()).toMatchObject({ code: 'RATE_LIMITED' });
+    expect(calls).toHaveLength(2);
+  });
+
+  it('单日用量跨过告警阈值时写入脱敏告警日志', async () => {
+    const logs: string[] = [];
+    const { app } = buildApp({ usage: { alertThreshold: 1, dailyCap: 10 }, logs });
+    await post(app, { task: 'greeting', resume: SAMPLE_RESUME, jd: SAMPLE_JD }, '8.8.8.1');
+
+    const alert = logs.map((line) => JSON.parse(line)).find((item) => item.event === 'usage_alert');
+    expect(alert).toMatchObject({ errorType: 'DAILY_CALL_ALERT' });
+    expect(logs.join('\n')).not.toContain('订单中心');
   });
 
   it('错误日志与响应中不出现简历与 JD 正文', async () => {

@@ -4,7 +4,7 @@
 import { createHash } from 'node:crypto';
 
 export interface LogRecord {
-  event: 'ok' | 'rate_limited' | 'invalid_input' | 'error';
+  event: 'ok' | 'rate_limited' | 'invalid_input' | 'error' | 'usage_alert';
   task?: string | null;
   ipHash: string;
   elapsedMs?: number;

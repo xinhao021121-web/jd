@@ -5,6 +5,7 @@ import { createApp } from './app';
 import { readEnv } from './env';
 import { createLogger } from './logger';
 import { createRateLimiter } from './ratelimit';
+import { createUsageGuard } from './usage';
 
 const env = readEnv();
 const client = createLlmClient({
@@ -16,7 +17,11 @@ const client = createLlmClient({
 const app = createApp({
   runner: client,
   limiter: createRateLimiter({ perMinute: RATE_LIMIT.perMinute, perDay: RATE_LIMIT.perDay }),
-  logger: createLogger()
+  logger: createLogger(),
+  usage: createUsageGuard({
+    alertThreshold: env.dailyCallAlert,
+    dailyCap: env.dailyCallCap
+  })
 });
 
 serve({ fetch: app.fetch, port: env.port }, (info) => {
