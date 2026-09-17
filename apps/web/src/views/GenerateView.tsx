@@ -2,10 +2,11 @@ import { useMemo } from 'react';
 import {
   ABORTED_NOTICE,
   ERROR_MESSAGES,
+  GREETING_LENGTH,
   LOW_MATCH_NOTICE,
   MIN_TEXT_LENGTH
 } from '@zhipin/shared';
-import { calcMetrics } from '@zhipin/core';
+import { calcMetrics, offSpecGreetingIndexes } from '@zhipin/core';
 import { copyText } from '../api/copy';
 import { JdField } from '../components/JdField';
 import { toast } from '../components/Toast';
@@ -13,7 +14,13 @@ import { Card, ChipRow, Notice, PageTitle } from '../components/ui';
 import { canGenerate, useAppStore, type GreetingItem } from '../store/store';
 import { countChars } from '../utils/format';
 
-function GreetingCard({ item }: { item: GreetingItem }): JSX.Element {
+function GreetingCard({
+  item,
+  lengthWarning
+}: {
+  item: GreetingItem;
+  lengthWarning: boolean;
+}): JSX.Element {
   const updateGreetingItem = useAppStore((state) => state.updateGreetingItem);
   const record = useAppStore((state) => state.record);
 
@@ -34,11 +41,17 @@ function GreetingCard({ item }: { item: GreetingItem }): JSX.Element {
   };
 
   return (
-    <article className="card p-4" data-testid="greeting-card">
+    <article
+      className={`card p-4 ${lengthWarning ? 'border-[#f4d7a1]' : ''}`}
+      data-testid="greeting-card"
+    >
       <div className="mb-2 flex items-center justify-between">
         <span className="chip bg-primary-soft text-primary">{item.style}</span>
         <span className="flex items-center gap-2 text-xs text-[#98a2b6]">
           {item.edited && <span className="text-[#b45309]">已编辑</span>}
+          {lengthWarning && (
+            <span className="text-[#b45309]">超出 {GREETING_LENGTH.min}~{GREETING_LENGTH.max} 字</span>
+          )}
           {countChars(item.text)} 字
         </span>
       </div>
@@ -71,6 +84,7 @@ export function GenerateView(): JSX.Element {
   // 指标是派生值，必须用 useMemo 而不是选择器：选择器每次返回新对象会导致无限重渲染
   const events = useAppStore((state) => state.events);
   const metrics = useMemo(() => calcMetrics(events), [events]);
+  const offSpec = useMemo(() => offSpecGreetingIndexes(greeting.items), [greeting.items]);
 
   const streaming = greeting.status === 'streaming';
   const analysis = greeting.analysis;
@@ -135,9 +149,18 @@ export function GenerateView(): JSX.Element {
           </Card>
         )}
 
-        {greeting.items.map((item) => (
-          <GreetingCard key={item.index} item={item} />
+        {greeting.items.map((item, position) => (
+          <GreetingCard key={item.index} item={item} lengthWarning={offSpec.includes(position)} />
         ))}
+
+        {greeting.status === 'done' && (offSpec.length > 0 || greeting.items.length < 3) && (
+          <Notice tone="warn">
+            {greeting.items.length < 3
+              ? `本次只返回 ${greeting.items.length} 条有效话术（应为 3 条）`
+              : `有 ${offSpec.length} 条话术超出 ${GREETING_LENGTH.min}~${GREETING_LENGTH.max} 字`}
+            ，建议点「重新生成 3 条话术」；已生成的内容仍可直接使用或手动编辑。
+          </Notice>
+        )}
 
         {greeting.status === 'error' && greeting.errorCode && (
           <Notice tone="error">{ERROR_MESSAGES[greeting.errorCode]}</Notice>

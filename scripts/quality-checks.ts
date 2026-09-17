@@ -36,9 +36,20 @@ function numbersIn(text: string): string[] {
   return (text.match(NUMBER_RE) ?? []).map((token) => token.replace(/\s+/g, ''));
 }
 
-function containsNumber(source: string, token: string): boolean {
+/**
+ * 数字是否可溯源。
+ * 年份（4 位数字 + 年）在简历里常写成「2022.06」「2022 届」，只校验数字本身；
+ * 年限（如「3 年」）是能力声明，必须真的在简历里出现过，避免把 JD 的要求年限写成自己的经验。
+ */
+function tokenMatches(token: string, source: string): boolean {
+  const normalizedToken = token.replace(/\s+/g, '');
   const normalizedSource = source.replace(/\s+/g, '');
-  return normalizedSource.includes(token.replace(/\s+/g, ''));
+  if (normalizedSource.includes(normalizedToken)) return true;
+
+  const year = normalizedToken.match(/^(\d{4})年$/);
+  if (year?.[1]) return normalizedSource.includes(year[1]);
+
+  return false;
 }
 
 /** 话术检查：条数、长度、数字与技能可溯源、无套话、无表情符号 */
@@ -65,7 +76,7 @@ export function checkGreetings(resume: string, items: OutputEvent[]): Violation[
     }
 
     numbersIn(text).forEach((token) => {
-      if (!containsNumber(resume, token)) {
+      if (!tokenMatches(token, resume)) {
         violations.push({ rule: '数字溯源', detail: `第 ${index + 1} 条出现简历中没有的数字「${token}」` });
       }
     });
@@ -116,7 +127,7 @@ export function checkSuggestions(resume: string, raw: RawSuggestion[], jd = ''):
     const beforeNumbers = numbersIn(suggestion.before);
     const afterNumbers = numbersIn(suggestion.after);
     afterNumbers.forEach((token) => {
-      if (!beforeNumbers.includes(token) && !containsNumber(resume, token)) {
+      if (!beforeNumbers.includes(token) && !tokenMatches(token, resume)) {
         violations.push({ rule: '改写数字', detail: `建议引入新数字「${token}」` });
       }
     });

@@ -64,6 +64,26 @@ describe('checkGreetings', () => {
     ]);
     expect(violations.filter((item) => item.rule === '数字溯源')).toEqual([]);
   });
+
+  it('年份允许简历里写成别的形式，但年限声明必须真的出现过', () => {
+    const resume = '李某 | 前端开发工程师 | 3 年经验\n\n教育背景\n某某大学  本科  2022 届';
+
+    const yearOk = checkGreetings(resume, [
+      greeting(`${cleanText}2022 年毕业至今一直做前端开发工作。`, 0),
+      greeting(cleanText, 1),
+      greeting(cleanText, 2)
+    ]);
+    expect(yearOk.some((item) => item.detail.includes('2022'))).toBe(false);
+
+    // JD 要求「3 年以上」，简历写「3 年经验」时可溯源；简历写 4 年时不能说 3 年
+    const resumeFourYears = resume.replace('3 年经验', '4 年经验');
+    const mismatched = checkGreetings(resumeFourYears, [
+      greeting(`${cleanText}我有 3 年经验。`, 0),
+      greeting(cleanText, 1),
+      greeting(cleanText, 2)
+    ]);
+    expect(mismatched.map((item) => item.detail).join(' ')).toContain('3年');
+  });
 });
 
 describe('checkSuggestions', () => {

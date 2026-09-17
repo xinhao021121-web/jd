@@ -1,11 +1,15 @@
 import { serve } from '@hono/node-server';
+import { fileURLToPath } from 'node:url';
 import { createLlmClient } from '@zhipin/llm';
 import { RATE_LIMIT } from '@zhipin/shared';
 import { createApp } from './app';
-import { readEnv } from './env';
+import { loadEnvFile, readEnv } from './env';
 import { createLogger } from './logger';
 import { createRateLimiter } from './ratelimit';
 import { createUsageGuard } from './usage';
+
+// 本地开发读取仓库根目录的 .env；已存在的环境变量优先，部署时无需该文件
+loadEnvFile(fileURLToPath(new URL('../../../.env', import.meta.url)));
 
 const env = readEnv();
 const client = createLlmClient({

@@ -9,11 +9,13 @@
  *   $env:DEEPSEEK_BASE_URL="http://127.0.0.1:8788/v1"; $env:DEEPSEEK_API_KEY="sk-local"; pnpm quality:samples
  */
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { createLlmClient } from '@zhipin/llm';
 import { planSuggestions } from '@zhipin/core';
 import { parseResume } from '@zhipin/core';
 import type { OutputEvent } from '@zhipin/shared';
 import { checkGreetings, checkSuggestions, type Violation } from './quality-checks';
+import { loadEnvFile } from '../apps/api/src/env';
 
 interface Sample {
   id: string;
@@ -34,6 +36,9 @@ interface SampleResult {
 
 const samplesPath = new URL('../tests/samples/quality-samples.json', import.meta.url);
 const samples = JSON.parse(readFileSync(samplesPath, 'utf8')) as Sample[];
+
+// 与 service 端一致：优先用已有环境变量，其次读仓库根目录的 .env
+loadEnvFile(fileURLToPath(new URL('../.env', import.meta.url)));
 
 const apiKey = process.env.DEEPSEEK_API_KEY ?? '';
 if (!apiKey) {
