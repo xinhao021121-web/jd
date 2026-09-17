@@ -58,7 +58,7 @@ function loadDemo() {
   const navigator = {clipboard: {writeText: async () => {}}};
 
   const exported = eval(
-    match[1] + '\n;({buildResult, state, saveResume, generate, setCollapsed, resumeEditor, jdEl, jd2El, parseResume, buildResumeSuggestions, composeCustomResume, saveCustom, extractJdTitle, SAMPLE_RESUME, SAMPLE_JD})'
+    match[1] + '\n;({buildResult, state, saveResume, generate, setCollapsed, resumeEditor, jdEl, jd2El, parseResume, buildResumeSuggestions, composeCustomResume, saveCustom, extractJdTitle, renameArchive, fillArchiveTitleFallback, SAMPLE_RESUME, SAMPLE_JD})'
   );
   return Object.assign({els}, exported);
 }
@@ -272,4 +272,23 @@ test('保存定制简历时使用解析出的名称', () => {
   demo.saveCustom();
 
   assert.strictEqual(demo.state.customs[0].title, '某电商科技有限公司 · Java 后端开发工程师');
+});
+
+test('定制简历记录名称可以编辑，留空则回退到解析名称', () => {
+  const demo = saveAs();
+  demo.state.jd = demo.SAMPLE_JD;
+  demo.state.suggestions = demo.buildResumeSuggestions().suggestions
+    .map((s) => Object.assign({}, s, {adopted: true}));
+  demo.saveCustom();
+
+  const id = demo.state.customs[0].id;
+  const content = demo.state.customs[0].text;
+
+  demo.renameArchive(id, '  我的目标岗位  ');
+  assert.strictEqual(demo.state.customs[0].title, '我的目标岗位', '应使用用户输入的名称');
+  assert.strictEqual(demo.state.customs[0].text, content, '改名不应影响简历内容');
+
+  demo.renameArchive(id, '   ');
+  demo.fillArchiveTitleFallback(id);
+  assert.ok(demo.state.customs[0].title.includes('Java'), '留空应回退到从 JD 解析的名称');
 });

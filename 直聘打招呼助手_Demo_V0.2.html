@@ -261,6 +261,13 @@
   }
   .custom-item .ct{color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   /* ---------- 定制简历存档 ---------- */
+  .title-edit{display:flex;align-items:center;gap:10px;margin-bottom:13px;}
+  .title-edit label{font-size:12.5px;color:var(--muted);flex:0 0 auto;}
+  .title-edit input{
+    flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;padding:8px 12px;
+    font-family:inherit;font-size:13.5px;color:var(--text);background:#fcfdff;outline:none;transition:.2s;
+  }
+  .title-edit input:focus{border-color:#b9cdff;background:#fff;box-shadow:0 0 0 3px rgba(47,107,255,.09);}
   .archive-list{display:flex;flex-direction:column;gap:8px;margin:12px 0;}
   .archive-item{
     border:1px solid var(--line);border-radius:11px;padding:11px 13px;cursor:pointer;transition:.18s;
@@ -501,6 +508,10 @@
             <p>从左侧选择一份定制简历查看</p>
           </div>
           <div id="archiveDetail" hidden>
+            <div class="title-edit">
+              <label for="archiveTitle">记录名称</label>
+              <input id="archiveTitle" type="text" maxlength="40" placeholder="给这份定制简历起个好认的名字">
+            </div>
             <div class="preview" id="archiveText"></div>
             <div class="card-head" style="margin:16px 0 8px">
               <h2>对应岗位 JD</h2>
@@ -510,6 +521,7 @@
               <button class="btn ghost fixed" id="deleteArchive">删除这份</button>
             </div>
           </div>
+          <p class="hint-line">记录名称可以直接修改，改完自动保存；留空会自动恢复为从 JD 解析的名称</p>
         </div>
       </section>
     </div>
@@ -1159,22 +1171,23 @@ function refreshCustomState(){
 
 /* ---------------- 定制简历存档 ---------------- */
 function renderArchive(){
-  const list = $('archiveList');
   $('archiveCount').textContent = '共 ' + state.customs.length + ' 份';
 
-  if (!state.customs.length) {
-    list.innerHTML = '';
-    $('archiveEmpty').hidden = false;
+  if (state.customs.length) {
+    if (!state.customs.some((c) => String(c.id) === String(state.selectedCustom))) {
+      state.selectedCustom = state.customs[0].id;
+    }
+  } else {
     state.selectedCustom = '';
-    renderArchiveDetail();
-    return;
   }
 
-  $('archiveEmpty').hidden = true;
-  if (!state.customs.some((c) => String(c.id) === String(state.selectedCustom))) {
-    state.selectedCustom = state.customs[0].id;
-  }
+  renderArchiveList();
+  renderArchiveDetail();
+}
 
+function renderArchiveList(){
+  const list = $('archiveList');
+  $('archiveEmpty').hidden = state.customs.length > 0;
   list.innerHTML = state.customs.map((c) => (
     '<div class="archive-item' + (String(c.id) === String(state.selectedCustom) ? ' active' : '') + '" data-id="' + c.id + '">'
     + '<div class="ai-title" title="' + escapeHtml(c.title) + '">' + escapeHtml(c.title) + '</div>'
@@ -1182,8 +1195,6 @@ function renderArchive(){
     + '<div class="ai-note">仅适用于该岗位，投递其他岗位请重新生成</div>'
     + '</div>'
   )).join('');
-
-  renderArchiveDetail();
 }
 
 function renderArchiveDetail(){
@@ -1192,6 +1203,27 @@ function renderArchiveDetail(){
   $('archiveDetailEmpty').hidden = !!item;
   $('archiveText').textContent = item ? item.text : '';
   $('archiveJd').textContent = item ? (item.jd || '（创建时未记录对应 JD）') : '';
+  if (item) $('archiveTitle').value = item.title;
+}
+
+/** 改名：只改标签，不动简历内容 */
+function renameArchive(id, title){
+  const item = state.customs.filter((c) => String(c.id) === String(id))[0];
+  if (!item) return '';
+  item.title = String(title || '').trim();
+  persist();
+  renderArchiveList();
+  return item.title;
+}
+
+/** 名称留空时，恢复为从 JD 解析出的名称 */
+function fillArchiveTitleFallback(id){
+  const item = state.customs.filter((c) => String(c.id) === String(id))[0];
+  if (!item || item.title) return;
+  item.title = extractJdTitle(item.jd);
+  persist();
+  renderArchiveList();
+  $('archiveTitle').value = item.title;
 }
 
 function currentArchive(){
@@ -1203,6 +1235,14 @@ $('archiveList').addEventListener('click', (e) => {
   if (!el) return;
   state.selectedCustom = el.dataset.id;
   renderArchive();
+});
+
+$('archiveTitle').addEventListener('input', () => {
+  renameArchive(state.selectedCustom, $('archiveTitle').value);
+});
+
+$('archiveTitle').addEventListener('blur', () => {
+  fillArchiveTitleFallback(state.selectedCustom);
 });
 
 $('copyArchive').addEventListener('click', async () => {
