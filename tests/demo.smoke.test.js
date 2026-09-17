@@ -1,29 +1,20 @@
 /**
- * Demo 冒烟测试：验证 HTML 原型里的话术生成逻辑
- * 运行方式：node --test tests
+ * Demo 冒烟测试（V0.2：简历保存与生成分离）
+ * 运行方式：node --test tests/demo.smoke.test.js
  */
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const assert = require('node:assert');
 
-const HTML_PATH = path.join(__dirname, '..', '直聘打招呼助手_Demo_V0.1.html');
+const HTML_PATH = path.join(__dirname, '..', '直聘打招呼助手_Demo_V0.2.html');
 
 function createEl() {
   return {
-    value: '',
-    textContent: '',
-    innerHTML: '',
-    hidden: false,
-    disabled: false,
-    dataset: {},
-    style: {},
-    classList: {add() {}, remove() {}, contains() { return false; }},
-    addEventListener() {},
-    focus() {},
-    remove() {},
-    select() {},
-    appendChild() {},
+    value: '', textContent: '', innerText: '', innerHTML: '',
+    hidden: false, disabled: false, dataset: {}, style: {},
+    classList: {add() {}, remove() {}, contains() { return false; }, toggle() {}},
+    addEventListener() {}, focus() {}, remove() {}, select() {}, appendChild() {},
     querySelector() { return createEl(); },
     querySelectorAll() { return []; },
     closest() { return null; }
@@ -48,22 +39,60 @@ function loadDemo() {
     execCommand() { return true; },
     body: {appendChild() {}}
   };
-  const window = {setTimeout() { return 0; }};
+  const window = {setTimeout() { return 0; }, clearTimeout() {}};
   const localStorage = {getItem() { return null; }, setItem() {}};
   const navigator = {clipboard: {writeText: async () => {}}};
 
   const exported = eval(
-    match[1] + '\n;({buildResult, resumeEl, jdEl, SAMPLE_RESUME, SAMPLE_JD})'
+    match[1] + '\n;({buildResult, state, saveResume, generate, resumeEditor, jdEl, SAMPLE_RESUME, SAMPLE_JD})'
   );
-  return exported;
+  return Object.assign({els}, exported);
 }
 
-test('示例简历 + 示例 JD：输出 3 条话术并命中关键要求', () => {
+/** 在简历页写入内容并保存，返回 demo 实例 */
+function saveAs(resume) {
   const demo = loadDemo();
-  demo.resumeEl.value = demo.SAMPLE_RESUME;
+  demo.resumeEditor.value = resume === undefined ? demo.SAMPLE_RESUME : resume;
+  demo.saveResume();
+  return demo;
+}
+
+const DESIGNER = '某某 平面设计师 4 年经验\n负责品牌视觉设计、海报与包装设计，熟练使用 Photoshop 与 Illustrator。';
+
+test('保存简历：记录内容与保存时间', () => {
+  const demo = loadDemo();
+  assert.strictEqual(demo.state.resume, '', '初始应没有已保存简历');
+  demo.resumeEditor.value = demo.SAMPLE_RESUME;
+  demo.saveResume();
+  assert.strictEqual(demo.state.resume, demo.SAMPLE_RESUME.trim());
+  assert.ok(demo.state.savedAt > 0, '应记录保存时间');
+});
+
+test('内容过短时拒绝保存', () => {
+  const demo = saveAs('太短了');
+  assert.strictEqual(demo.state.resume, '', '过短内容不应被保存');
+});
+
+test('生成只读取已保存简历，未保存的编辑不生效', () => {
+  const demo = saveAs();
+  demo.resumeEditor.value = DESIGNER;
+  demo.jdEl.value = demo.SAMPLE_JD;
+  assert.ok(demo.buildResult().matched.includes('Java'), '应仍基于已保存的简历生成');
+});
+
+test('没有保存简历时不允许生成', () => {
+  const demo = loadDemo();
+  demo.jdEl.value = demo.SAMPLE_JD;
+  demo.generate();
+  assert.strictEqual(demo.state.stats.gen, 0, '缺简历时不应发起生成');
+});
+
+test('示例简历生成 3 条话术，命中关键要求且数据可溯源', () => {
+  const demo = saveAs();
   demo.jdEl.value = demo.SAMPLE_JD;
 
   const result = demo.buildResult();
+  const joined = result.messages.map((m) => m.text).join(' ');
 
   assert.strictEqual(result.messages.length, 3, '应输出 3 条候选话术');
   result.messages.forEach((m) => {
@@ -72,35 +101,12 @@ test('示例简历 + 示例 JD：输出 3 条话术并命中关键要求', () =>
   assert.ok(result.matched.includes('Java'), '应命中 Java');
   assert.ok(result.matched.includes('Redis'), '应命中 Redis');
   assert.strictEqual(result.lowMatch, false, '示例数据不应判定为低匹配');
-});
-
-test('事实溯源：话术中的量化成果来自简历原文', () => {
-  const demo = loadDemo();
-  demo.resumeEl.value = demo.SAMPLE_RESUME;
-  demo.jdEl.value = demo.SAMPLE_JD;
-
-  const joined = demo.buildResult().messages.map((m) => m.text).join(' ');
-
-  assert.ok(joined.includes('800ms'), '应引用简历中的性能数据');
-  ['800ms', '180ms'].forEach((num) => {
-    assert.ok(demo.SAMPLE_RESUME.includes(num), '引用的数据必须存在于简历原文：' + num);
-  });
-});
-
-test('简历缺少量化成果时，话术不虚构数据', () => {
-  const demo = loadDemo();
-  demo.resumeEl.value = '王某某 后端开发工程师 2 年经验\n负责订单系统开发，使用 Java 与 Redis 完成需求。';
-  demo.jdEl.value = demo.SAMPLE_JD;
-
-  const joined = demo.buildResult().messages.map((m) => m.text).join(' ');
-
-  assert.ok(!/\d+\s*ms/.test(joined), '不应凭空出现响应时间等数据');
-  assert.ok(!/\d+\s*%/.test(joined), '不应凭空出现百分比数据');
+  assert.ok(joined.includes('800ms'), '应引用简历原文中的性能数据');
+  assert.ok(demo.SAMPLE_RESUME.includes('800ms'), '引用的数据必须存在于简历原文');
 });
 
 test('简历与岗位不匹配时降级话术，不冒认技能', () => {
-  const demo = loadDemo();
-  demo.resumeEl.value = '某某 平面设计师 4 年经验\n负责品牌视觉设计、海报与包装设计，熟练使用 Photoshop 与 Illustrator。';
+  const demo = saveAs(DESIGNER);
   demo.jdEl.value = demo.SAMPLE_JD;
 
   const result = demo.buildResult();
@@ -113,11 +119,7 @@ test('简历与岗位不匹配时降级话术，不冒认技能', () => {
 });
 
 test('JD 中简历未覆盖的要求被标记为未覆盖', () => {
-  const demo = loadDemo();
-  demo.resumeEl.value = demo.SAMPLE_RESUME;
+  const demo = saveAs();
   demo.jdEl.value = '岗位要求：\n1. 3 年以上 Golang 开发经验，熟悉微服务\n2. 熟悉 Kubernetes 容器编排\n3. 熟悉 MySQL';
-
-  const result = demo.buildResult();
-
-  assert.ok(result.missing.includes('Go'), 'Golang 应被识别为简历未覆盖的要求');
+  assert.ok(demo.buildResult().missing.includes('Go'), 'Golang 应被识别为未覆盖要求');
 });

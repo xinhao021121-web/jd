@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>直聘打招呼助手 · 交互 Demo V0.1</title>
+<title>直聘打招呼助手 · 交互 Demo V0.2</title>
 <style>
   :root{
     --bg:#f4f6fb;
@@ -22,7 +22,6 @@
     --shadow:0 1px 2px rgba(20,30,60,.04), 0 10px 26px rgba(20,30,60,.06);
   }
   *{box-sizing:border-box;}
-  html,body{height:100%;}
   body{
     margin:0;background:var(--bg);color:var(--text);font-size:14px;line-height:1.65;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
@@ -30,7 +29,7 @@
   .page{max-width:1240px;margin:0 auto;padding:26px 22px 44px;}
 
   /* ---------- 顶部 ---------- */
-  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .topbar{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
   .brand{display:flex;align-items:center;gap:12px;}
   .mark{
     width:42px;height:42px;border-radius:12px;flex:0 0 auto;
@@ -40,16 +39,68 @@
   }
   .brand h1{margin:0;font-size:19px;letter-spacing:.2px;}
   .brand p{margin:2px 0 0;color:var(--muted);font-size:12.5px;}
+  .nav{display:flex;gap:4px;background:#eaeef8;padding:4px;border-radius:11px;margin-left:auto;}
+  .nav button{
+    border:0;background:none;padding:8px 18px;border-radius:8px;font-size:13px;
+    font-family:inherit;color:var(--muted);cursor:pointer;transition:.2s;
+  }
+  .nav button.active{background:#fff;color:var(--primary);box-shadow:0 1px 3px rgba(20,30,60,.1);font-weight:500;}
   .tag-demo{
     background:#eef2ff;color:#3f4cbb;border:1px solid #dfe4ff;
     padding:5px 11px;border-radius:999px;font-size:12px;white-space:nowrap;
   }
 
-  /* ---------- 步骤条 ---------- */
-  .steps{
-    list-style:none;display:flex;gap:10px;flex-wrap:wrap;
-    margin:22px 0 18px;padding:0;
+  /* ---------- 通用 ---------- */
+  .view{margin-top:22px;}
+  .view[hidden]{display:none;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px 18px;}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+  .card-head h2{margin:0;font-size:14.5px;font-weight:600;}
+  .card-head-right{display:flex;align-items:center;gap:12px;}
+  .count{color:var(--faint);font-size:12px;}
+  .link{background:none;border:0;padding:0;color:var(--primary);cursor:pointer;font-size:12.5px;font-family:inherit;}
+  .link:hover{text-decoration:underline;}
+  .link[hidden]{display:none;}
+  .hint-line{margin:10px 0 0;color:var(--faint);font-size:12.5px;}
+
+  textarea{
+    width:100%;min-height:186px;resize:vertical;border:1px solid var(--line);border-radius:10px;
+    padding:12px 13px;font-family:inherit;font-size:13px;line-height:1.7;color:var(--text);
+    background:#fcfdff;outline:none;transition:.2s;
   }
+  textarea:focus{border-color:#b9cdff;background:#fff;box-shadow:0 0 0 3px rgba(47,107,255,.09);}
+  #resumeEditor{min-height:330px;}
+  #jd{min-height:180px;}
+
+  .actions{display:flex;gap:10px;}
+  .actions.right{justify-content:flex-end;margin-top:14px;}
+  .btn{
+    border:0;border-radius:11px;padding:12px 20px;font-size:14px;font-family:inherit;
+    cursor:pointer;font-weight:500;transition:.2s;
+  }
+  .btn.primary{
+    flex:1;background:linear-gradient(135deg,#2f6bff,#5b7cff);color:#fff;
+    box-shadow:0 6px 16px rgba(47,107,255,.26);
+  }
+  .btn.primary:hover:not(:disabled){background:linear-gradient(135deg,#1f52d6,#4a6bff);}
+  .btn.primary:disabled{background:#d9e0ee;color:#93a0b8;box-shadow:none;cursor:not-allowed;}
+  .btn.primary.fixed{flex:0 0 auto;}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--muted);}
+  .btn.ghost:hover{border-color:#cdd6e6;color:var(--text);}
+  .btn.small{padding:8px 15px;font-size:12.5px;border-radius:9px;background:#eef3ff;color:var(--primary);}
+  .btn.small:hover{background:#e2ebff;}
+
+  /* ---------- 简历页 ---------- */
+  .narrow{max-width:780px;margin:0 auto;}
+  .saved-bar{
+    display:flex;align-items:center;gap:8px;background:#f4fcf7;border:1px solid #d8eede;
+    color:var(--ok);border-radius:10px;padding:9px 14px;font-size:12.5px;margin-bottom:12px;
+  }
+  .saved-bar.empty{background:#fff8ec;border-color:#f2e2c4;color:var(--warn);}
+  .saved-bar b{font-weight:600;}
+
+  /* ---------- 生成页 ---------- */
+  .steps{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px;padding:0;}
   .steps li{
     display:flex;align-items:center;gap:8px;color:var(--faint);
     background:#fff;border:1px solid var(--line);border-radius:999px;
@@ -64,45 +115,16 @@
   .steps li.done{color:var(--ok);border-color:#c9ecd7;background:#f4fcf7;}
   .steps li.done b{background:var(--ok);color:#fff;}
 
-  /* ---------- 主区域 ---------- */
   .workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:18px;align-items:start;}
   .col{display:flex;flex-direction:column;gap:14px;min-width:0;}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px 18px;}
-  .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
-  .card-head h2{margin:0;font-size:14.5px;font-weight:600;}
-  .card-head-right{display:flex;align-items:center;gap:12px;}
-  .count{color:var(--faint);font-size:12px;}
-  .link{
-    background:none;border:0;padding:0;color:var(--primary);cursor:pointer;
-    font-size:12.5px;font-family:inherit;
-  }
-  .link:hover{text-decoration:underline;}
-  .link[hidden]{display:none;}
 
-  textarea{
-    width:100%;min-height:186px;resize:vertical;border:1px solid var(--line);border-radius:10px;
-    padding:12px 13px;font-family:inherit;font-size:13px;line-height:1.7;color:var(--text);
-    background:#fcfdff;outline:none;transition:.2s;
+  .resume-bar{
+    display:flex;align-items:center;gap:10px;background:#f7f9ff;border:1px solid #e2e9fb;
+    border-radius:12px;padding:11px 14px;font-size:12.5px;color:var(--muted);
   }
-  textarea:focus{border-color:#b9cdff;background:#fff;box-shadow:0 0 0 3px rgba(47,107,255,.09);}
-  #jd{min-height:170px;}
-
-  .actions{display:flex;gap:10px;}
-  .btn{
-    border:0;border-radius:11px;padding:12px 20px;font-size:14px;font-family:inherit;
-    cursor:pointer;font-weight:500;transition:.2s;
-  }
-  .btn.primary{
-    flex:1;background:linear-gradient(135deg,#2f6bff,#5b7cff);color:#fff;
-    box-shadow:0 6px 16px rgba(47,107,255,.26);
-  }
-  .btn.primary:hover:not(:disabled){background:linear-gradient(135deg,#1f52d6,#4a6bff);}
-  .btn.primary:disabled{background:#d9e0ee;color:#93a0b8;box-shadow:none;cursor:not-allowed;}
-  .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--muted);}
-  .btn.ghost:hover{border-color:#cdd6e6;color:var(--text);}
-  .btn.small{padding:8px 15px;font-size:12.5px;border-radius:9px;background:#eef3ff;color:var(--primary);}
-  .btn.small:hover{background:#e2ebff;}
-  .hint-line{margin:0;color:var(--faint);font-size:12.5px;}
+  .resume-bar.warn{background:#fff8ec;border-color:#f2e2c4;color:var(--warn);}
+  .resume-bar .rb-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rb-label{color:var(--text);font-weight:500;}
 
   /* ---------- 结果区 ---------- */
   .result-card{min-height:520px;display:flex;flex-direction:column;}
@@ -110,15 +132,14 @@
     flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:10px;color:var(--faint);text-align:center;padding:50px 20px;
   }
-  .empty .ico{
-    width:58px;height:58px;border-radius:18px;background:#f1f4fb;
-    display:flex;align-items:center;justify-content:center;font-size:26px;
-  }
+  .empty .ico{width:58px;height:58px;border-radius:18px;background:#f1f4fb;display:flex;align-items:center;justify-content:center;font-size:26px;}
   .empty p{margin:0;font-size:13px;}
 
   .loading{flex:1;padding:8px 0;}
-  .skel{height:96px;border-radius:12px;background:linear-gradient(90deg,#f1f4fa 25%,#e7ecf6 37%,#f1f4fa 63%);
-    background-size:400% 100%;animation:shine 1.3s ease infinite;margin-bottom:12px;}
+  .skel{
+    height:96px;border-radius:12px;background:linear-gradient(90deg,#f1f4fa 25%,#e7ecf6 37%,#f1f4fa 63%);
+    background-size:400% 100%;animation:shine 1.3s ease infinite;margin-bottom:12px;
+  }
   @keyframes shine{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
   .loading p{color:var(--faint);font-size:12.5px;text-align:center;}
 
@@ -139,8 +160,8 @@
   .msg-tag{font-size:11.5px;color:var(--primary);background:#eef3ff;padding:2px 9px;border-radius:6px;}
   .wc{color:var(--faint);font-size:11.5px;}
   .msg-body{
-    margin:0;font-size:13.5px;line-height:1.85;color:#26314a;outline:none;
-    border-radius:8px;padding:4px 6px;margin-left:-6px;transition:.2s;
+    margin:0 0 0 -6px;font-size:13.5px;line-height:1.85;color:#26314a;outline:none;
+    border-radius:8px;padding:4px 6px;transition:.2s;
   }
   .msg-body:focus{background:#f7f9ff;box-shadow:0 0 0 2px rgba(47,107,255,.12);}
   .msg-foot{display:flex;align-items:center;gap:10px;margin-top:9px;}
@@ -148,9 +169,9 @@
   .edit-flag{color:var(--warn);font-size:12px;}
   [hidden]{display:none !important;}
 
-  /* ---------- 底部统计 ---------- */
+  /* ---------- 统计与提示 ---------- */
   .stats{
-    margin-top:20px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+    margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);
     box-shadow:var(--shadow);padding:13px 18px;display:flex;align-items:center;gap:26px;flex-wrap:wrap;
   }
   .stats .title{color:var(--muted);font-size:12.5px;}
@@ -158,9 +179,17 @@
   .stats .item b{font-size:16px;color:var(--primary);margin-right:3px;}
   .stats .note{color:var(--faint);font-size:12px;margin-left:auto;}
 
+  .toast{
+    position:fixed;left:50%;bottom:34px;transform:translateX(-50%);
+    background:#1b2333;color:#fff;font-size:13px;padding:10px 20px;border-radius:10px;
+    box-shadow:0 10px 30px rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:.25s;z-index:9;
+  }
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
   @media (max-width:940px){
     .workspace{grid-template-columns:minmax(0,1fr);}
     .result-card{min-height:auto;}
+    .nav{margin-left:0;order:3;width:100%;}
     .stats .note{margin-left:0;}
   }
 </style>
@@ -176,84 +205,104 @@
         <p>粘贴简历与 JD，生成可直接发送的打招呼话术</p>
       </div>
     </div>
+    <nav class="nav" id="nav">
+      <button data-view="resume">我的简历</button>
+      <button data-view="generate" class="active">生成打招呼</button>
+    </nav>
     <span class="tag-demo">交互 Demo · 话术由本地规则模拟生成</span>
   </header>
 
-  <ol class="steps" id="steps">
-    <li data-step="1"><b>1</b>粘贴简历</li>
-    <li data-step="2"><b>2</b>粘贴 JD</li>
-    <li data-step="3"><b>3</b>生成话术</li>
-    <li data-step="4"><b>4</b>复制发送</li>
-  </ol>
-
-  <main class="workspace">
-    <section class="col">
+  <!-- ==================== 视图一：我的简历 ==================== -->
+  <section class="view" id="view-resume" hidden>
+    <div class="narrow">
       <div class="card">
         <div class="card-head">
-          <h2>简历内容</h2>
+          <h2>我的简历</h2>
           <div class="card-head-right">
             <span class="count" id="resumeCount">0 字</span>
             <button class="link" id="fillResume">填入示例</button>
           </div>
         </div>
-        <textarea id="resume" placeholder="把简历正文粘贴进来，包含工作经历、项目、技能即可，不必整理格式"></textarea>
+        <div class="saved-bar empty" id="savedBar">尚未保存简历</div>
+        <textarea id="resumeEditor" placeholder="把简历正文粘贴进来，包含工作经历、项目、技能即可，不必整理格式"></textarea>
+        <div class="actions right">
+          <button class="btn ghost" id="revertResume">还原</button>
+          <button class="btn primary fixed" id="saveResume">保存简历</button>
+        </div>
+        <p class="hint-line">简历只需要维护一次，之后每次生成都会自动读取这里保存的内容</p>
       </div>
+    </div>
+  </section>
 
-      <div class="card">
-        <div class="card-head">
-          <h2>岗位 JD</h2>
-          <div class="card-head-right">
-            <span class="count" id="jdCount">0 字</span>
-            <button class="link" id="fillJd">填入示例</button>
+  <!-- ==================== 视图二：生成打招呼 ==================== -->
+  <section class="view" id="view-generate">
+    <ol class="steps" id="steps">
+      <li data-step="1"><b>1</b>粘贴 JD</li>
+      <li data-step="2"><b>2</b>生成话术</li>
+      <li data-step="3"><b>3</b>复制发送</li>
+    </ol>
+
+    <main class="workspace">
+      <section class="col">
+        <div class="resume-bar" id="resumeBar"></div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>岗位 JD</h2>
+            <div class="card-head-right">
+              <span class="count" id="jdCount">0 字</span>
+              <button class="link" id="fillJd">填入示例</button>
+            </div>
+          </div>
+          <textarea id="jd" placeholder="把岗位职责与任职要求完整粘贴进来，硬性条件写得越全，生成越准"></textarea>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" id="generate" disabled>生成打招呼话术</button>
+          <button class="btn ghost" id="clearJd">清空</button>
+        </div>
+        <p class="hint-line" id="inputHint"></p>
+      </section>
+
+      <section class="col">
+        <div class="card result-card">
+          <div class="card-head">
+            <h2>生成结果</h2>
+            <button class="link" id="regen" hidden>重新生成</button>
+          </div>
+
+          <div class="empty" id="emptyState">
+            <div class="ico">✍️</div>
+            <p>粘贴岗位 JD 后，点击「生成打招呼话术」</p>
+            <p>这里会给出 3 条可直接发送的候选话术</p>
+          </div>
+
+          <div class="loading" id="loadingState" hidden>
+            <div class="skel"></div>
+            <div class="skel"></div>
+            <div class="skel"></div>
+            <p>正在比对简历与岗位要求…</p>
+          </div>
+
+          <div id="resultState" hidden>
+            <div class="match" id="matchBox"></div>
+            <div class="msg-list" id="msgList"></div>
           </div>
         </div>
-        <textarea id="jd" placeholder="把岗位职责与任职要求完整粘贴进来，硬性条件写得越全，生成越准"></textarea>
-      </div>
+      </section>
+    </main>
 
-      <div class="actions">
-        <button class="btn primary" id="generate" disabled>生成打招呼话术</button>
-        <button class="btn ghost" id="clear">清空</button>
-      </div>
-      <p class="hint-line" id="inputHint">两份内容都填写后即可生成（各至少 20 字）</p>
-    </section>
-
-    <section class="col">
-      <div class="card result-card">
-        <div class="card-head">
-          <h2>生成结果</h2>
-          <button class="link" id="regen" hidden>重新生成</button>
-        </div>
-
-        <div class="empty" id="emptyState">
-          <div class="ico">✍️</div>
-          <p>粘贴简历和 JD 后，点击「生成打招呼话术」</p>
-          <p>这里会给出 3 条可直接发送的候选话术</p>
-        </div>
-
-        <div class="loading" id="loadingState" hidden>
-          <div class="skel"></div>
-          <div class="skel"></div>
-          <div class="skel"></div>
-          <p>正在比对简历与岗位要求…</p>
-        </div>
-
-        <div id="resultState" hidden>
-          <div class="match" id="matchBox"></div>
-          <div class="msg-list" id="msgList"></div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="stats">
-    <span class="title">本次会话</span>
-    <span class="item"><b id="statGen">0</b>次生成</span>
-    <span class="item"><b id="statCopy">0</b>次复制</span>
-    <span class="item"><b id="statRate">—</b>零修改直接复制率</span>
-    <span class="note">该指标是 MVP 的核心验收标准，目标 ≥ 50%</span>
-  </footer>
+    <footer class="stats">
+      <span class="title">本次会话</span>
+      <span class="item"><b id="statGen">0</b>次生成</span>
+      <span class="item"><b id="statCopy">0</b>次复制</span>
+      <span class="item"><b id="statRate">—</b>零修改直接复制率</span>
+      <span class="note">该指标是 MVP 的核心验收标准，目标 ≥ 50%</span>
+    </footer>
+  </section>
 
 </div>
+<div class="toast" id="toast"></div>
 
 <script>
 /* ---------------- 示例数据 ---------------- */
@@ -360,48 +409,135 @@ function shorten(s, max){
   return (i > 12 ? cut.slice(0, i) : cut) + '…';
 }
 
+function formatTime(ts){
+  const d = new Date(ts);
+  const p = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + '/' + p(d.getMonth() + 1) + '/' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
 /* ---------------- 状态 ---------------- */
+const LS_RESUME = 'greet_demo_resume_v2';
+const LS_RESUME_AT = 'greet_demo_resume_at_v2';
+const LS_JD = 'greet_demo_jd_v2';
+const MIN_LEN = 20;
+
 const state = {
+  resume: '',
+  savedAt: 0,
   stats: {gen: 0, copy: 0, dirtyCopy: 0},
   edited: {}
 };
 
-const resumeEl = $('resume');
+const resumeEditor = $('resumeEditor');
 const jdEl = $('jd');
 const genBtn = $('generate');
 
-/* ---------------- 输入区交互 ---------------- */
+let toastTimer = null;
+function toast(msg){
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  if (toastTimer) window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => el.classList.remove('on'), 1800);
+}
+
+function persist(){
+  try {
+    localStorage.setItem(LS_RESUME, state.resume);
+    localStorage.setItem(LS_RESUME_AT, String(state.savedAt));
+    localStorage.setItem(LS_JD, jdEl.value);
+  } catch (e) { /* 无痕模式等场景下不可用，忽略 */ }
+}
+
+/* ---------------- 视图切换 ---------------- */
+function switchView(name){
+  const views = document.querySelectorAll('.view');
+  for (let i = 0; i < views.length; i++) {
+    views[i].hidden = views[i].id !== 'view-' + name;
+  }
+  const btns = $('nav').querySelectorAll('button');
+  for (let i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('active', btns[i].dataset.view === name);
+  }
+}
+
+/* ---------------- 简历页 ---------------- */
+function renderSavedBar(){
+  const bar = $('savedBar');
+  if (state.resume) {
+    bar.classList.remove('empty');
+    bar.innerHTML = '已保存 · <b>' + escapeHtml(formatTime(state.savedAt)) + '</b> · ' + count(state.resume) + ' 字';
+  } else {
+    bar.classList.add('empty');
+    bar.textContent = '尚未保存简历，填写后点击「保存简历」';
+  }
+}
+
+function renderResumeBar(){
+  const bar = $('resumeBar');
+  if (state.resume) {
+    bar.classList.remove('warn');
+    bar.innerHTML = '<span class="rb-label">当前简历</span>'
+      + '<span class="rb-text">' + escapeHtml(state.resume.replace(/\s+/g, ' ').slice(0, 46)) + '…</span>'
+      + '<span>' + count(state.resume) + ' 字</span>'
+      + '<button class="link" data-goto="resume">编辑</button>';
+  } else {
+    bar.classList.add('warn');
+    bar.innerHTML = '<span class="rb-label">还没有简历</span>'
+      + '<span class="rb-text">先生成一次简历提交，之后每次生成都会自动读取</span>'
+      + '<button class="link" data-goto="resume">去填写</button>';
+  }
+}
+
+function refreshResumeEditor(){
+  const n = count(resumeEditor.value);
+  $('resumeCount').textContent = n + ' 字';
+  const changed = resumeEditor.value.trim() !== state.resume;
+  $('saveResume').disabled = n < MIN_LEN || !changed;
+}
+
+function saveResume(){
+  const text = resumeEditor.value.trim();
+  if (count(text) < MIN_LEN) {
+    toast('简历内容太短，至少 ' + MIN_LEN + ' 字');
+    return;
+  }
+  state.resume = text;
+  state.savedAt = Date.now();
+  persist();
+  renderSavedBar();
+  renderResumeBar();
+  refreshResumeEditor();
+  refreshGenerateState();
+  toast('简历已保存，生成时会自动读取');
+}
+
+/* ---------------- 生成页 ---------------- */
 function setStep(n, mode){
   const li = document.querySelector('.steps li[data-step="' + n + '"]');
+  if (!li) return;
   li.classList.remove('on', 'done');
   if (mode) li.classList.add(mode);
 }
 
-function saveDraft(){
-  try {
-    localStorage.setItem('greet_demo_resume', resumeEl.value);
-    localStorage.setItem('greet_demo_jd', jdEl.value);
-  } catch (e) { /* 忽略：无痕模式等场景下不可用 */ }
-}
-
-function refreshInputs(){
-  const r = count(resumeEl.value);
+function refreshGenerateState(){
   const j = count(jdEl.value);
-  $('resumeCount').textContent = r + ' 字';
   $('jdCount').textContent = j + ' 字';
-  const ready = r >= 20 && j >= 20;
+  const hasResume = !!state.resume;
+  const ready = hasResume && j >= MIN_LEN;
   genBtn.disabled = !ready;
-  $('inputHint').textContent = ready
-    ? '内容已就绪，点击生成 3 条候选话术'
-    : '两份内容都填写后即可生成（各至少 20 字）';
-  setStep(1, r >= 20 ? 'done' : 'on');
-  setStep(2, r >= 20 ? (j >= 20 ? 'done' : 'on') : '');
-  saveDraft();
+  if (!hasResume) {
+    $('inputHint').textContent = '还没有保存简历，先到「我的简历」填写并保存';
+  } else if (j < MIN_LEN) {
+    $('inputHint').textContent = '粘贴岗位 JD 后即可生成（至少 ' + MIN_LEN + ' 字）';
+  } else {
+    $('inputHint').textContent = '内容已就绪，点击生成 3 条候选话术';
+  }
+  setStep(1, j >= MIN_LEN ? 'done' : 'on');
 }
 
-/* ---------------- 生成（本地模拟） ---------------- */
 function buildResult(){
-  const resume = resumeEl.value;
+  const resume = state.resume;
   const jd = jdEl.value;
   const jdSkills = extractSkills(jd);
   const resumeSkills = extractSkills(resume);
@@ -409,25 +545,23 @@ function buildResult(){
   const missing = jdSkills.filter((s) => !resumeSkills.includes(s));
   const years = (resume.match(/(\d{1,2})\s*年/) || [])[1] || '';
   const role = inferRole(resume + ' ' + jd);
-  const achievements = extractAchievements(resume);
-  const achieve = shorten(achievements[0] || '', 64);
+  const achieved = shorten(extractAchievements(resume)[0] || '', 64);
 
   const core = (matched.length ? matched : resumeSkills).slice(0, 3).join('、') || '相关技能';
   const focus = (matched.length ? matched : jdSkills).slice(0, 2).join('、') || '岗位方向';
   const expText = (years ? years + '年' : '多年') + role;
-
   const lowMatch = matched.length === 0;
 
   const m1 = '您好，我有' + expText + '经验，' + core + '是我日常工作的主要部分。'
-    + (achieve ? achieve + '。' : '')
+    + (achieved ? achieved + '。' : '')
     + (lowMatch
         ? '看到岗位方向与我的经历不完全是同一方向，但希望有机会了解下具体需求，也方便您判断是否有可迁移的空间。'
         : '看到岗位在找' + focus + '方向的人，我的经历和这个岗位比较对口，方便的话想和您具体聊聊。');
 
   const m2 = lowMatch
     ? '您好，我目前主要做' + core + '相关工作，和岗位要求的' + focus + '方向有差异，但希望能有机会了解一下具体需求，判断是否有可迁移的空间。'
-    : (achieve
-        ? '您好，' + achieve + '。岗位里提到的' + focus + '正好是我一直在做的方向，希望能有机会和您详细沟通一下。'
+    : (achieved
+        ? '您好，' + achieved + '。岗位里提到的' + focus + '正好是我一直在做的方向，希望能有机会和您详细沟通一下。'
         : '您好，我目前主要做' + core + '相关工作，和岗位要求的' + focus + '方向比较贴近，希望能有机会和您详细沟通一下。');
 
   const m3 = lowMatch
@@ -467,8 +601,7 @@ function render(result){
   }
   box.innerHTML = html;
 
-  const list = $('msgList');
-  list.innerHTML = result.messages.map((m, i) => (
+  $('msgList').innerHTML = result.messages.map((m, i) => (
     '<article class="msg-card" data-index="' + i + '">'
     + '<div class="msg-head"><span class="msg-tag">' + escapeHtml(m.style) + '</span>'
     + '<span class="wc">' + count(m.text) + ' 字</span></div>'
@@ -484,6 +617,16 @@ function render(result){
 }
 
 function generate(){
+  if (!state.resume) {
+    toast('请先到「我的简历」保存简历');
+    switchView('resume');
+    return;
+  }
+  if (count(jdEl.value) < MIN_LEN) {
+    toast('请先粘贴岗位 JD（至少 ' + MIN_LEN + ' 字）');
+    return;
+  }
+
   $('emptyState').hidden = true;
   $('resultState').hidden = true;
   $('loadingState').hidden = false;
@@ -491,14 +634,13 @@ function generate(){
   $('regen').hidden = true;
 
   window.setTimeout(() => {
-    const result = buildResult();
-    render(result);
+    render(buildResult());
     $('loadingState').hidden = true;
     $('resultState').hidden = false;
     $('regen').hidden = false;
     genBtn.disabled = false;
     state.stats.gen += 1;
-    setStep(3, 'done');
+    setStep(2, 'done');
     renderStats();
   }, 1300);
 }
@@ -530,13 +672,66 @@ function renderStats(){
   $('statRate').textContent = s.copy ? Math.round((clean / s.copy) * 100) + '%' : '—';
 }
 
+/* ---------------- 事件绑定 ---------------- */
+$('nav').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-view]');
+  if (btn) switchView(btn.dataset.view);
+});
+
+resumeEditor.addEventListener('input', refreshResumeEditor);
+$('saveResume').addEventListener('click', saveResume);
+
+$('fillResume').addEventListener('click', () => {
+  resumeEditor.value = SAMPLE_RESUME;
+  refreshResumeEditor();
+});
+
+$('revertResume').addEventListener('click', () => {
+  resumeEditor.value = state.resume;
+  refreshResumeEditor();
+  toast('已还原为上次保存的内容');
+});
+
+jdEl.addEventListener('input', () => {
+  refreshGenerateState();
+  persist();
+});
+
+genBtn.addEventListener('click', generate);
+$('regen').addEventListener('click', generate);
+
+$('fillJd').addEventListener('click', () => {
+  jdEl.value = SAMPLE_JD;
+  refreshGenerateState();
+  persist();
+});
+
+$('clearJd').addEventListener('click', () => {
+  jdEl.value = '';
+  $('emptyState').hidden = false;
+  $('resultState').hidden = true;
+  $('loadingState').hidden = true;
+  $('regen').hidden = true;
+  setStep(2, '');
+  setStep(3, '');
+  refreshGenerateState();
+  jdEl.focus();
+});
+
+$('resumeBar').addEventListener('click', (e) => {
+  if (e.target.closest('[data-goto="resume"]')) switchView('resume');
+});
+
 $('msgList').addEventListener('click', async (e) => {
   const btn = e.target.closest('.copy');
   if (!btn) return;
   const card = btn.closest('.msg-card');
   const body = card.querySelector('.msg-body');
   const ok = await copyText(body.innerText.trim());
-  if (!ok) return;
+  if (!ok) {
+    toast('浏览器拒绝了剪贴板权限，请手动选择复制');
+    return;
+  }
 
   const index = card.dataset.index;
   state.stats.copy += 1;
@@ -545,60 +740,37 @@ $('msgList').addEventListener('click', async (e) => {
 
   card.querySelector('.copied').hidden = false;
   window.setTimeout(() => { card.querySelector('.copied').hidden = true; }, 1600);
-  setStep(4, 'done');
+  setStep(3, 'done');
 });
 
 $('msgList').addEventListener('input', (e) => {
   const body = e.target.closest('.msg-body');
   if (!body) return;
   const card = body.closest('.msg-card');
-  const index = card.dataset.index;
-  state.edited[index] = true;
+  state.edited[card.dataset.index] = true;
   card.querySelector('.edit-flag').hidden = false;
   card.querySelector('.wc').textContent = count(body.innerText.trim()) + ' 字';
-});
-
-/* ---------------- 事件绑定 ---------------- */
-resumeEl.addEventListener('input', refreshInputs);
-jdEl.addEventListener('input', refreshInputs);
-genBtn.addEventListener('click', generate);
-$('regen').addEventListener('click', generate);
-
-$('fillResume').addEventListener('click', () => {
-  resumeEl.value = SAMPLE_RESUME;
-  refreshInputs();
-});
-
-$('fillJd').addEventListener('click', () => {
-  jdEl.value = SAMPLE_JD;
-  refreshInputs();
-});
-
-$('clear').addEventListener('click', () => {
-  resumeEl.value = '';
-  jdEl.value = '';
-  $('emptyState').hidden = false;
-  $('resultState').hidden = true;
-  $('loadingState').hidden = true;
-  $('regen').hidden = true;
-  setStep(3, '');
-  setStep(4, '');
-  refreshInputs();
-  resumeEl.focus();
 });
 
 /* ---------------- 初始化 ---------------- */
 (function init(){
   try {
-    const r = localStorage.getItem('greet_demo_resume');
-    const j = localStorage.getItem('greet_demo_jd');
-    if (r) resumeEl.value = r;
-    if (j) jdEl.value = j;
+    const saved = localStorage.getItem(LS_RESUME);
+    const at = localStorage.getItem(LS_RESUME_AT);
+    const jd = localStorage.getItem(LS_JD);
+    if (saved) state.resume = saved;
+    if (at) state.savedAt = Number(at) || 0;
+    if (jd) jdEl.value = jd;
   } catch (e) { /* 忽略 */ }
-  refreshInputs();
+
+  resumeEditor.value = state.resume;
+  renderSavedBar();
+  renderResumeBar();
+  refreshResumeEditor();
+  refreshGenerateState();
   renderStats();
+  switchView(state.resume ? 'generate' : 'resume');
 })();
 </script>
 </body>
 </html>
-
