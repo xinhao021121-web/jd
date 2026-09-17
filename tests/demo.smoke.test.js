@@ -9,11 +9,25 @@ const assert = require('node:assert');
 
 const HTML_PATH = path.join(__dirname, '..', '直聘打招呼助手_Demo_V0.2.html');
 
+function makeClassList() {
+  const set = new Set();
+  return {
+    add(c) { set.add(c); },
+    remove(c) { set.delete(c); },
+    contains(c) { return set.has(c); },
+    toggle(c, on) {
+      if (on === undefined) { set.has(c) ? set.delete(c) : set.add(c); }
+      else if (on) { set.add(c); }
+      else { set.delete(c); }
+    }
+  };
+}
+
 function createEl() {
   return {
     value: '', textContent: '', innerText: '', innerHTML: '',
     hidden: false, disabled: false, dataset: {}, style: {},
-    classList: {add() {}, remove() {}, contains() { return false; }, toggle() {}},
+    classList: makeClassList(),
     addEventListener() {}, focus() {}, remove() {}, select() {}, appendChild() {},
     querySelector() { return createEl(); },
     querySelectorAll() { return []; },
@@ -44,7 +58,7 @@ function loadDemo() {
   const navigator = {clipboard: {writeText: async () => {}}};
 
   const exported = eval(
-    match[1] + '\n;({buildResult, state, saveResume, generate, resumeEditor, jdEl, SAMPLE_RESUME, SAMPLE_JD})'
+    match[1] + '\n;({buildResult, state, saveResume, generate, setCollapsed, resumeEditor, jdEl, SAMPLE_RESUME, SAMPLE_JD})'
   );
   return Object.assign({els}, exported);
 }
@@ -122,4 +136,16 @@ test('JD 中简历未覆盖的要求被标记为未覆盖', () => {
   const demo = saveAs();
   demo.jdEl.value = '岗位要求：\n1. 3 年以上 Golang 开发经验，熟悉微服务\n2. 熟悉 Kubernetes 容器编排\n3. 熟悉 MySQL';
   assert.ok(demo.buildResult().missing.includes('Go'), 'Golang 应被识别为未覆盖要求');
+});
+
+
+test('侧边栏可以收起与展开', () => {
+  const demo = loadDemo();
+  const sidebar = demo.els.get('sidebar');
+
+  demo.setCollapsed(true);
+  assert.ok(sidebar.classList.contains('collapsed'), '应收起侧边栏');
+
+  demo.setCollapsed(false);
+  assert.ok(!sidebar.classList.contains('collapsed'), '应展开侧边栏');
 });

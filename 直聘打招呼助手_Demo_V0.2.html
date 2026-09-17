@@ -26,25 +26,55 @@
     margin:0;background:var(--bg);color:var(--text);font-size:14px;line-height:1.65;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
   }
-  .page{max-width:1240px;margin:0 auto;padding:26px 22px 44px;}
+  .page{display:flex;min-height:100vh;align-items:stretch;}
 
-  /* ---------- 顶部 ---------- */
-  .topbar{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
-  .brand{display:flex;align-items:center;gap:12px;}
+  /* ---------- 侧边栏 ---------- */
+  .sidebar{
+    width:236px;flex:0 0 236px;background:#fff;border-right:1px solid var(--line);
+    display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+    transition:width .22s ease,flex-basis .22s ease;
+  }
+  .sidebar.collapsed{width:72px;flex-basis:72px;}
+  .side-head{display:flex;align-items:center;gap:11px;padding:20px 18px 16px;}
   .mark{
-    width:42px;height:42px;border-radius:12px;flex:0 0 auto;
+    width:40px;height:40px;border-radius:12px;flex:0 0 auto;
     background:linear-gradient(135deg,#2f6bff,#7b5cff);color:#fff;
-    display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;
     box-shadow:0 6px 16px rgba(47,107,255,.28);
   }
-  .brand h1{margin:0;font-size:19px;letter-spacing:.2px;}
-  .brand p{margin:2px 0 0;color:var(--muted);font-size:12.5px;}
-  .nav{display:flex;gap:4px;background:#eaeef8;padding:4px;border-radius:11px;margin-left:auto;}
-  .nav button{
-    border:0;background:none;padding:8px 18px;border-radius:8px;font-size:13px;
-    font-family:inherit;color:var(--muted);cursor:pointer;transition:.2s;
+  .side-brand{min-width:0;}
+  .side-brand h1{margin:0;font-size:15px;letter-spacing:.2px;white-space:nowrap;}
+  .side-brand p{margin:2px 0 0;color:var(--faint);font-size:11.5px;white-space:nowrap;}
+  .side-nav{display:flex;flex-direction:column;gap:4px;padding:6px 12px;flex:1;overflow:hidden;}
+  .side-nav button{
+    display:flex;align-items:center;gap:11px;width:100%;border:0;background:none;
+    padding:10px 12px;border-radius:10px;font-family:inherit;font-size:13.5px;color:var(--muted);
+    cursor:pointer;transition:.18s;text-align:left;white-space:nowrap;
   }
-  .nav button.active{background:#fff;color:var(--primary);box-shadow:0 1px 3px rgba(20,30,60,.1);font-weight:500;}
+  .side-nav button:hover:not(:disabled){background:#f3f6fd;color:var(--text);}
+  .side-nav button.active{background:#eef3ff;color:var(--primary);font-weight:500;}
+  .side-nav button:disabled{color:#c3cbd9;cursor:default;}
+  .side-nav .ico{flex:0 0 auto;width:20px;text-align:center;font-size:14px;}
+  .side-divider{height:1px;background:var(--line);margin:12px 4px;}
+  .side-group{padding:2px 12px 4px;color:var(--faint);font-size:11.5px;white-space:nowrap;}
+  .side-foot{padding:12px;border-top:1px solid var(--line);}
+  .collapse-btn{
+    display:flex;align-items:center;gap:11px;width:100%;border:0;background:none;
+    padding:10px 12px;border-radius:10px;font-family:inherit;font-size:13px;color:var(--faint);
+    cursor:pointer;white-space:nowrap;transition:.18s;
+  }
+  .collapse-btn:hover{background:#f3f6fd;color:var(--text);}
+  .sidebar.collapsed .side-brand,
+  .sidebar.collapsed .label,
+  .sidebar.collapsed .side-group{display:none;}
+  .sidebar.collapsed .side-head{justify-content:center;padding:20px 0 16px;}
+  .sidebar.collapsed .side-nav{padding:6px 10px;}
+  .sidebar.collapsed .side-nav button,
+  .sidebar.collapsed .collapse-btn{justify-content:center;padding:10px 0;}
+  .main{flex:1;min-width:0;padding:24px 28px 44px;}
+
+  .topbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:6px;}
+  .page-title{margin:0;font-size:17px;font-weight:600;}
   .tag-demo{
     background:#eef2ff;color:#3f4cbb;border:1px solid #dfe4ff;
     padding:5px 11px;border-radius:999px;font-size:12px;white-space:nowrap;
@@ -187,9 +217,16 @@
   .toast.on{opacity:1;transform:translateX(-50%) translateY(-6px);}
 
   @media (max-width:940px){
+    .sidebar{width:72px;flex-basis:72px;}
+    .sidebar .side-brand,
+    .sidebar .label,
+    .sidebar .side-group,
+    .sidebar .collapse-btn{display:none;}
+    .sidebar .side-head{justify-content:center;padding:20px 0 16px;}
+    .sidebar .side-nav button{justify-content:center;padding:10px 0;}
+    .main{padding:18px 16px 32px;}
     .workspace{grid-template-columns:minmax(0,1fr);}
     .result-card{min-height:auto;}
-    .nav{margin-left:0;order:3;width:100%;}
     .stats .note{margin-left:0;}
   }
 </style>
@@ -197,20 +234,34 @@
 <body>
 <div class="page">
 
-  <header class="topbar">
-    <div class="brand">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-head">
       <div class="mark">招</div>
-      <div>
-        <h1>直聘打招呼助手</h1>
-        <p>粘贴简历与 JD，生成可直接发送的打招呼话术</p>
+      <div class="side-brand">
+        <h1>打招呼助手</h1>
+        <p>简历 + JD 生成话术</p>
       </div>
     </div>
-    <nav class="nav" id="nav">
-      <button data-view="resume">我的简历</button>
-      <button data-view="generate" class="active">生成打招呼</button>
+    <nav class="side-nav" id="nav">
+      <button data-view="resume"><span class="ico">📄</span><span class="label">我的简历</span></button>
+      <button data-view="generate" class="active"><span class="ico">✍️</span><span class="label">生成打招呼</span></button>
+      <div class="side-divider"></div>
+      <div class="side-group">后续规划</div>
+      <button disabled title="规划中"><span class="ico">🕘</span><span class="label">话术历史</span></button>
+      <button disabled title="规划中"><span class="ico">⚙️</span><span class="label">设置</span></button>
     </nav>
-    <span class="tag-demo">交互 Demo · 话术由本地规则模拟生成</span>
-  </header>
+    <div class="side-foot">
+      <button class="collapse-btn" id="collapseBtn" title="收起侧边栏">
+        <span class="ico" id="collapseIco">«</span><span class="label">收起侧边栏</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <h2 class="page-title" id="pageTitle">生成打招呼</h2>
+      <span class="tag-demo">交互 Demo · 话术由本地规则模拟生成</span>
+    </header>
 
   <!-- ==================== 视图一：我的简历 ==================== -->
   <section class="view" id="view-resume" hidden>
@@ -301,6 +352,7 @@
     </footer>
   </section>
 
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -459,6 +511,17 @@ function switchView(name){
   for (let i = 0; i < btns.length; i++) {
     btns[i].classList.toggle('active', btns[i].dataset.view === name);
   }
+  $('pageTitle').textContent = name === 'resume' ? '我的简历' : '生成打招呼';
+}
+
+/* ---------------- 侧边栏收起 ---------------- */
+const LS_COLLAPSED = 'greet_demo_sidebar_collapsed';
+
+function setCollapsed(collapsed){
+  $('sidebar').classList.toggle('collapsed', collapsed);
+  $('collapseIco').textContent = collapsed ? '»' : '«';
+  $('collapseBtn').title = collapsed ? '展开侧边栏' : '收起侧边栏';
+  try { localStorage.setItem(LS_COLLAPSED, collapsed ? '1' : '0'); } catch (e) { /* 忽略 */ }
 }
 
 /* ---------------- 简历页 ---------------- */
@@ -673,6 +736,10 @@ function renderStats(){
 }
 
 /* ---------------- 事件绑定 ---------------- */
+$('collapseBtn').addEventListener('click', () => {
+  setCollapsed(!$('sidebar').classList.contains('collapsed'));
+});
+
 $('nav').addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-view]');
   if (btn) switchView(btn.dataset.view);
@@ -770,6 +837,9 @@ $('msgList').addEventListener('input', (e) => {
   refreshGenerateState();
   renderStats();
   switchView(state.resume ? 'generate' : 'resume');
+  try {
+    setCollapsed(localStorage.getItem(LS_COLLAPSED) === '1');
+  } catch (e) { /* 忽略 */ }
 })();
 </script>
 </body>
