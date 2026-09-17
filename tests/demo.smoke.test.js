@@ -58,7 +58,7 @@ function loadDemo() {
   const navigator = {clipboard: {writeText: async () => {}}};
 
   const exported = eval(
-    match[1] + '\n;({buildResult, state, saveResume, generate, setCollapsed, resumeEditor, jdEl, jd2El, parseResume, buildResumeSuggestions, composeCustomResume, saveCustom, extractJdTitle, renameArchive, fillArchiveTitleFallback, SAMPLE_RESUME, SAMPLE_JD})'
+    match[1] + '\n;({buildResult, state, saveResume, generate, setCollapsed, resumeEditor, jdEl, jd2El, parseResume, buildResumeSuggestions, composeCustomResume, saveCustom, extractJdTitle, renameArchive, fillArchiveTitleFallback, removeArchive, SAMPLE_RESUME, SAMPLE_JD})'
   );
   return Object.assign({els}, exported);
 }
@@ -291,4 +291,28 @@ test('定制简历记录名称可以编辑，留空则回退到解析名称', ()
   demo.renameArchive(id, '   ');
   demo.fillArchiveTitleFallback(id);
   assert.ok(demo.state.customs[0].title.includes('Java'), '留空应回退到从 JD 解析的名称');
+});
+
+test('可以删除定制简历，且不影响其他记录与原始简历', () => {
+  const demo = saveAs();
+  const original = demo.state.resume;
+
+  demo.state.jd = demo.SAMPLE_JD;
+  demo.state.suggestions = demo.buildResumeSuggestions().suggestions
+    .map((s) => Object.assign({}, s, {adopted: true}));
+  demo.saveCustom();
+
+  demo.state.jd = '岗位：数据平台开发工程师\n任职要求：熟悉 Python、数据分析';
+  demo.state.suggestions = demo.buildResumeSuggestions().suggestions
+    .map((s) => Object.assign({}, s, {adopted: true}));
+  demo.saveCustom();
+
+  const first = demo.state.customs[0].id;
+  const second = demo.state.customs[1].id;
+
+  assert.strictEqual(demo.removeArchive(first), true, '应删除成功');
+  assert.strictEqual(demo.state.customs.length, 1, '应只剩一条');
+  assert.strictEqual(demo.state.customs[0].id, second, '应保留另一条');
+  assert.strictEqual(demo.state.resume, original, '原始简历不受影响');
+  assert.strictEqual(demo.removeArchive(999999), false, '删除不存在的记录应返回 false');
 });

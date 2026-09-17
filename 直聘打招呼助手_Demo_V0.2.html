@@ -271,13 +271,22 @@
   .archive-list{display:flex;flex-direction:column;gap:8px;margin:12px 0;}
   .archive-item{
     border:1px solid var(--line);border-radius:11px;padding:11px 13px;cursor:pointer;transition:.18s;
+    position:relative;
   }
   .archive-item:hover{border-color:#cfdcff;background:#fafbff;}
   .archive-item.active{border-color:#b9cdff;background:#f5f8ff;}
   .ai-title{
     font-size:13.5px;color:var(--text);font-weight:500;margin-bottom:3px;
+    padding-right:26px;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
+  .ai-del{
+    position:absolute;top:9px;right:9px;width:22px;height:22px;border:0;border-radius:6px;
+    background:transparent;color:var(--faint);cursor:pointer;font-size:12px;line-height:1;
+    opacity:0;transition:.18s;
+  }
+  .archive-item:hover .ai-del{opacity:1;}
+  .ai-del:hover{background:#fdeeee;color:#b3261e;}
   .ai-meta{font-size:12px;color:var(--faint);}
   .ai-note{
     margin-top:7px;font-size:12px;color:var(--warn);background:var(--warnbg);
@@ -1128,7 +1137,7 @@ function saveCustom(){
   const adopted = state.suggestions.filter((s) => s.adopted);
   if (!adopted.length) return;
   state.customs.unshift({
-    id: Date.now(),
+    id: 'c' + Date.now() + Math.floor(Math.random() * 10000),
     at: Date.now(),
     title: extractJdTitle(state.jd),
     jd: state.jd,
@@ -1193,6 +1202,7 @@ function renderArchiveList(){
     + '<div class="ai-title" title="' + escapeHtml(c.title) + '">' + escapeHtml(c.title) + '</div>'
     + '<div class="ai-meta">' + escapeHtml(formatTime(c.at)) + ' · 采纳 ' + c.adopted + ' 条 · ' + count(c.text) + ' 字</div>'
     + '<div class="ai-note">仅适用于该岗位，投递其他岗位请重新生成</div>'
+    + '<button class="ai-del" data-del="' + c.id + '" title="删除这份">✕</button>'
     + '</div>'
   )).join('');
 }
@@ -1230,7 +1240,29 @@ function currentArchive(){
   return state.customs.filter((c) => String(c.id) === String(state.selectedCustom))[0];
 }
 
+/** 删除一份定制简历：只影响存档，不触碰原始简历 */
+function removeArchive(id){
+  const before = state.customs.length;
+  state.customs = state.customs.filter((c) => String(c.id) !== String(id));
+  if (state.customs.length === before) return false;
+  if (String(state.selectedCustom) === String(id)) state.selectedCustom = '';
+  persist();
+  renderArchive();
+  toast('已删除这份定制简历，原始简历未受影响');
+  return true;
+}
+
+function confirmDeleteArchive(item){
+  return window.confirm('删除「' + item.title + '」？删除后无法恢复，原始简历不受影响。');
+}
+
 $('archiveList').addEventListener('click', (e) => {
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    const item = state.customs.filter((c) => String(c.id) === del.dataset.del)[0];
+    if (item && confirmDeleteArchive(item)) removeArchive(item.id);
+    return;
+  }
   const el = e.target.closest('.archive-item');
   if (!el) return;
   state.selectedCustom = el.dataset.id;
@@ -1254,12 +1286,8 @@ $('copyArchive').addEventListener('click', async () => {
 
 $('deleteArchive').addEventListener('click', () => {
   const item = currentArchive();
-  if (!item) return;
-  state.customs = state.customs.filter((c) => String(c.id) !== String(item.id));
-  state.selectedCustom = '';
-  persist();
-  renderArchive();
-  toast('已删除这份定制简历，原始简历未受影响');
+  if (!item || !confirmDeleteArchive(item)) return;
+  removeArchive(item.id);
 });
 
 $('gotoArchive').addEventListener('click', () => switchView('archive'));
