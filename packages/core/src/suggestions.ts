@@ -42,6 +42,18 @@ export interface PlanSuggestionsResult {
 }
 
 /**
+ * 合规兜底：判断一段原文是否落在可改写区块内。
+ * 服务端在回传前用它对每条建议做二次校验，避免任何模型输出绕过锁定规则（PRD 4.1）。
+ */
+export function isEditableAnchor(blocks: ResumeBlock[], before: string): boolean {
+  const anchor = (before || '').trim();
+  if (!anchor || anchor.includes('\n')) return false;
+  return blocks.some(
+    (block) => block.kind === 'editable' && block.lines.some((line) => line.includes(anchor))
+  );
+}
+
+/**
  * 把模型返回的建议绑定到区块：
  * - 只允许落在可改写区块，锁定区块与未识别区块一律丢弃；
  * - 建议不得跨区块，`before` 必须能在某个区块的某一行里完整找到；

@@ -1,0 +1,14 @@
+{
+  "name": "@zhipin/llm",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@zhipin/core": "workspace:*",
+    "@zhipin/shared": "workspace:*",
+    "zod": "^3.24.1"
+  }
+}
