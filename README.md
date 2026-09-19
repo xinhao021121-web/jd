@@ -2,6 +2,8 @@
 
 面向求职者的轻量工具：维护一份长期简历，针对具体岗位 JD 生成可直接发送的打招呼话术，以及逐条可采纳的简历改写建议。
 
+只看一份文档的话，看 [docs/作品集主文档_V1.0.md](docs/作品集主文档_V1.0.md)：三分钟读完产品判断、评测体系与已知不足。
+
 产品口径见 [直聘打招呼助手_PRD_V0.2.md](直聘打招呼助手_PRD_V0.2.md)，实现口径见 [docs/技术方案_V0.1.md](docs/技术方案_V0.1.md)。V0.2 的交互原型保留在 `直聘打招呼助手_Demo_V0.2.html`，仅用于对照，不是运行入口。
 
 ## 界面
@@ -79,6 +81,18 @@ $env:DEEPSEEK_API_KEY="sk-..."; pnpm quality:samples
 指向本地 mock 也能跑（`DEEPSEEK_BASE_URL=http://127.0.0.1:8788/v1`），用于验证脚本自身；mock 的模板话术偏短，会如实报出长度违规。
 
 结论留档见 [docs/质量回归_V0.1.md](docs/质量回归_V0.1.md)。
+
+## 外部盲测
+
+评审标准六要求 3–5 人外部盲测（不告知作者身份，1–5 分评三项，均分 ≥ 3.5）：
+
+```bash
+pnpm blind-test:kit      # 生成 reports/blind-test/ 下的评分表与邀请话术
+# 发给 3–5 位测试者，把回收的 JSON 存进 reports/blind-test/results/
+pnpm blind-test:report   # 汇总并输出 reports/盲测报告_<时间>.md
+```
+
+评分表是自包含的 HTML，测试者打开就能用，不需要注册任何服务，也不需要你部署评分页。样本默认取 `tests/samples/quality-samples.json` 的前 3 组，换真实简历用 `--samples=<路径>`。
 
 ## 部署（可选）
 
