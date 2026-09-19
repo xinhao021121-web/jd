@@ -1,0 +1,36 @@
+# Cloudflare 部署配置（技术方案 十）。部署命令在 apps/api 目录执行：
+#   pnpm build && npx wrangler deploy
+# 密钥不进仓库，用 `npx wrangler secret put DEEPSEEK_API_KEY` 单独写入。
+name = "zhipin-assistant"
+main = "src/cloudflare/worker.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+# 保留 workers.dev 地址，便于境外访问与 wrangler dev --remote
+workers_dev = true
+
+# 前端静态产物与 API 同域：Worker 先接请求，非 /api 交给资源服务
+[assets]
+directory = "../web/dist"
+binding = "ASSETS"
+run_worker_first = true
+
+[vars]
+DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
+DEEPSEEK_MODEL = "deepseek-chat"
+# 公开演示：额度比本地更保守，避免链接外传后耗尽密钥余额
+DAILY_CALL_ALERT = "100"
+DAILY_CALL_CAP = "300"
+
+[[durable_objects.bindings]]
+name = "COUNTERS"
+class_name = "Counters"
+
+# 自有域名：workers.dev 在国内被 DNS 污染 + TLS 阻断，直连打不开
+[[routes]]
+pattern = "zhipin.xinhao02.ccwu.cc"
+custom_domain = true
+
+# 免费计划的 Durable Object 必须使用 SQLite 存储后端
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Counters"]

@@ -3,6 +3,8 @@ dist/
 .vite/
 .env
 .env.local
+.dev.vars
+.wrangler/
 test-results/
 playwright-report/
 reports/

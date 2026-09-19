@@ -94,6 +94,24 @@ pnpm --filter @zhipin/api start  # 服务端常驻进程，读取环境变量
 - 前端与 API 建议同域，把 `/api/*` 反代到服务端，可省掉 CORS 配置；
 - 密钥只放部署平台的环境变量里，不要写进仓库，也不要用 `VITE_` 前缀（会被打进前端产物）。
 
+### Cloudflare Workers（推荐）
+
+一个 Worker 同时托管前端静态产物与 `/api/llm`：前端与 API 同域，密钥存 Worker Secret，限流与每日配额由 Durable Object 保存，跨请求、跨重新部署都不会重置。
+
+```bash
+pnpm deploy:cf                            # 构建前端 + 部署
+npx wrangler secret put DEEPSEEK_API_KEY  # 首次部署后写入密钥，不进仓库
+```
+
+[apps/api/wrangler.toml](apps/api/wrangler.toml) 里的关键配置：
+
+- `[assets]` + `run_worker_first = true`：把 `apps/web/dist` 作为静态资源，Worker 先接请求，只有 `/api/*` 与 `/healthz` 交给服务端；
+- `[[durable_objects.bindings]]` 与 `new_sqlite_classes`：限流与每日配额的共享计数器，免费计划的 Durable Object 必须用 SQLite 存储后端；
+- `DAILY_CALL_CAP`：公开部署取 300，比本地的 1500 保守，链接外传时先看这一项；
+- `[[routes]]`：自定义域名，不需要可以删掉，只留 `workers.dev`。
+
+**国内访问的注意事项**：`*.workers.dev` 在国内会被 DNS 污染且 TLS 连接被重置，直连打不开，必须挂自有域名。实测同一账号下不同 Cloudflare 出口 IP 的可达性并不一致（`104.16.x` 可直连，`104.21.x` / `172.67.x` 被重置），自定义域名也可能只有 IPv6 能直连，发布前应实测。
+
 ### 临时公网地址（隧道预览）
 
 还没选好托管平台时，可以让本机先对外提供一个 HTTPS 地址：API 用真实密钥跑在本机，前端走 `vite preview`（已配置 `/api` 反代，前后端同域），再用隧道把预览端口暴露出去。
