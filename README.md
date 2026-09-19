@@ -94,6 +94,26 @@ pnpm --filter @zhipin/api start  # 服务端常驻进程，读取环境变量
 - 前端与 API 建议同域，把 `/api/*` 反代到服务端，可省掉 CORS 配置；
 - 密钥只放部署平台的环境变量里，不要写进仓库，也不要用 `VITE_` 前缀（会被打进前端产物）。
 
+### 临时公网地址（隧道预览）
+
+还没选好托管平台时，可以让本机先对外提供一个 HTTPS 地址：API 用真实密钥跑在本机，前端走 `vite preview`（已配置 `/api` 反代，前后端同域），再用隧道把预览端口暴露出去。
+
+```bash
+pnpm build                       # 产物交给 preview 托管
+pnpm --filter @zhipin/api start  # 终端 1：服务端，读取根目录 .env
+
+# 终端 2：隧道域名在启动时才确定，先跑一次拿到域名，再注入白名单重启
+# PowerShell
+$env:PREVIEW_ALLOWED_HOSTS="<隧道域名>"; pnpm --filter @zhipin/web preview
+
+# 终端 3
+cloudflared tunnel --url http://127.0.0.1:4173
+```
+
+Vite 默认只接受本机 Host，未注入 `PREVIEW_ALLOWED_HOSTS`（逗号分隔）时外部访问会返回 403，自定义域名部署同理。
+
+这条路径有三点限制，仅适合临时演示：进程停止或机器休眠后地址即失效；公网地址会消耗服务端密钥的额度，暴露前应把 `DAILY_CALL_CAP` 调低；本机同时承担了服务端角色。
+
 ## 边界说明
 
 - 密钥只存在于服务端环境变量，前端代码与响应体里都不会出现；

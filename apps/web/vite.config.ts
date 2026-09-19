@@ -13,6 +13,15 @@ const apiProxy = {
   }
 };
 
+/**
+ * Vite 默认只接受本机 Host，隧道预览或自定义域名会被 403 拦截。
+ * 部署时用 PREVIEW_ALLOWED_HOSTS 注入域名（逗号分隔）；本地开发留空即保持默认防护。
+ */
+const allowedHosts = (process.env.PREVIEW_ALLOWED_HOSTS ?? '')
+  .split(',')
+  .map((host) => host.trim())
+  .filter(Boolean);
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -21,7 +30,7 @@ export default defineConfig({
       '@zhipin/shared': resolveFromRoot('../../packages/shared/src/index.ts')
     }
   },
-  server: { port: 5173, proxy: apiProxy },
-  preview: { port: 4173, proxy: apiProxy },
+  server: { port: 5173, proxy: apiProxy, allowedHosts },
+  preview: { port: 4173, proxy: apiProxy, allowedHosts },
   build: { outDir: 'dist', emptyOutDir: true }
 });
