@@ -80,7 +80,7 @@ $env:DEEPSEEK_API_KEY="sk-..."; pnpm quality:samples
 
 指向本地 mock 也能跑（`DEEPSEEK_BASE_URL=http://127.0.0.1:8788/v1`），用于验证脚本自身；mock 的模板话术偏短，会如实报出长度违规。
 
-结论留档见 [docs/质量回归_V0.1.md](docs/质量回归_V0.1.md)。
+结论留档见 [docs/质量回归_V0.2.md](docs/质量回归_V0.2.md)。
 
 ## 外部盲测
 

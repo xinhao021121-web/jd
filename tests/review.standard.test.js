@@ -63,3 +63,19 @@ test('单人项目必备：两层评审、变更分级与独立视角', () => {
   });
   assert.ok(review.includes('结论不能只由自评支撑'), '单人评审应要求至少一项外部证据');
 });
+
+test('质量回归结论沿用 PRD 的现口径，不保留旧阈值', () => {
+  const quality = fs.readFileSync(path.join(ROOT, 'docs', '质量回归_V0.2.md'), 'utf8');
+
+  assert.ok(!quality.includes('≥50%'), '质量回归不应保留旧的条级 50% 阈值');
+  assert.ok(quality.includes('≥ 80%'), '质量回归应沿用会话级 80% 门槛');
+  assert.ok(quality.includes('≥ 40%'), '质量回归应沿用条级辅助 40% 门槛');
+});
+
+test('PRD 版本规划不把已实现并上线的 V0.3 标为规划中', () => {
+  const plan = prd.split('### 2.7 产品版本规划')[1] ?? '';
+  const v03 = plan.split('\n').find((line) => line.startsWith('| V0.3 ')) ?? '';
+
+  assert.ok(v03.includes('已完成'), 'V0.3 的已实现范围应标为已完成');
+  assert.ok(!v03.includes('规划中'), 'V0.3 不应同时标为规划中');
+});
