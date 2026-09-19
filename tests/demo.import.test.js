@@ -174,7 +174,22 @@ test('识别失败只提示，不动用户已输入的 JD', () => {
 
 test('两个页面都提供导入入口，导入元素齐备', () => {
   const demo = loadDemo();
-  ['id="importResume"', 'id="resumeFile"', 'id="blockPreview"', 'id="importJdImage"', 'id="importJdImage2"', 'id="jdImportBar"', 'id="jdImportBar2"', 'id="modal"'].forEach((marker) => {
+  ['id="resumeFile"', 'id="blockPreview"', 'id="jdImportBar"', 'id="jdImportBar2"', 'id="modal"'].forEach((marker) => {
     assert.ok(demo.html.includes(marker), '页面应包含：' + marker);
   });
+});
+
+test('导入入口是显眼的整行按钮，而不是文字链接', () => {
+  const demo = loadDemo();
+  [
+    ['id="importResume"', '简历导入'],
+    ['id="importJdImage"', '生成页 JD 截图导入'],
+    ['id="importJdImage2"', '改简历页 JD 截图导入']
+  ].forEach(([id, name]) => {
+    const line = demo.html.split('\n').find((l) => l.includes(id)) ?? '';
+    assert.ok(line.includes('class="import-cta"'), name + '应使用 import-cta 按钮样式');
+    assert.ok(line.includes('<button'), name + '应是可点击按钮');
+    assert.ok(!line.includes('class="link"'), name + '不应是文字链接');
+  });
+  assert.ok(demo.html.includes('.import-cta:hover'), '应有悬停反馈');
 });

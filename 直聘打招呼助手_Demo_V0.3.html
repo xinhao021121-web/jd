@@ -152,6 +152,16 @@
   .block-preview[hidden]{display:none;}
   .chip2{background:#eef3ff;color:var(--primary);border-radius:7px;padding:2px 9px;font-size:12px;}
   .chip2.lock{background:#f1f3f8;color:var(--faint);}
+  /* 导入按钮：与「粘贴文本」并列的第二条录入路径，做成整行虚线按钮 */
+  .import-cta{
+    display:flex;align-items:center;gap:10px;width:100%;text-align:left;font-family:inherit;
+    background:#f5f8ff;border:1px dashed #b9cdff;color:var(--primary);border-radius:10px;
+    padding:11px 14px;font-size:13.5px;font-weight:500;cursor:pointer;transition:.18s;margin-bottom:10px;
+  }
+  .import-cta:hover{background:#eef3ff;border-color:#93b6ff;box-shadow:0 4px 14px rgba(47,107,255,.12);}
+  .import-cta .cta-ico{font-size:15px;}
+  .import-cta .cta-hint{margin-left:auto;color:var(--faint);font-size:12px;font-weight:400;}
+  .import-cta.drop-on{border-style:solid;border-color:var(--primary);background:#e6eeff;}
   .drop-on{outline:2px dashed #b9cdff;outline-offset:-4px;background:#fbfdff;}
   .file-input{display:none;}
   .demo-help{font-size:12.5px;color:var(--muted);}
@@ -378,13 +388,14 @@
         <details class="demo-help">
           <summary>演示说明</summary>
           <ul>
-            <li>简历页「导入文件」：解析结果只进草稿，必须点「保存简历」才生效；</li>
+            <li>简历页「导入简历文件」按钮：解析结果只进草稿，必须点「保存简历」才生效；</li>
             <li>草稿已有内容时会先二次确认；文件名带「扫描」可看解析失败的兜底提示；</li>
-            <li>JD 输入区「导入图片」：识别结果追加到 JD，并出现校对提示与「撤销本次导入」；</li>
+            <li>JD 输入区「导入 JD 截图」按钮：识别结果追加到 JD，并出现校对提示与「撤销本次导入」；</li>
             <li>JD 输入框支持直接 Ctrl+V 粘贴截图，两页 JD 共用同一份内容；</li>
             <li>手边没有文件时，可用下面的模拟入口直接跑一遍流程：
               <button class="link" id="demoImportResume">模拟导入简历</button> ·
               <button class="link" id="demoImportJdImage">模拟导入 JD 截图</button></li>
+            <li>导入按钮本身也可以直接把文件拖进去。</li>
           </ul>
         </details>
       </div>
@@ -398,11 +409,16 @@
           <h2>我的简历</h2>
           <div class="card-head-right">
             <span class="count" id="resumeCount">0 字</span>
-            <button class="link" id="importResume">导入文件</button>
             <button class="link" id="fillResume">填入示例</button>
           </div>
         </div>
         <div class="saved-bar empty" id="savedBar">尚未保存简历</div>
+
+        <button type="button" class="import-cta" id="importResume">
+          <span class="cta-ico">📄</span>
+          <span>导入简历文件</span>
+          <span class="cta-hint">TXT / Markdown / Word / PDF · 文件只在本机解析</span>
+        </button>
 
         <div class="import-bar" id="resumeImportBar" hidden></div>
         <div class="block-preview" id="blockPreview" hidden></div>
@@ -435,11 +451,15 @@
             <h2>岗位 JD</h2>
             <div class="card-head-right">
               <span class="count" id="jdCount">0 字</span>
-              <button class="link" id="importJdImage">导入图片</button>
               <button class="link" id="fillJd">填入示例</button>
             </div>
           </div>
           <textarea id="jd" placeholder="把岗位职责与任职要求完整粘贴进来，硬性条件写得越全，生成越准；也可以导入招聘截图，或直接 Ctrl+V 粘贴图片"></textarea>
+          <button type="button" class="import-cta" id="importJdImage">
+            <span class="cta-ico">🖼️</span>
+            <span>导入 JD 截图</span>
+            <span class="cta-hint">PNG / JPG / WebP · 也可直接 Ctrl+V 粘贴</span>
+          </button>
           <input class="file-input" type="file" id="jdImage" accept="image/png,image/jpeg,image/webp" />
           <div class="import-bar" id="jdImportBar" hidden></div>
         </div>
@@ -498,11 +518,15 @@
             <h2>目标岗位 JD</h2>
             <div class="card-head-right">
               <span class="count" id="jd2Count">0 字</span>
-              <button class="link" id="importJdImage2">导入图片</button>
               <button class="link" id="fillJd2">填入示例</button>
             </div>
           </div>
           <textarea id="jd2" placeholder="粘贴目标岗位的 JD，用来判断哪些经历需要突出；也可以用招聘截图导入"></textarea>
+          <button type="button" class="import-cta" id="importJdImage2">
+            <span class="cta-ico">🖼️</span>
+            <span>导入 JD 截图</span>
+            <span class="cta-hint">与「生成打招呼」共用同一份 JD</span>
+          </button>
           <input class="file-input" type="file" id="jdImage2" accept="image/png,image/jpeg,image/webp" />
           <div class="import-bar" id="jdImportBar2" hidden></div>
         </div>
@@ -1539,6 +1563,21 @@ function hideImportBar(el){
   el.innerHTML = '';
 }
 
+/** 拖拽投放：输入框与导入按钮共用同一套反馈 */
+function bindFileDrop(el, onFile){
+  el.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    el.classList.add('drop-on');
+  });
+  el.addEventListener('dragleave', () => el.classList.remove('drop-on'));
+  el.addEventListener('drop', (e) => {
+    e.preventDefault();
+    el.classList.remove('drop-on');
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) onFile(file);
+  });
+}
+
 /* 覆盖草稿前的二次确认 */
 function showConfirm(title, text, onOk){
   $('modalTitle').textContent = title;
@@ -1665,17 +1704,10 @@ $('resumeFile').addEventListener('change', (e) => {
   if (file) simulateResumeImport(file.name);
 });
 
-resumeEditor.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  resumeEditor.classList.add('drop-on');
-});
-resumeEditor.addEventListener('dragleave', () => resumeEditor.classList.remove('drop-on'));
-resumeEditor.addEventListener('drop', (e) => {
-  e.preventDefault();
-  resumeEditor.classList.remove('drop-on');
-  const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-  if (file) simulateResumeImport(file.name);
-});
+bindFileDrop(resumeEditor, (file) => simulateResumeImport(file.name));
+bindFileDrop($('importResume'), (file) => simulateResumeImport(file.name));
+bindFileDrop($('importJdImage'), (file) => simulateJdImageImport(jdEl, 'jdImportBar', file.name));
+bindFileDrop($('importJdImage2'), (file) => simulateJdImageImport(jd2El, 'jdImportBar2', file.name));
 
 function pickJdImage(inputId){
   const input = $(inputId);
