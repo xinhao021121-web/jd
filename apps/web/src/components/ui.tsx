@@ -2,12 +2,18 @@ import type { ReactNode } from 'react';
 
 export function Card({
   children,
-  className = ''
+  className = '',
+  testId
 }: {
   children: ReactNode;
   className?: string;
+  testId?: string;
 }): JSX.Element {
-  return <section className={`card p-5 ${className}`}>{children}</section>;
+  return (
+    <section className={`card p-5 ${className}`} data-testid={testId}>
+      {children}
+    </section>
+  );
 }
 
 export function PageTitle({

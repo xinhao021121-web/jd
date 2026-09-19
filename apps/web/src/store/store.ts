@@ -42,6 +42,8 @@ interface StreamState {
   errorCode: ErrorCode | null;
   elapsedMs: number | null;
   analysis: MatchAnalysis | null;
+  /** 本次生成的会话标识，供行为记录归属用 */
+  sessionId: string | null;
 }
 
 export interface GreetingState extends StreamState {
@@ -97,7 +99,8 @@ const IDLE_GREETING: GreetingState = {
   status: 'idle',
   errorCode: null,
   elapsedMs: null,
-  analysis: null
+  analysis: null,
+  sessionId: null
 };
 
 const IDLE_CUSTOMIZATION: CustomizationState = {
@@ -106,11 +109,19 @@ const IDLE_CUSTOMIZATION: CustomizationState = {
   status: 'idle',
   errorCode: null,
   elapsedMs: null,
-  analysis: null
+  analysis: null,
+  sessionId: null
 };
 
 /** 单次只允许一个进行中的生成，用户中止或发起新生成时旧请求会被取消 */
 let activeController: AbortController | null = null;
+
+/** 会话标识：把复制、采纳这类行为归属到产生它的那次生成 */
+let sessionSeq = 0;
+function createSessionId(prefix: 'g' | 's'): string {
+  sessionSeq += 1;
+  return `${prefix}${Date.now().toString(36)}-${sessionSeq}`;
+}
 
 export function canGenerate(state: { resume: string; jd: string }): boolean {
   return state.resume.trim().length >= MIN_TEXT_LENGTH && state.jd.trim().length >= MIN_TEXT_LENGTH;
@@ -176,14 +187,15 @@ export const useAppStore = create<AppStore>()(
         activeController?.abort();
         const controller = new AbortController();
         activeController = controller;
+        const sessionId = createSessionId('g');
 
         set({
-          greeting: { ...IDLE_GREETING, status: 'streaming' },
+          greeting: { ...IDLE_GREETING, status: 'streaming', sessionId },
           view: 'generate'
         });
 
         if (options.regenerate) {
-          state.record({ type: 'regenerate', at: Date.now(), count: 1 });
+          state.record({ type: 'regenerate', at: Date.now(), count: 1, sessionId });
         }
 
         const startedAt = Date.now();
@@ -205,7 +217,8 @@ export const useAppStore = create<AppStore>()(
             type: 'generate',
             at: Date.now(),
             jdLength: state.jd.length,
-            elapsedMs: Date.now() - startedAt
+            elapsedMs: Date.now() - startedAt,
+            sessionId
           });
         } else if (outcome.status === 'aborted') {
           set({ greeting: { ...get().greeting, status: 'aborted' } });
@@ -224,7 +237,8 @@ export const useAppStore = create<AppStore>()(
         activeController = controller;
 
         const blocks = parseResume(state.resume);
-        set({ customization: { ...IDLE_CUSTOMIZATION, status: 'streaming' } });
+        const sessionId = createSessionId('s');
+        set({ customization: { ...IDLE_CUSTOMIZATION, status: 'streaming', sessionId } });
 
         const outcome = await streamTask(
           'suggestions',
@@ -240,6 +254,13 @@ export const useAppStore = create<AppStore>()(
 
         if (outcome.status === 'done') {
           set({ customization: { ...get().customization, status: 'done' } });
+          // 采纳率的分母：本机发起过几次改写建议生成，每次给出多少条可采纳建议
+          get().record({
+            type: 'suggest_generate',
+            at: Date.now(),
+            count: get().customization.suggestions.length,
+            sessionId
+          });
         } else if (outcome.status === 'aborted') {
           set({ customization: { ...get().customization, status: 'aborted' } });
         } else {
@@ -279,7 +300,8 @@ export const useAppStore = create<AppStore>()(
             type: 'suggest_adopt',
             at: Date.now(),
             section: target.section,
-            count: target.adopted ? 1 : -1
+            count: target.adopted ? 1 : -1,
+            sessionId: get().customization.sessionId ?? undefined
           });
         }
       },
@@ -304,7 +326,12 @@ export const useAppStore = create<AppStore>()(
         // 容量上限：超出后移除最早的一份（PRD 3.4）
         const archive = [record, ...state.archive].slice(0, MAX_CUSTOM_RESUMES);
         set({ archive, selectedArchiveId: record.id });
-        state.record({ type: 'custom_save', at: Date.now(), count: adopted.length });
+        state.record({
+          type: 'custom_save',
+          at: Date.now(),
+          count: adopted.length,
+          sessionId: state.customization.sessionId ?? undefined
+        });
         return record;
       },
 

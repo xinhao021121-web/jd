@@ -76,14 +76,22 @@ function resetStore(): void {
     sidebarCollapsed: false,
     view: 'resume',
     events: [],
-    greeting: { items: [], status: 'idle', errorCode: null, elapsedMs: null, analysis: null },
+    greeting: {
+      items: [],
+      status: 'idle',
+      errorCode: null,
+      elapsedMs: null,
+      analysis: null,
+      sessionId: null
+    },
     customization: {
       suggestions: [],
       droppedCount: 0,
       status: 'idle',
       errorCode: null,
       elapsedMs: null,
-      analysis: null
+      analysis: null,
+      sessionId: null
     }
   });
 }
@@ -315,6 +323,85 @@ describe('按 JD 改简历', () => {
       false
     );
     expect(store().events.at(-1)?.type).toBe('custom_save');
+  });
+});
+
+describe('本机使用数据', () => {
+  const suggestionEvent = {
+    type: 'item',
+    kind: 'suggestion',
+    index: 0,
+    section: '工作经历',
+    before: '主导订单查询接口性能优化，通过 Redis 缓存与 SQL 优化将 P99 响应时间从 800ms 降到 180ms',
+    after:
+      '主导订单查询接口性能优化，通过 Redis 缓存与 SQL 优化将 P99 响应时间从 800ms 降到 180ms（高并发场景）',
+    reason: '补上岗位关注的术语标签，不改变事实',
+    suggestionType: '术语对齐'
+  };
+
+  async function generateGreeting(): Promise<void> {
+    saveResume();
+    store().setJd(SAMPLE_JD);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      sseStream([analysisEvent, ...greetingItems, { type: 'done', elapsedMs: 100 }])
+    );
+    await store().generateGreeting();
+  }
+
+  async function generateSuggestions(): Promise<void> {
+    saveResume();
+    store().setJd(SAMPLE_JD);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      sseStream([analysisEvent, suggestionEvent, { type: 'done', elapsedMs: 800 }])
+    );
+    await store().generateSuggestions();
+  }
+
+  it('生成话术时带上会话标识，供复制行为归属', async () => {
+    await generateGreeting();
+
+    const sessionId = store().greeting.sessionId;
+    expect(sessionId).toBeTruthy();
+    expect(store().events.at(-1)).toMatchObject({ type: 'generate', sessionId });
+  });
+
+  it('重新生成会换成新的会话标识，不与上一次混算', async () => {
+    await generateGreeting();
+    const first = store().greeting.sessionId;
+
+    await store().generateGreeting({ regenerate: true });
+
+    expect(store().events.at(-1)?.type).toBe('generate');
+    expect(store().greeting.sessionId).toBeTruthy();
+    expect(store().greeting.sessionId).not.toBe(first);
+  });
+
+  it('生成改写建议时记录次数与可采纳条数，补上采纳率的分母', async () => {
+    await generateSuggestions();
+
+    const last = store().events.at(-1);
+    expect(last).toMatchObject({ type: 'suggest_generate', count: 1 });
+    expect(last?.sessionId).toBe(store().customization.sessionId);
+  });
+
+  it('采纳与取消采纳都归属到同一次建议生成的会话', async () => {
+    await generateSuggestions();
+    const sessionId = store().customization.sessionId;
+    const id = store().customization.suggestions[0]!.id;
+
+    store().toggleSuggestion(id);
+    expect(store().events.at(-1)).toMatchObject({
+      type: 'suggest_adopt',
+      count: 1,
+      sessionId
+    });
+
+    store().toggleSuggestion(id);
+    expect(store().events.at(-1)).toMatchObject({
+      type: 'suggest_adopt',
+      count: -1,
+      sessionId
+    });
   });
 });
 

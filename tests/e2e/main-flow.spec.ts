@@ -43,6 +43,12 @@ test('主流程：保存简历 → 生成话术 → 采纳建议 → 合成定�
   await page.getByRole('button', { name: '复制话术' }).first().click();
   await expect(page.getByText('已复制')).toBeVisible();
 
+  // 复制行为计入本机使用数据：这一次生成拿到了不用改就能发的话（会话级 1/1）
+  const metrics = page.getByTestId('metrics');
+  await expect(metrics).toBeVisible();
+  await expect(metrics).toContainText('会话级零修改复制率');
+  await expect(metrics).toContainText('100%（1/1）');
+
   // 4. 改简历：JD 在两页之间共享
   await nav(page, 'custom').click();
   await expect(page.locator('#jd2')).toHaveValue(SAMPLE_JD);

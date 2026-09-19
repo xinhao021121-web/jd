@@ -12,7 +12,34 @@ import { JdField } from '../components/JdField';
 import { toast } from '../components/Toast';
 import { Card, ChipRow, Notice, PageTitle } from '../components/ui';
 import { canGenerate, useAppStore, type GreetingItem } from '../store/store';
+import { downloadJson } from '../utils/download';
 import { countChars } from '../utils/format';
+
+/** 比例展示：分母为 0 时显示 —，避免把"还没有数据"写成 0% */
+function ratioText(count: number, total: number): string {
+  if (!total) return '—';
+  return `${Math.round((count / total) * 100)}%（${count}/${total}）`;
+}
+
+function MetricItem({
+  label,
+  note,
+  value
+}: {
+  label: string;
+  note?: string;
+  value: string;
+}): JSX.Element {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-b border-[#f0f2f7] py-1.5 last:border-0">
+      <span className="text-xs text-[#6b7688]">
+        {label}
+        {note && <span className="ml-1 text-[#98a2b6]">{note}</span>}
+      </span>
+      <span className="flex-none text-sm font-medium text-[#1b2333]">{value}</span>
+    </div>
+  );
+}
 
 function GreetingCard({
   item,
@@ -23,6 +50,7 @@ function GreetingCard({
 }): JSX.Element {
   const updateGreetingItem = useAppStore((state) => state.updateGreetingItem);
   const record = useAppStore((state) => state.record);
+  const sessionId = useAppStore((state) => state.greeting.sessionId);
 
   const onCopy = async () => {
     const ok = await copyText(item.text);
@@ -33,6 +61,7 @@ function GreetingCard({
     record({
       type: 'copy',
       at: Date.now(),
+      sessionId: sessionId ?? undefined,
       index: item.index,
       edited: item.edited,
       count: countChars(item.text)
@@ -85,6 +114,15 @@ export function GenerateView(): JSX.Element {
   const events = useAppStore((state) => state.events);
   const metrics = useMemo(() => calcMetrics(events), [events]);
   const offSpec = useMemo(() => offSpecGreetingIndexes(greeting.items), [greeting.items]);
+
+  const onExportUsage = () => {
+    downloadJson(`直聘助手_使用数据_${new Date().toISOString().slice(0, 10)}.json`, {
+      exportedAt: new Date().toISOString(),
+      metrics,
+      events
+    });
+    toast('已导出本机使用数据');
+  };
 
   const streaming = greeting.status === 'streaming';
   const analysis = greeting.analysis;
@@ -176,11 +214,51 @@ export function GenerateView(): JSX.Element {
         )}
 
         {metrics.generateCount > 0 && (
-          <p className="text-xs text-[#98a2b6]" data-testid="metrics">
-            本地统计（只保存在这台设备）· 生成 {metrics.generateCount} 次 · 复制 {metrics.copyCount}{' '}
-            次 · 零修改直接复制率
-            {metrics.copyCount ? ` ${Math.round(metrics.cleanCopyRate * 100)}%` : ' —'}
-          </p>
+          <Card testId="metrics">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-medium">本机使用数据</h3>
+                <p className="mt-1 text-xs text-[#98a2b6]">
+                  只保存在这台设备，不会上传；导出的是原始行为记录，不含简历与 JD 正文。
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn-ghost flex-none"
+                data-testid="export-usage"
+                onClick={onExportUsage}
+              >
+                导出原始记录
+              </button>
+            </div>
+
+            <div className="mt-3 grid gap-x-8 sm:grid-cols-2">
+              <MetricItem label="生成话术" value={`${metrics.generateCount} 次`} />
+              <MetricItem
+                label="会话级零修改复制率"
+                note="主指标"
+                value={ratioText(metrics.cleanCopySessionCount, metrics.generateCount)}
+              />
+              <MetricItem label="生成改写建议" value={`${metrics.suggestGenerateCount} 次`} />
+              <MetricItem
+                label="至少采纳 1 条建议"
+                value={ratioText(metrics.adoptedSessionCount, metrics.suggestGenerateCount)}
+              />
+              <MetricItem
+                label="条级零修改复制率"
+                note="辅助"
+                value={
+                  metrics.copyCount
+                    ? `${Math.round(metrics.cleanCopyRate * 100)}%（${metrics.cleanCopyCount}/${metrics.copyCount}）`
+                    : '—'
+                }
+              />
+              <MetricItem
+                label="平均每份可采纳建议"
+                value={metrics.suggestGenerateCount ? `${metrics.suggestionsPerSession} 条` : '—'}
+              />
+            </div>
+          </Card>
         )}
       </div>
     </div>

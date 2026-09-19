@@ -160,6 +160,7 @@ export const TELEMETRY_EVENT_TYPES = [
   'generate',
   'copy',
   'regenerate',
+  'suggest_generate',
   'suggest_adopt',
   'custom_save',
   'error'
@@ -169,6 +170,8 @@ export type TelemetryEventType = (typeof TELEMETRY_EVENT_TYPES)[number];
 export const TelemetryEventSchema = z.object({
   type: z.enum(TELEMETRY_EVENT_TYPES),
   at: z.number(),
+  /** 一次生成的标识：把复制、采纳等行为归属到产生它的那次生成 */
+  sessionId: z.string().optional(),
   jdLength: z.number().optional(),
   elapsedMs: z.number().optional(),
   index: z.number().optional(),
