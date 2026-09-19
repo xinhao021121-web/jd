@@ -19,12 +19,18 @@ export interface RateLimitDecision {
 const MINUTE_MS = 60_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** 路由只依赖 check 这一个方法；内存实现与远程计数器都满足该接口 */
 export interface RateLimiter {
+  check(key: string): RateLimitDecision | Promise<RateLimitDecision>;
+}
+
+/** 内存实现额外提供 size()，供本地排查与单测断言使用 */
+export interface InMemoryRateLimiter extends RateLimiter {
   check(key: string): RateLimitDecision;
   size(): number;
 }
 
-export function createRateLimiter(options: RateLimiterOptions = {}): RateLimiter {
+export function createRateLimiter(options: RateLimiterOptions = {}): InMemoryRateLimiter {
   const perMinute = options.perMinute ?? RATE_LIMIT.perMinute;
   const perDay = options.perDay ?? RATE_LIMIT.perDay;
   const now = options.now ?? (() => Date.now());

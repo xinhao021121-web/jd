@@ -83,7 +83,7 @@ export function registerLlmRoute(app: Hono, deps: LlmRouteDeps): void {
     const ipHash = hashIp(ip);
 
     // 限流先于模型调用：超限不消耗任何模型额度
-    const decision = deps.limiter.check(ip);
+    const decision = await deps.limiter.check(ip);
     if (!decision.allowed) {
       deps.logger.warn({ event: 'rate_limited', ipHash, errorType: decision.limit });
       return c.json(
@@ -94,7 +94,7 @@ export function registerLlmRoute(app: Hono, deps: LlmRouteDeps): void {
 
     // 全局单日用量：跨过硬上限直接拒绝，跨过告警阈值写一条告警日志（PRD 4.1）
     if (deps.usage) {
-      const usage = deps.usage.check();
+      const usage = await deps.usage.check();
       if (usage.exceeded) {
         deps.logger.warn({ event: 'rate_limited', ipHash, errorType: 'DAILY_CAP' });
         return c.json(
@@ -107,7 +107,7 @@ export function registerLlmRoute(app: Hono, deps: LlmRouteDeps): void {
           event: 'usage_alert',
           ipHash,
           errorType: 'DAILY_CALL_ALERT',
-          elapsedMs: deps.usage.snapshot().count
+          elapsedMs: (await deps.usage.snapshot()).count
         });
       }
     }

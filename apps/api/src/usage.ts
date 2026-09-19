@@ -7,6 +7,8 @@ export interface UsageGuardOptions {
   alertThreshold?: number;
   dailyCap?: number;
   now?: () => number;
+  /** 从持久化快照恢复计数：跨实例或冷启动后仍按同一自然日累计 */
+  initial?: UsageSnapshot;
 }
 
 export interface UsageDecision {
@@ -23,6 +25,12 @@ export interface UsageSnapshot {
 export const DEFAULT_USAGE_LIMITS = { alertThreshold: 500, dailyCap: 1500 } as const;
 
 export interface UsageGuard {
+  check(): UsageDecision | Promise<UsageDecision>;
+  snapshot(): UsageSnapshot | Promise<UsageSnapshot>;
+}
+
+/** 内存实现同步返回，便于单测直接断言 */
+export interface InMemoryUsageGuard extends UsageGuard {
   check(): UsageDecision;
   snapshot(): UsageSnapshot;
 }
@@ -31,14 +39,14 @@ function dayKeyOf(timestamp: number): string {
   return new Date(timestamp).toISOString().slice(0, 10);
 }
 
-export function createUsageGuard(options: UsageGuardOptions = {}): UsageGuard {
+export function createUsageGuard(options: UsageGuardOptions = {}): InMemoryUsageGuard {
   const now = options.now ?? (() => Date.now());
   const alertThreshold = options.alertThreshold ?? DEFAULT_USAGE_LIMITS.alertThreshold;
   const dailyCap = options.dailyCap ?? DEFAULT_USAGE_LIMITS.dailyCap;
 
-  let day = dayKeyOf(now());
-  let count = 0;
-  let alerted = false;
+  let day = options.initial?.day ?? dayKeyOf(now());
+  let count = options.initial?.count ?? 0;
+  let alerted = options.initial?.alerted ?? false;
 
   const rollIfNeeded = (): void => {
     const current = dayKeyOf(now());
