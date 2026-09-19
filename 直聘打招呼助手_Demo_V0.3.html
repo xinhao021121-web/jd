@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>直聘打招呼助手 · 交互 Demo V0.3</title>
+<style>
+  :root{
+    --bg:#f4f6fb;
+    --card:#fff;
+    --line:#e5e9f2;
+    --text:#1b2333;
+    --muted:#6b7688;
+    --faint:#98a2b6;
+    --primary:#2f6bff;
+    --primary-dark:#1f52d6;
+    --ok:#15a34a;
+    --okbg:#e9f8ef;
+    --warn:#b45309;
+    --warnbg:#fdf3e3;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(20,30,60,.04), 0 10px 26px rgba(20,30,60,.06);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--bg);color:var(--text);font-size:14px;line-height:1.65;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  .page{display:flex;min-height:100vh;align-items:stretch;}
+
+  /* ---------- 侧边栏 ---------- */
+  .sidebar{
+    width:236px;flex:0 0 236px;background:#fff;border-right:1px solid var(--line);
+    display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+    transition:width .22s ease,flex-basis .22s ease;
+  }
+  .sidebar.collapsed{width:72px;flex-basis:72px;}
+  .side-head{display:flex;align-items:center;gap:11px;padding:20px 18px 16px;}
+  .mark{
+    width:40px;height:40px;border-radius:12px;flex:0 0 auto;
+    background:linear-gradient(135deg,#2f6bff,#7b5cff);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;
+    box-shadow:0 6px 16px rgba(47,107,255,.28);
+  }
+  .side-brand{min-width:0;}
+  .side-brand h1{margin:0;font-size:15px;letter-spacing:.2px;white-space:nowrap;}
+  .side-brand p{margin:2px 0 0;color:var(--faint);font-size:11.5px;white-space:nowrap;}
+  .side-nav{display:flex;flex-direction:column;gap:4px;padding:6px 12px;flex:1;overflow:hidden;}
+  .side-nav button{
+    display:flex;align-items:center;gap:11px;width:100%;border:0;background:none;
+    padding:10px 12px;border-radius:10px;font-family:inherit;font-size:13.5px;color:var(--muted);
+    cursor:pointer;transition:.18s;text-align:left;white-space:nowrap;
+  }
+  .side-nav button:hover:not(:disabled){background:#f3f6fd;color:var(--text);}
+  .side-nav button.active{background:#eef3ff;color:var(--primary);font-weight:500;}
+  .side-nav button:disabled{color:#c3cbd9;cursor:default;}
+  .side-nav .ico{flex:0 0 auto;width:20px;text-align:center;font-size:14px;}
+  .side-divider{height:1px;background:var(--line);margin:12px 4px;}
+  .side-group{padding:2px 12px 4px;color:var(--faint);font-size:11.5px;white-space:nowrap;}
+  .side-foot{padding:12px;border-top:1px solid var(--line);}
+  .collapse-btn{
+    display:flex;align-items:center;gap:11px;width:100%;border:0;background:none;
+    padding:10px 12px;border-radius:10px;font-family:inherit;font-size:13px;color:var(--faint);
+    cursor:pointer;white-space:nowrap;transition:.18s;
+  }
+  .collapse-btn:hover{background:#f3f6fd;color:var(--text);}
+  .sidebar.collapsed .side-brand,
+  .sidebar.collapsed .label,
+  .sidebar.collapsed .side-group{display:none;}
+  .sidebar.collapsed .side-head{justify-content:center;padding:20px 0 16px;}
+  .sidebar.collapsed .side-nav{padding:6px 10px;}
+  .sidebar.collapsed .side-nav button,
+  .sidebar.collapsed .collapse-btn{justify-content:center;padding:10px 0;}
+  .main{flex:1;min-width:0;padding:24px 28px 44px;}
+
+  .topbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:6px;}
+  .page-title{margin:0;font-size:17px;font-weight:600;}
+  .tag-demo{
+    background:#eef2ff;color:#3f4cbb;border:1px solid #dfe4ff;
+    padding:5px 11px;border-radius:999px;font-size:12px;white-space:nowrap;
+  }
+
+  /* ---------- 通用 ---------- */
+  .view{margin-top:22px;}
+  .view[hidden]{display:none;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px 18px;}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+  .card-head h2{margin:0;font-size:14.5px;font-weight:600;}
+  .card-head-right{display:flex;align-items:center;gap:12px;}
+  .count{color:var(--faint);font-size:12px;}
+  .link{background:none;border:0;padding:0;color:var(--primary);cursor:pointer;font-size:12.5px;font-family:inherit;}
+  .link:hover{text-decoration:underline;}
+  .link[hidden]{display:none;}
+  .hint-line{margin:10px 0 0;color:var(--faint);font-size:12.5px;}
+
+  textarea{
+    width:100%;min-height:186px;resize:vertical;border:1px solid var(--line);border-radius:10px;
+    padding:12px 13px;font-family:inherit;font-size:13px;line-height:1.7;color:var(--text);
+    background:#fcfdff;outline:none;transition:.2s;
+  }
+  textarea:focus{border-color:#b9cdff;background:#fff;box-shadow:0 0 0 3px rgba(47,107,255,.09);}
+  #resumeEditor{min-height:330px;}
+  #jd{min-height:180px;}
+
+  .actions{display:flex;gap:10px;}
+  .actions.right{justify-content:flex-end;margin-top:14px;}
+  .btn{
+    border:0;border-radius:11px;padding:12px 20px;font-size:14px;font-family:inherit;
+    cursor:pointer;font-weight:500;transition:.2s;
+  }
+  .btn.primary{
+    flex:1;background:linear-gradient(135deg,#2f6bff,#5b7cff);color:#fff;
+    box-shadow:0 6px 16px rgba(47,107,255,.26);
+  }
+  .btn.primary:hover:not(:disabled){background:linear-gradient(135deg,#1f52d6,#4a6bff);}
+  .btn.primary:disabled{background:#d9e0ee;color:#93a0b8;box-shadow:none;cursor:not-allowed;}
+  .btn.primary.fixed{flex:0 0 auto;}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--muted);}
+  .btn.ghost:hover{border-color:#cdd6e6;color:var(--text);}
+  .btn.small{padding:8px 15px;font-size:12.5px;border-radius:9px;background:#eef3ff;color:var(--primary);}
+  .btn.small:hover{background:#e2ebff;}
+
+  /* ---------- 简历页 ---------- */
+  .narrow{max-width:780px;margin:0 auto;}
+  .saved-bar{
+    display:flex;align-items:center;gap:8px;background:#f4fcf7;border:1px solid #d8eede;
+    color:var(--ok);border-radius:10px;padding:9px 14px;font-size:12.5px;margin-bottom:12px;
+  }
+  .saved-bar.empty{background:#fff8ec;border-color:#f2e2c4;color:var(--warn);}
+  .saved-bar b{font-weight:600;}
+
+  /* ---------- 导入（Demo V0.3 新增） ---------- */
+  .top-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .import-bar{
+    display:flex;align-items:flex-start;gap:9px;border-radius:10px;padding:9px 14px;
+    font-size:12.5px;margin-bottom:12px;border:1px solid var(--line);background:#f7f8fc;color:var(--muted);
+  }
+  .import-bar[hidden]{display:none;}
+  .import-bar.loading{background:#f2f6ff;border-color:#d7e2ff;color:var(--primary);}
+  .import-bar.ok{background:#f4fcf7;border-color:#d8eede;color:var(--ok);}
+  .import-bar.warn{background:#fff8ec;border-color:#f2e2c4;color:var(--warn);}
+  .import-bar .act{margin-left:auto;flex:0 0 auto;}
+  .import-bar .spin{
+    width:12px;height:12px;border:2px solid rgba(47,107,255,.25);border-top-color:var(--primary);
+    border-radius:50%;flex:0 0 auto;margin-top:4px;animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .block-preview{
+    display:flex;align-items:center;gap:9px;flex-wrap:wrap;background:#f7f8fc;border:1px dashed #d8dfec;
+    border-radius:10px;padding:9px 14px;font-size:12.5px;color:var(--muted);margin-bottom:12px;
+  }
+  .block-preview[hidden]{display:none;}
+  .chip2{background:#eef3ff;color:var(--primary);border-radius:7px;padding:2px 9px;font-size:12px;}
+  .chip2.lock{background:#f1f3f8;color:var(--faint);}
+  .drop-on{outline:2px dashed #b9cdff;outline-offset:-4px;background:#fbfdff;}
+  .file-input{display:none;}
+  .demo-help{font-size:12.5px;color:var(--muted);}
+  .demo-help summary{cursor:pointer;color:var(--primary);}
+  .demo-help ul{margin:10px 0 0;padding-left:18px;max-width:620px;}
+  .demo-help li{margin:3px 0;}
+  .modal{position:fixed;inset:0;background:rgba(20,30,60,.32);display:flex;align-items:center;justify-content:center;z-index:20;}
+  .modal[hidden]{display:none;}
+  .modal-card{background:#fff;border-radius:14px;padding:20px 22px;width:min(430px,92vw);box-shadow:0 18px 50px rgba(20,30,60,.24);}
+  .modal-card h3{margin:0 0 8px;font-size:15px;}
+  .modal-card p{margin:0 0 16px;color:var(--muted);font-size:13px;}
+
+  /* ---------- 生成页 ---------- */
+  .steps{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px;padding:0;}
+  .steps li{
+    display:flex;align-items:center;gap:8px;color:var(--faint);
+    background:#fff;border:1px solid var(--line);border-radius:999px;
+    padding:7px 15px 7px 8px;font-size:12.5px;transition:.25s;
+  }
+  .steps li b{
+    width:20px;height:20px;border-radius:50%;background:#eef1f7;color:var(--faint);
+    display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;
+  }
+  .steps li.on{color:var(--primary);border-color:#c8d8ff;background:#f5f8ff;}
+  .steps li.on b{background:var(--primary);color:#fff;}
+  .steps li.done{color:var(--ok);border-color:#c9ecd7;background:#f4fcf7;}
+  .steps li.done b{background:var(--ok);color:#fff;}
+
+  .workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:18px;align-items:start;}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0;}
+
+  .resume-bar{
+    display:flex;align-items:center;gap:10px;background:#f7f9ff;border:1px solid #e2e9fb;
+    border-radius:12px;padding:11px 14px;font-size:12.5px;color:var(--muted);
+  }
+  .resume-bar.warn{background:#fff8ec;border-color:#f2e2c4;color:var(--warn);}
+  .resume-bar .rb-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rb-label{color:var(--text);font-weight:500;}
+
+  /* ---------- 结果区 ---------- */
+  .result-card{min-height:520px;display:flex;flex-direction:column;}
+  .empty{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:10px;color:var(--faint);text-align:center;padding:50px 20px;
+  }
+  .empty .ico{width:58px;height:58px;border-radius:18px;background:#f1f4fb;display:flex;align-items:center;justify-content:center;font-size:26px;}
+  .empty p{margin:0;font-size:13px;}
+
+  .loading{flex:1;padding:8px 0;}
+  .skel{
+    height:96px;border-radius:12px;background:linear-gradient(90deg,#f1f4fa 25%,#e7ecf6 37%,#f1f4fa 63%);
+    background-size:400% 100%;animation:shine 1.3s ease infinite;margin-bottom:12px;
+  }
+  @keyframes shine{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
+  .loading p{color:var(--faint);font-size:12.5px;text-align:center;}
+
+  .match{border:1px solid var(--line);background:#fafbff;border-radius:12px;padding:12px 14px;margin-bottom:14px;}
+  .match-row{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+  .match-row + .match-row{margin-top:9px;padding-top:9px;border-top:1px dashed #e8ecf5;}
+  .match-label{color:var(--muted);font-size:12.5px;flex:0 0 84px;line-height:24px;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{font-size:12px;padding:3px 10px;border-radius:7px;line-height:1.5;}
+  .chip.ok{background:var(--okbg);color:var(--ok);}
+  .chip.warn{background:var(--warnbg);color:var(--warn);}
+  .chip.none{background:#f1f4fa;color:var(--faint);}
+
+  .msg-list{display:flex;flex-direction:column;gap:12px;}
+  .msg-card{border:1px solid var(--line);border-radius:13px;padding:13px 15px 11px;transition:.2s;background:#fff;}
+  .msg-card:hover{border-color:#cfdcff;box-shadow:0 6px 18px rgba(47,107,255,.08);}
+  .msg-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .msg-tag{font-size:11.5px;color:var(--primary);background:#eef3ff;padding:2px 9px;border-radius:6px;}
+  .wc{color:var(--faint);font-size:11.5px;}
+  .msg-body{
+    margin:0 0 0 -6px;font-size:13.5px;line-height:1.85;color:#26314a;outline:none;
+    border-radius:8px;padding:4px 6px;transition:.2s;
+  }
+  .msg-body:focus{background:#f7f9ff;box-shadow:0 0 0 2px rgba(47,107,255,.12);}
+  .msg-foot{display:flex;align-items:center;gap:10px;margin-top:9px;}
+  .copied{color:var(--ok);font-size:12px;}
+  .edit-flag{color:var(--warn);font-size:12px;}
+  [hidden]{display:none !important;}
+
+  /* ---------- 统计与提示 ---------- */
+  .stats{
+    margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:13px 18px;display:flex;align-items:center;gap:26px;flex-wrap:wrap;
+  }
+  .stats .title{color:var(--muted);font-size:12.5px;}
+  .stats .item{font-size:13px;color:var(--text);}
+  .stats .item b{font-size:16px;color:var(--primary);margin-right:3px;}
+  .stats .note{color:var(--faint);font-size:12px;margin-left:auto;}
+
+  .toast{
+    position:fixed;left:50%;bottom:34px;transform:translateX(-50%);
+    background:#1b2333;color:#fff;font-size:13px;padding:10px 20px;border-radius:10px;
+    box-shadow:0 10px 30px rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:.25s;z-index:9;
+  }
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+  /* ---------- 按 JD 改简历 ---------- */
+  .lock-bar{
+    display:flex;align-items:flex-start;gap:9px;background:#f4fcf7;border:1px solid #d8eede;
+    color:#166b35;border-radius:12px;padding:11px 14px;font-size:12.5px;margin-bottom:14px;
+  }
+  .tip-warn{
+    display:flex;align-items:flex-start;gap:9px;background:#fff8ec;border:1px solid #f2e2c4;
+    color:var(--warn);border-radius:12px;padding:11px 14px;font-size:12.5px;margin-bottom:14px;
+  }
+  .sug-group{margin-bottom:16px;}
+  .sug-group h3{
+    margin:0 0 9px;font-size:12.5px;color:var(--muted);font-weight:600;
+    display:flex;align-items:center;gap:8px;
+  }
+  .sug-card{
+    border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;
+    background:#fff;transition:.2s;
+  }
+  .sug-card:hover{border-color:#cfdcff;}
+  .sug-card.adopted{border-color:#bfe4cd;background:#fbfefc;}
+  .sug-head{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+  .sug-head input{width:15px;height:15px;accent-color:#2f6bff;cursor:pointer;flex:0 0 auto;}
+  .sug-head label{font-size:12.5px;color:var(--muted);cursor:pointer;}
+  .sug-diff{font-size:13px;line-height:1.75;}
+  .sug-diff .row{display:flex;gap:9px;margin-bottom:5px;}
+  .sug-diff .mark{
+    flex:0 0 auto;font-size:11px;padding:1px 7px;border-radius:6px;height:20px;line-height:18px;
+  }
+  .sug-diff .mark.before{background:#fdeeee;color:#b3261e;}
+  .sug-diff .mark.after{background:#e9f8ef;color:#15a34a;}
+  .sug-diff .txt{flex:1;min-width:0;word-break:break-word;}
+  .sug-diff .txt.del{color:#8a939f;text-decoration:line-through;text-decoration-color:#e0a9a6;}
+  .sug-reason{margin:8px 0 0;color:var(--faint);font-size:12px;}
+  .preview{
+    white-space:pre-wrap;font-size:12.5px;line-height:1.85;color:#26314a;
+    border:1px solid var(--line);border-radius:11px;padding:13px 15px;background:#fcfdff;
+    max-height:420px;overflow:auto;
+  }
+  .customs-list{display:flex;flex-direction:column;gap:8px;}
+  .custom-item{
+    display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:10px;
+    padding:9px 12px;font-size:12.5px;color:var(--muted);
+  }
+  .custom-item .ct{color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  /* ---------- 定制简历存档 ---------- */
+  .title-edit{display:flex;align-items:center;gap:10px;margin-bottom:13px;}
+  .title-edit label{font-size:12.5px;color:var(--muted);flex:0 0 auto;}
+  .title-edit input{
+    flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;padding:8px 12px;
+    font-family:inherit;font-size:13.5px;color:var(--text);background:#fcfdff;outline:none;transition:.2s;
+  }
+  .title-edit input:focus{border-color:#b9cdff;background:#fff;box-shadow:0 0 0 3px rgba(47,107,255,.09);}
+  .archive-list{display:flex;flex-direction:column;gap:8px;margin:12px 0;}
+  .archive-item{
+    border:1px solid var(--line);border-radius:11px;padding:11px 13px;cursor:pointer;transition:.18s;
+    position:relative;
+  }
+  .archive-item:hover{border-color:#cfdcff;background:#fafbff;}
+  .archive-item.active{border-color:#b9cdff;background:#f5f8ff;}
+  .ai-title{
+    font-size:13.5px;color:var(--text);font-weight:500;margin-bottom:3px;
+    padding-right:26px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .ai-del{
+    position:absolute;top:9px;right:9px;width:22px;height:22px;border:0;border-radius:6px;
+    background:transparent;color:var(--faint);cursor:pointer;font-size:12px;line-height:1;
+    opacity:0;transition:.18s;
+  }
+  .archive-item:hover .ai-del{opacity:1;}
+  .ai-del:hover{background:#fdeeee;color:#b3261e;}
+  .ai-meta{font-size:12px;color:var(--faint);}
+  .ai-note{
+    margin-top:7px;font-size:12px;color:var(--warn);background:var(--warnbg);
+    border-radius:7px;padding:4px 9px;display:inline-block;
+  }
+  @media (max-width:940px){
+    .sidebar{width:72px;flex-basis:72px;}
+    .sidebar .side-brand,
+    .sidebar .label,
+    .sidebar .side-group,
+    .sidebar .collapse-btn{display:none;}
+    .sidebar .side-head{justify-content:center;padding:20px 0 16px;}
+    .sidebar .side-nav button{justify-content:center;padding:10px 0;}
+    .main{padding:18px 16px 32px;}
+    .workspace{grid-template-columns:minmax(0,1fr);}
+    .result-card{min-height:auto;}
+    .stats .note{margin-left:0;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="side-head">
+      <div class="mark">招</div>
+      <div class="side-brand">
+        <h1>打招呼助手</h1>
+        <p>简历 + JD 生成话术</p>
+      </div>
+    </div>
+    <nav class="side-nav" id="nav">
+      <button data-view="resume"><span class="ico">📄</span><span class="label">我的简历</span></button>
+      <button data-view="custom"><span class="ico">📝</span><span class="label">按 JD 改简历</span></button>
+      <button data-view="archive"><span class="ico">📁</span><span class="label">定制简历</span></button>
+      <button data-view="generate" class="active"><span class="ico">✍️</span><span class="label">生成打招呼</span></button>
+      <div class="side-divider"></div>
+      <div class="side-group">后续规划</div>
+      <button disabled title="规划中"><span class="ico">🕘</span><span class="label">话术历史</span></button>
+      <button disabled title="规划中"><span class="ico">⚙️</span><span class="label">设置</span></button>
+    </nav>
+    <div class="side-foot">
+      <button class="collapse-btn" id="collapseBtn" title="收起侧边栏">
+        <span class="ico" id="collapseIco">«</span><span class="label">收起侧边栏</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <h2 class="page-title" id="pageTitle">生成打招呼</h2>
+      <div class="top-right">
+        <span class="tag-demo">交互 Demo V0.3 · 解析与识别均为本地模拟，不联网</span>
+        <details class="demo-help">
+          <summary>演示说明</summary>
+          <ul>
+            <li>简历页「导入文件」：解析结果只进草稿，必须点「保存简历」才生效；</li>
+            <li>草稿已有内容时会先二次确认；文件名带「扫描」可看解析失败的兜底提示；</li>
+            <li>JD 输入区「导入图片」：识别结果追加到 JD，并出现校对提示与「撤销本次导入」；</li>
+            <li>JD 输入框支持直接 Ctrl+V 粘贴截图，两页 JD 共用同一份内容；</li>
+            <li>手边没有文件时，可用下面的模拟入口直接跑一遍流程：
+              <button class="link" id="demoImportResume">模拟导入简历</button> ·
+              <button class="link" id="demoImportJdImage">模拟导入 JD 截图</button></li>
+          </ul>
+        </details>
+      </div>
+    </header>
+
+  <!-- ==================== 视图一：我的简历 ==================== -->
+  <section class="view" id="view-resume" hidden>
+    <div class="narrow">
+      <div class="card">
+        <div class="card-head">
+          <h2>我的简历</h2>
+          <div class="card-head-right">
+            <span class="count" id="resumeCount">0 字</span>
+            <button class="link" id="importResume">导入文件</button>
+            <button class="link" id="fillResume">填入示例</button>
+          </div>
+        </div>
+        <div class="saved-bar empty" id="savedBar">尚未保存简历</div>
+
+        <div class="import-bar" id="resumeImportBar" hidden></div>
+        <div class="block-preview" id="blockPreview" hidden></div>
+
+        <textarea id="resumeEditor" placeholder="把简历正文粘贴进来，包含工作经历、项目、技能即可，不必整理格式；也可以直接把 PDF / Word 文件拖到这里"></textarea>
+        <input class="file-input" type="file" id="resumeFile" accept=".txt,.md,.docx,.pdf" />
+        <div class="actions right">
+          <button class="btn ghost" id="revertResume">还原</button>
+          <button class="btn primary fixed" id="saveResume">保存简历</button>
+        </div>
+        <p class="hint-line">支持 TXT / Markdown / Word / 文本层 PDF 导入；文件只在本机解析、不上传；导入结果先进入草稿，保存后才成为简历</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 视图二：生成打招呼 ==================== -->
+  <section class="view" id="view-generate">
+    <ol class="steps" id="steps">
+      <li data-step="1"><b>1</b>粘贴 JD</li>
+      <li data-step="2"><b>2</b>生成话术</li>
+      <li data-step="3"><b>3</b>复制发送</li>
+    </ol>
+
+    <main class="workspace">
+      <section class="col">
+        <div class="resume-bar" id="resumeBar"></div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>岗位 JD</h2>
+            <div class="card-head-right">
+              <span class="count" id="jdCount">0 字</span>
+              <button class="link" id="importJdImage">导入图片</button>
+              <button class="link" id="fillJd">填入示例</button>
+            </div>
+          </div>
+          <textarea id="jd" placeholder="把岗位职责与任职要求完整粘贴进来，硬性条件写得越全，生成越准；也可以导入招聘截图，或直接 Ctrl+V 粘贴图片"></textarea>
+          <input class="file-input" type="file" id="jdImage" accept="image/png,image/jpeg,image/webp" />
+          <div class="import-bar" id="jdImportBar" hidden></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" id="generate" disabled>生成打招呼话术</button>
+          <button class="btn ghost" id="clearJd">清空</button>
+        </div>
+        <p class="hint-line" id="inputHint"></p>
+      </section>
+
+      <section class="col">
+        <div class="card result-card">
+          <div class="card-head">
+            <h2>生成结果</h2>
+            <button class="link" id="regen" hidden>重新生成</button>
+          </div>
+
+          <div class="empty" id="emptyState">
+            <div class="ico">✍️</div>
+            <p>粘贴岗位 JD 后，点击「生成打招呼话术」</p>
+            <p>这里会给出 3 条可直接发送的候选话术</p>
+          </div>
+
+          <div class="loading" id="loadingState" hidden>
+            <div class="skel"></div>
+            <div class="skel"></div>
+            <div class="skel"></div>
+            <p>正在比对简历与岗位要求…</p>
+          </div>
+
+          <div id="resultState" hidden>
+            <div class="match" id="matchBox"></div>
+            <div class="msg-list" id="msgList"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="stats">
+      <span class="title">本次会话</span>
+      <span class="item"><b id="statGen">0</b>次生成</span>
+      <span class="item"><b id="statCopy">0</b>次复制</span>
+      <span class="item"><b id="statRate">—</b>零修改直接复制率</span>
+      <span class="note">该指标是 MVP 的核心验收标准，目标 ≥ 50%</span>
+    </footer>
+  </section>
+
+  <section class="view" id="view-custom" hidden>
+    <div class="workspace">
+      <section class="col">
+        <div class="resume-bar" id="resumeBar2"></div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>目标岗位 JD</h2>
+            <div class="card-head-right">
+              <span class="count" id="jd2Count">0 字</span>
+              <button class="link" id="importJdImage2">导入图片</button>
+              <button class="link" id="fillJd2">填入示例</button>
+            </div>
+          </div>
+          <textarea id="jd2" placeholder="粘贴目标岗位的 JD，用来判断哪些经历需要突出；也可以用招聘截图导入"></textarea>
+          <input class="file-input" type="file" id="jdImage2" accept="image/png,image/jpeg,image/webp" />
+          <div class="import-bar" id="jdImportBar2" hidden></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" id="makeSuggest" disabled>生成改写建议</button>
+          <button class="btn ghost" id="clearCustom">清空</button>
+        </div>
+        <p class="hint-line" id="customHint"></p>
+      </section>
+
+      <section class="col">
+        <div class="card">
+          <div class="card-head">
+            <h2>改写建议</h2>
+            <span class="count" id="adoptCount">已采纳 0 条</span>
+          </div>
+          <div class="lock-bar">
+            <span>🔒</span>
+            <span><b>个人信息与教育经历已锁定</b>，本次改写只会作用于项目经历、实习 / 工作经历、自我评价、专业技能；未识别的小标题同样不会改动。</span>
+          </div>
+          <div class="empty" id="sugEmpty">
+            <div class="ico">🧩</div>
+            <p>粘贴 JD 后点击「生成改写建议」</p>
+            <p>每条建议都可以单独采纳或忽略</p>
+          </div>
+          <div id="sugList" hidden></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>定制简历预览</h2>
+            <button class="link" id="copyCustom">复制全文</button>
+          </div>
+          <div class="preview" id="customPreview">还没有生成改写建议</div>
+          <div class="actions right">
+            <button class="btn primary fixed" id="saveCustom" disabled>保存为定制版本</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>定制简历</h2>
+            <button class="link" id="gotoArchive">去「定制简历」页查看</button>
+          </div>
+          <p class="hint-line" id="customsEmpty">保存后会单独存放在「定制简历」页，与原始简历分开</p>
+        </div>
+      </section>
+    </div>
+  </section>
+  <section class="view" id="view-archive" hidden>
+    <div class="workspace">
+      <section class="col">
+        <div class="card">
+          <div class="card-head">
+            <h2>定制简历</h2>
+            <span class="count" id="archiveCount">共 0 份</span>
+          </div>
+          <p class="hint-line">每份定制简历都是针对某个岗位 JD 生成的，只适合投递那个岗位，因此与原始简历分开存放</p>
+          <div class="archive-list" id="archiveList"></div>
+          <p class="hint-line" id="archiveEmpty">还没有定制简历，去「按 JD 改简历」生成一份</p>
+        </div>
+      </section>
+
+      <section class="col">
+        <div class="card">
+          <div class="card-head">
+            <h2>定制简历内容</h2>
+            <button class="link" id="copyArchive">复制全文</button>
+          </div>
+          <div class="empty" id="archiveDetailEmpty">
+            <div class="ico">📁</div>
+            <p>从左侧选择一份定制简历查看</p>
+          </div>
+          <div id="archiveDetail" hidden>
+            <div class="title-edit">
+              <label for="archiveTitle">记录名称</label>
+              <input id="archiveTitle" type="text" maxlength="40" placeholder="给这份定制简历起个好认的名字">
+            </div>
+            <div class="preview" id="archiveText"></div>
+            <div class="card-head" style="margin:16px 0 8px">
+              <h2>对应岗位 JD</h2>
+            </div>
+            <div class="preview" id="archiveJd"></div>
+            <div class="actions right">
+              <button class="btn ghost fixed" id="deleteArchive">删除这份</button>
+            </div>
+          </div>
+          <p class="hint-line">记录名称可以直接修改，改完自动保存；留空会自动恢复为从 JD 解析的名称</p>
+        </div>
+      </section>
+    </div>
+  </section>
+  </div>
+</div>
+<div class="modal" id="modal" hidden>
+  <div class="modal-card">
+    <h3 id="modalTitle">确认操作</h3>
+    <p id="modalText"></p>
+    <div class="actions right">
+      <button class="btn ghost" id="modalCancel">取消</button>
+      <button class="btn primary fixed" id="modalOk">继续导入</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- 示例数据 ---------------- */
+const SAMPLE_RESUME = `李某某 | Java 后端开发工程师 | 3 年经验
+
+工作经历
+2023.06 - 至今  某电商科技有限公司  后端开发工程师
+- 负责订单中心核心链路开发，使用 Java、Spring Boot 搭建订单创建与履约服务
+- 主导订单查询接口性能优化，通过 Redis 缓存与 SQL 优化将 P99 响应时间从 800ms 降到 180ms
+- 参与微服务拆分，基于 Kafka 实现订单状态异步通知，日均处理消息 40 万条
+2021.07 - 2023.05  某信息服务公司  后端开发工程师
+- 使用 Java、MySQL 开发用户权益系统，支撑日均 20 万次调用
+- 参与系统容器化改造，基于 Docker 与 K8s 完成服务部署
+
+专业技能
+Java、Spring Boot、MySQL、Redis、Kafka、微服务、Docker / Kubernetes
+
+教育背景
+某某大学  计算机科学与技术  本科  2021 届`;
+
+const SAMPLE_JD = `公司：某电商科技有限公司
+岗位：Java 后端开发工程师（高级）
+
+岗位职责
+1. 负责核心业务系统的后端设计与开发，保障系统高可用
+2. 参与微服务架构演进，持续优化系统性能与稳定性
+3. 参与技术方案评审，推动技术难点攻关
+
+任职要求
+1. 3 年以上 Java 开发经验，熟悉 Spring Boot、MySQL、Redis
+2. 有高并发、分布式系统实践经验，熟悉消息队列（Kafka / RocketMQ）
+3. 熟悉 Docker、Kubernetes 等容器化技术
+4. 有大型电商或交易类系统经验者优先
+5. 具备良好的沟通能力与团队协作意识`;
+
+/* ---------------- 关键词库 ---------------- */
+const SKILLS = [
+  {name:'Java', kw:['java']},
+  {name:'Spring Boot', kw:['spring boot','springboot','spring']},
+  {name:'MySQL', kw:['mysql']},
+  {name:'Redis', kw:['redis']},
+  {name:'Kafka / 消息队列', kw:['kafka','rocketmq','消息队列']},
+  {name:'微服务', kw:['微服务']},
+  {name:'高并发', kw:['高并发']},
+  {name:'分布式', kw:['分布式']},
+  {name:'性能优化', kw:['性能优化','调优']},
+  {name:'Docker / K8s', kw:['docker','kubernetes','k8s','容器化','容器']},
+  {name:'Go', kw:['golang','go 语言','go语言']},
+  {name:'Python', kw:['python']},
+  {name:'前端（Vue / React）', kw:['vue','react','前端']},
+  {name:'数据分析', kw:['数据分析','bi 报表','指标体系']},
+  {name:'产品设计', kw:['产品设计','需求分析','原型设计','产品经理']},
+  {name:'项目管理', kw:['项目管理','跨部门协作','项目推进']},
+  {name:'用户研究', kw:['用户研究','用户调研','用户访谈']},
+  {name:'增长与转化', kw:['ab 测试','a/b 测试','留存','转化率','增长']}
+];
+
+/* ---------------- 小工具 ---------------- */
+const $ = (id) => document.getElementById(id);
+const count = (s) => [...(s || '').trim()].length;
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => (
+  {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+));
+
+function hasKeyword(text, kw){
+  const t = (text || '').toLowerCase();
+  const k = kw.toLowerCase();
+  if (/^[a-z0-9 +#./-]+$/.test(k)) {
+    const esc = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('(^|[^a-z0-9])' + esc + '([^a-z0-9]|$)', 'i').test(t);
+  }
+  return t.includes(k);
+}
+
+function extractSkills(text){
+  return SKILLS.filter((s) => s.kw.some((k) => hasKeyword(text, k))).map((s) => s.name);
+}
+
+function inferRole(text){
+  const t = (text || '').toLowerCase();
+  if (/产品经理|产品设计|需求分析/.test(t)) return '产品经理';
+  if (/数据分析|bi|指标体系/.test(t)) return '数据分析师';
+  if (/前端|vue|react/.test(t)) return '前端开发';
+  if (/java|golang|python|后端|服务端|微服务/.test(t)) return '后端开发';
+  return '相关方向';
+}
+
+function extractAchievements(resume){
+  const sentences = (resume || '')
+    .split(/[\n。；;]/)
+    .map((s) => s.replace(/^[-•\s]+/, '').trim())
+    .filter((s) => s.length >= 10);
+  const scored = sentences.filter((s) =>
+    /\d+\s*(%|ms|万|亿|倍)/.test(s) || /从\s*\d+.*(到|至|降到|提升到)/.test(s) || /提升|降低|优化|缩短/.test(s)
+  );
+  const list = scored.length ? scored : sentences;
+  return list.slice(0, 3);
+}
+
+function shorten(s, max){
+  if (!s) return '';
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max);
+  const i = Math.max(cut.lastIndexOf('，'), cut.lastIndexOf(','));
+  return (i > 12 ? cut.slice(0, i) : cut) + '…';
+}
+
+function formatTime(ts){
+  const d = new Date(ts);
+  const p = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + '/' + p(d.getMonth() + 1) + '/' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+/* ---------------- 状态 ---------------- */
+const LS_RESUME = 'greet_demo_resume_v2';
+const LS_RESUME_AT = 'greet_demo_resume_at_v2';
+const LS_JD = 'greet_demo_jd_v2';
+const LS_CUSTOMS = 'greet_demo_customs_v1';
+const MIN_LEN = 20;
+
+const state = {
+  resume: '',
+  savedAt: 0,
+  jd: '',
+  customs: [],
+  selectedCustom: '',
+  suggestions: [],
+  stats: {gen: 0, copy: 0, dirtyCopy: 0},
+  edited: {}
+};
+
+const resumeEditor = $('resumeEditor');
+const jdEl = $('jd');
+const jd2El = $('jd2');
+const genBtn = $('generate');
+
+let toastTimer = null;
+function toast(msg){
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  if (toastTimer) window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => el.classList.remove('on'), 1800);
+}
+
+function persist(){
+  try {
+    localStorage.setItem(LS_RESUME, state.resume);
+    localStorage.setItem(LS_RESUME_AT, String(state.savedAt));
+    localStorage.setItem(LS_JD, state.jd);
+    localStorage.setItem(LS_CUSTOMS, JSON.stringify(state.customs));
+  } catch (e) { /* 无痕模式等场景下不可用，忽略 */ }
+}
+
+/* ---------------- 视图切换 ---------------- */
+function switchView(name){
+  const views = document.querySelectorAll('.view');
+  for (let i = 0; i < views.length; i++) {
+    views[i].hidden = views[i].id !== 'view-' + name;
+  }
+  const btns = $('nav').querySelectorAll('button');
+  for (let i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('active', btns[i].dataset.view === name);
+  }
+  $('pageTitle').textContent = name === 'resume' ? '我的简历'
+    : (name === 'custom' ? '按 JD 改简历'
+    : (name === 'archive' ? '定制简历' : '生成打招呼'));
+}
+
+/* ---------------- 侧边栏收起 ---------------- */
+const LS_COLLAPSED = 'greet_demo_sidebar_collapsed';
+
+function setCollapsed(collapsed){
+  $('sidebar').classList.toggle('collapsed', collapsed);
+  $('collapseIco').textContent = collapsed ? '»' : '«';
+  $('collapseBtn').title = collapsed ? '展开侧边栏' : '收起侧边栏';
+  try { localStorage.setItem(LS_COLLAPSED, collapsed ? '1' : '0'); } catch (e) { /* 忽略 */ }
+}
+
+/* ---------------- 简历页 ---------------- */
+function renderSavedBar(){
+  const bar = $('savedBar');
+  if (state.resume) {
+    bar.classList.remove('empty');
+    bar.innerHTML = '已保存 · <b>' + escapeHtml(formatTime(state.savedAt)) + '</b> · ' + count(state.resume) + ' 字';
+  } else {
+    bar.classList.add('empty');
+    bar.textContent = '尚未保存简历，填写后点击「保存简历」';
+  }
+}
+
+function renderResumeBar(){
+  const bar = $('resumeBar');
+  if (state.resume) {
+    bar.classList.remove('warn');
+    bar.innerHTML = '<span class="rb-label">当前简历</span>'
+      + '<span class="rb-text">' + escapeHtml(state.resume.replace(/\s+/g, ' ').slice(0, 46)) + '…</span>'
+      + '<span>' + count(state.resume) + ' 字</span>'
+      + '<button class="link" data-goto="resume">编辑</button>';
+  } else {
+    bar.classList.add('warn');
+    bar.innerHTML = '<span class="rb-label">还没有简历</span>'
+      + '<span class="rb-text">先生成一次简历提交，之后每次生成都会自动读取</span>'
+      + '<button class="link" data-goto="resume">去填写</button>';
+  }
+}
+
+function refreshResumeEditor(){
+  const n = count(resumeEditor.value);
+  $('resumeCount').textContent = n + ' 字';
+  const changed = resumeEditor.value.trim() !== state.resume;
+  $('saveResume').disabled = n < MIN_LEN || !changed;
+}
+
+function saveResume(){
+  const text = resumeEditor.value.trim();
+  if (count(text) < MIN_LEN) {
+    toast('简历内容太短，至少 ' + MIN_LEN + ' 字');
+    return;
+  }
+  state.resume = text;
+  state.savedAt = Date.now();
+  persist();
+  renderSavedBar();
+  renderResumeBar();
+  $('resumeBar2').innerHTML = $('resumeBar').innerHTML;
+  refreshResumeEditor();
+  refreshGenerateState();
+  refreshCustomState();
+  hideImportBar($('resumeImportBar'));
+  $('blockPreview').hidden = true;
+  toast('简历已保存，生成时会自动读取');
+}
+
+/* ---------------- 生成页 ---------------- */
+function setStep(n, mode){
+  const li = document.querySelector('.steps li[data-step="' + n + '"]');
+  if (!li) return;
+  li.classList.remove('on', 'done');
+  if (mode) li.classList.add(mode);
+}
+
+function refreshGenerateState(){
+  const j = count(jdEl.value);
+  $('jdCount').textContent = j + ' 字';
+  const hasResume = !!state.resume;
+  const ready = hasResume && j >= MIN_LEN;
+  genBtn.disabled = !ready;
+  if (!hasResume) {
+    $('inputHint').textContent = '还没有保存简历，先到「我的简历」填写并保存';
+  } else if (j < MIN_LEN) {
+    $('inputHint').textContent = '粘贴岗位 JD 后即可生成（至少 ' + MIN_LEN + ' 字）';
+  } else {
+    $('inputHint').textContent = '内容已就绪，点击生成 3 条候选话术';
+  }
+  setStep(1, j >= MIN_LEN ? 'done' : 'on');
+}
+
+function buildResult(){
+  const resume = state.resume;
+  const jd = state.jd;
+  const jdSkills = extractSkills(jd);
+  const resumeSkills = extractSkills(resume);
+  const matched = jdSkills.filter((s) => resumeSkills.includes(s));
+  const missing = jdSkills.filter((s) => !resumeSkills.includes(s));
+  const years = (resume.match(/(\d{1,2})\s*年/) || [])[1] || '';
+  const role = inferRole(resume + ' ' + jd);
+  const achieved = shorten(extractAchievements(resume)[0] || '', 64);
+
+  const core = (matched.length ? matched : resumeSkills).slice(0, 3).join('、') || '相关技能';
+  const focus = (matched.length ? matched : jdSkills).slice(0, 2).join('、') || '岗位方向';
+  const expText = (years ? years + '年' : '多年') + role;
+  const lowMatch = matched.length === 0;
+
+  const m1 = '您好，我有' + expText + '经验，' + core + '是我日常工作的主要部分。'
+    + (achieved ? achieved + '。' : '')
+    + (lowMatch
+        ? '看到岗位方向与我的经历不完全是同一方向，但希望有机会了解下具体需求，也方便您判断是否有可迁移的空间。'
+        : '看到岗位在找' + focus + '方向的人，我的经历和这个岗位比较对口，方便的话想和您具体聊聊。');
+
+  const m2 = lowMatch
+    ? '您好，我目前主要做' + core + '相关工作，和岗位要求的' + focus + '方向有差异，但希望能有机会了解一下具体需求，判断是否有可迁移的空间。'
+    : (achieved
+        ? '您好，' + achieved + '。岗位里提到的' + focus + '正好是我一直在做的方向，希望能有机会和您详细沟通一下。'
+        : '您好，我目前主要做' + core + '相关工作，和岗位要求的' + focus + '方向比较贴近，希望能有机会和您详细沟通一下。');
+
+  const m3 = lowMatch
+    ? '您好，' + expText + '，主要做' + core + '相关工作，希望能有机会了解一下岗位的具体需求，方便聊聊吗？'
+    : '您好，' + expText + '，熟悉' + core + '，和岗位要求比较匹配，方便聊聊吗？';
+
+  return {
+    matched: matched,
+    missing: missing,
+    lowMatch: lowMatch,
+    messages: [
+      {style: '技能匹配型', text: m1},
+      {style: '经历相关型', text: m2},
+      {style: '简短直接型', text: m3}
+    ]
+  };
+}
+
+function chips(list, cls){
+  if (!list.length) return '<span class="chip none">无</span>';
+  return list.map((s) => '<span class="chip ' + cls + '">' + escapeHtml(s) + '</span>').join('');
+}
+
+function render(result){
+  const box = $('matchBox');
+  let html = '<div class="match-row"><span class="match-label">JD 关键要求</span><div class="chips">'
+    + chips(extractSkills(state.jd), 'none') + '</div></div>'
+    + '<div class="match-row"><span class="match-label">简历已命中</span><div class="chips">'
+    + chips(result.matched, 'ok') + '</div></div>';
+  if (result.missing.length) {
+    html += '<div class="match-row"><span class="match-label">简历未覆盖</span><div class="chips">'
+      + chips(result.missing, 'warn') + '</div></div>';
+  }
+  if (result.lowMatch) {
+    html += '<div class="match-row"><span class="match-label">提示</span><div class="chips">'
+      + '<span class="chip warn">简历与该岗位直接匹配点较少，话术已尽量贴合，未编造简历中没有的经历</span></div></div>';
+  }
+  box.innerHTML = html;
+
+  $('msgList').innerHTML = result.messages.map((m, i) => (
+    '<article class="msg-card" data-index="' + i + '">'
+    + '<div class="msg-head"><span class="msg-tag">' + escapeHtml(m.style) + '</span>'
+    + '<span class="wc">' + count(m.text) + ' 字</span></div>'
+    + '<p class="msg-body" contenteditable="true" spellcheck="false">' + escapeHtml(m.text) + '</p>'
+    + '<div class="msg-foot">'
+    + '<button class="btn small copy">复制话术</button>'
+    + '<span class="copied" hidden>已复制</span>'
+    + '<span class="edit-flag" hidden>已编辑</span>'
+    + '</div></article>'
+  )).join('');
+
+  state.edited = {};
+}
+
+function generate(){
+  if (!state.resume) {
+    toast('请先到「我的简历」保存简历');
+    switchView('resume');
+    return;
+  }
+  if (count(state.jd) < MIN_LEN) {
+    toast('请先粘贴岗位 JD（至少 ' + MIN_LEN + ' 字）');
+    return;
+  }
+
+  $('emptyState').hidden = true;
+  $('resultState').hidden = true;
+  $('loadingState').hidden = false;
+  genBtn.disabled = true;
+  $('regen').hidden = true;
+
+  window.setTimeout(() => {
+    render(buildResult());
+    $('loadingState').hidden = true;
+    $('resultState').hidden = false;
+    $('regen').hidden = false;
+    genBtn.disabled = false;
+    state.stats.gen += 1;
+    setStep(2, 'done');
+    renderStats();
+  }, 1300);
+}
+
+/* ---------------- 复制与统计 ---------------- */
+async function copyText(text){
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+    ta.remove();
+    return ok;
+  }
+}
+
+function renderStats(){
+  const s = state.stats;
+  $('statGen').textContent = s.gen;
+  $('statCopy').textContent = s.copy;
+  const clean = s.copy - s.dirtyCopy;
+  $('statRate').textContent = s.copy ? Math.round((clean / s.copy) * 100) + '%' : '—';
+}
+
+/* ---------------- 按 JD 改简历 ---------------- */
+const EDITABLE_TITLES = ['项目经历','项目经验','工作经历','实习经历','实习经验','自我评价','个人优势','专业技能','技能特长','技能清单'];
+const HEADING_RE = /^\s*[【\[]?\s*(个人信息|基本信息|教育经历|教育背景|学历|项目经历|项目经验|工作经历|实习经历|实习经验|自我评价|个人优势|专业技能|技能特长|技能清单)\s*[】\]]?\s*[:：]?\s*$/;
+
+function isEditableTitle(title){
+  return EDITABLE_TITLES.indexOf(title) >= 0;
+}
+
+/** 把简历切成区块；未识别的小标题一律按 locked 处理 */
+function parseResume(text){
+  const blocks = [];
+  let cur = {title: '（简历开头）', kind: 'locked', lines: []};
+  blocks.push(cur);
+  (text || '').split('\n').forEach((line) => {
+    const m = line.match(HEADING_RE);
+    if (m) {
+      cur = {title: m[1], kind: isEditableTitle(m[1]) ? 'editable' : 'locked', lines: [line]};
+      blocks.push(cur);
+    } else {
+      cur.lines.push(line);
+    }
+  });
+  return blocks;
+}
+
+function pickTerm(pool){
+  const priority = ['高并发','分布式','性能优化','微服务','数据分析','产品设计'];
+  for (let i = 0; i < priority.length; i++) {
+    if (pool.indexOf(priority[i]) >= 0) return priority[i];
+  }
+  return pool[0] || '';
+}
+
+function buildResumeSuggestions(){
+  const blocks = parseResume(state.resume);
+  const jdSkills = extractSkills(state.jd);
+  const resumeSkills = extractSkills(state.resume);
+  const matched = jdSkills.filter((s) => resumeSkills.indexOf(s) >= 0);
+  const missing = jdSkills.filter((s) => resumeSkills.indexOf(s) < 0);
+  const term = pickTerm(matched);
+  const suggestions = [];
+
+  const push = (section, bi, li, before, after, reason) => {
+    suggestions.push({
+      id: 's' + suggestions.length,
+      section: section,
+      blockIndex: bi,
+      lineIndex: li,
+      before: before,
+      after: after,
+      reason: reason,
+      adopted: false
+    });
+  };
+
+  blocks.forEach((b, bi) => {
+    if (b.kind !== 'editable') return;
+    b.lines.forEach((line, li) => {
+      if (HEADING_RE.test(line)) return;
+      line.split(/(?<=[。；;])/).forEach((p) => {
+        const s = p.trim();
+        if (s.length < 8) return;
+        if (/\d+\s*(ms|%|万|倍)/.test(s) && term && s.indexOf(term) < 0) {
+          push(b.title, bi, li, s, s.replace(/[。]?$/, '') + '（' + term + '场景）',
+            '这句已有量化结果，但没有点出岗位关注的「' + term + '」，补一个标签即可，不改变事实');
+        }
+      });
+    });
+  });
+
+  const skillBlock = blocks.filter((b) => b.kind === 'editable' && /专业技能|技能特长|技能清单/.test(b.title))[0];
+  if (skillBlock) {
+    const listed = extractSkills(skillBlock.lines.join('\n'));
+    const candidates = resumeSkills.filter((s) => listed.indexOf(s) < 0);
+    const li = skillBlock.lines.findIndex((l) => l.trim() && !HEADING_RE.test(l));
+    if (candidates.length && li >= 0) {
+      const before = skillBlock.lines[li].trim();
+      push(skillBlock.title, blocks.indexOf(skillBlock), li, before,
+        before.replace(/\s*$/, '') + '、' + candidates.join('、'),
+        '「' + candidates.join('、') + '」在简历正文里有依据，但没有列进技能清单，补上让匹配更直接');
+    }
+  }
+
+  const selfBlock = blocks.filter((b) => b.kind === 'editable' && /自我评价|个人优势/.test(b.title))[0];
+  if (selfBlock && term) {
+    const body = selfBlock.lines.join('\n');
+    const li = selfBlock.lines.findIndex((l) => l.trim() && !HEADING_RE.test(l));
+    if (li >= 0 && !matched.some((t) => body.indexOf(t) >= 0)) {
+      const before = selfBlock.lines[li].trim();
+      push(selfBlock.title, blocks.indexOf(selfBlock), li, before,
+        before.replace(/[。]?$/, '') + '，熟悉' + matched.slice(0, 3).join('、') + '。',
+        '自我评价里没有出现岗位关注的关键词，点出来能让招聘方第一眼看到匹配点');
+    }
+  }
+
+  return {blocks: blocks, suggestions: suggestions, matched: matched, missing: missing};
+}
+
+/** 只改写可编辑区块，锁定区块原样输出 */
+function composeCustomResume(){
+  const blocks = parseResume(state.resume);
+  const adopted = state.suggestions.filter((s) => s.adopted);
+  return blocks.map((b, bi) => {
+    if (b.kind !== 'editable') return b.lines.join('\n');
+    const lines = b.lines.slice();
+    adopted.filter((s) => s.blockIndex === bi).forEach((s) => {
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].indexOf(s.before) >= 0) {
+          lines[i] = lines[i].replace(s.before, s.after);
+          break;
+        }
+      }
+    });
+    return lines.join('\n');
+  }).join('\n');
+}
+
+function renderPreview(){
+  const text = state.suggestions.length ? composeCustomResume() : '';
+  $('customPreview').textContent = text || '还没有生成改写建议';
+  const n = state.suggestions.filter((s) => s.adopted).length;
+  $('adoptCount').textContent = '已采纳 ' + n + ' 条';
+  $('saveCustom').disabled = n === 0;
+}
+
+function renderSuggestions(result){
+  const wrap = $('sugList');
+  $('sugEmpty').hidden = true;
+  wrap.hidden = false;
+
+  if (!result.suggestions.length) {
+    wrap.innerHTML = '<div class="empty"><div class="ico">🤔</div>'
+      + '<p>没有找到可以安全改写的点</p><p>简历与岗位的匹配度可能已经很好，或简历文本偏短</p></div>';
+    renderPreview();
+    return;
+  }
+
+  let html = '';
+  if (result.missing.length) {
+    html += '<div class="tip-warn"><span>⚠️</span><span>岗位要求的「'
+      + escapeHtml(result.missing.join('、')) + '」在简历里找不到依据，建议不要写入简历。</span></div>';
+  }
+
+  const titles = [];
+  const groups = {};
+  result.suggestions.forEach((s) => {
+    if (!groups[s.section]) { groups[s.section] = []; titles.push(s.section); }
+    groups[s.section].push(s);
+  });
+
+  html += titles.map((title) => (
+    '<div class="sug-group"><h3>' + escapeHtml(title)
+    + '<span class="chip none">' + groups[title].length + ' 条建议</span></h3>'
+    + groups[title].map((s) => (
+      '<div class="sug-card" data-id="' + s.id + '">'
+      + '<div class="sug-head"><input type="checkbox" id="cb-' + s.id + '">'
+      + '<label for="cb-' + s.id + '">采纳这条建议</label></div>'
+      + '<div class="sug-diff">'
+      + '<div class="row"><span class="mark before">原</span><span class="txt del">' + escapeHtml(s.before) + '</span></div>'
+      + '<div class="row"><span class="mark after">改</span><span class="txt">' + escapeHtml(s.after) + '</span></div>'
+      + '</div>'
+      + '<p class="sug-reason">' + escapeHtml(s.reason) + '</p>'
+      + '</div>'
+    )).join('')
+    + '</div>'
+  )).join('');
+
+  wrap.innerHTML = html;
+  renderPreview();
+}
+
+/** 从 JD 里提取「公司 · 岗位」作为记录名称，便于辨认对应的是哪个岗位 */
+function extractJdTitle(jd){
+  const lines = (jd || '').split('\n').map((l) => l.trim()).filter(Boolean);
+
+  const pick = (re) => {
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i].match(re);
+      if (m && m[1]) return m[1].trim().replace(/[（(].*?[)）]\s*$/, '').slice(0, 22);
+    }
+    return '';
+  };
+
+  let company = pick(/(?:公司名称|所属公司|公司|企业)\s*[:：]\s*([^\n，,。;；]{2,40})/);
+  let role = pick(/(?:职位名称|招聘岗位|岗位名称|岗位|职位)\s*[:：]\s*([^\n，,。;；]{2,40})/);
+
+  const COMPANY_WORD = /(有限公司|集团|科技|网络|信息|软件|数据|智能|银行|证券|研究院|工作室)/;
+  const ROLE_WORD = /(工程师|经理|专员|设计师|主管|总监|架构师|开发|运营|分析师|研究员)/;
+
+  if (!company) {
+    const hit = lines.slice(0, 6).filter((l) => COMPANY_WORD.test(l) && l.length <= 26)[0];
+    if (hit) company = hit.replace(/[（(].*?[)）]\s*$/, '').slice(0, 22);
+  }
+  if (!role) {
+    const hit = lines.slice(0, 8).filter((l) => ROLE_WORD.test(l) && !COMPANY_WORD.test(l) && l.length <= 26)[0];
+    if (hit) role = hit.replace(/[（(].*?[)）]\s*$/, '').slice(0, 22);
+  }
+
+  const parts = [company, role].filter(Boolean);
+  if (parts.length) return parts.join(' · ');
+  return (lines[0] || '未命名岗位').slice(0, 26);
+}
+
+function saveCustom(){
+  const adopted = state.suggestions.filter((s) => s.adopted);
+  if (!adopted.length) return;
+  state.customs.unshift({
+    id: 'c' + Date.now() + Math.floor(Math.random() * 10000),
+    at: Date.now(),
+    title: extractJdTitle(state.jd),
+    jd: state.jd,
+    adopted: adopted.length,
+    text: composeCustomResume()
+  });
+  state.customs = state.customs.slice(0, 20);
+  state.selectedCustom = '';
+  persist();
+  renderArchive();
+  toast('已保存到「定制简历」：' + state.customs[0].title);
+}
+
+function renderCustoms(){
+  renderArchive();
+}
+
+/** 生成页与改简历页共用同一份 JD */
+function syncJd(source){
+  state.jd = source.value;
+  if (source !== jdEl) jdEl.value = state.jd;
+  if (source !== jd2El) jd2El.value = state.jd;
+  refreshGenerateState();
+  refreshCustomState();
+  persist();
+}
+
+function refreshCustomState(){
+  const n = count(state.jd);
+  $('jd2Count').textContent = n + ' 字';
+  $('makeSuggest').disabled = !state.resume || n < MIN_LEN;
+  if (!state.resume) {
+    $('customHint').textContent = '还没有保存简历，先到「我的简历」填写并保存';
+  } else if (n < MIN_LEN) {
+    $('customHint').textContent = '粘贴目标岗位 JD 后即可生成改写建议（至少 ' + MIN_LEN + ' 字）';
+  } else {
+    $('customHint').textContent = '改写只会作用于经历、自我评价与技能，个人信息和教育经历不会被改动';
+  }
+}
+
+/* ---------------- 定制简历存档 ---------------- */
+function renderArchive(){
+  $('archiveCount').textContent = '共 ' + state.customs.length + ' 份';
+
+  if (state.customs.length) {
+    if (!state.customs.some((c) => String(c.id) === String(state.selectedCustom))) {
+      state.selectedCustom = state.customs[0].id;
+    }
+  } else {
+    state.selectedCustom = '';
+  }
+
+  renderArchiveList();
+  renderArchiveDetail();
+}
+
+function renderArchiveList(){
+  const list = $('archiveList');
+  $('archiveEmpty').hidden = state.customs.length > 0;
+  list.innerHTML = state.customs.map((c) => (
+    '<div class="archive-item' + (String(c.id) === String(state.selectedCustom) ? ' active' : '') + '" data-id="' + c.id + '">'
+    + '<div class="ai-title" title="' + escapeHtml(c.title) + '">' + escapeHtml(c.title) + '</div>'
+    + '<div class="ai-meta">' + escapeHtml(formatTime(c.at)) + ' · 采纳 ' + c.adopted + ' 条 · ' + count(c.text) + ' 字</div>'
+    + '<div class="ai-note">仅适用于该岗位，投递其他岗位请重新生成</div>'
+    + '<button class="ai-del" data-del="' + c.id + '" title="删除这份">✕</button>'
+    + '</div>'
+  )).join('');
+}
+
+function renderArchiveDetail(){
+  const item = state.customs.filter((c) => String(c.id) === String(state.selectedCustom))[0];
+  $('archiveDetail').hidden = !item;
+  $('archiveDetailEmpty').hidden = !!item;
+  $('archiveText').textContent = item ? item.text : '';
+  $('archiveJd').textContent = item ? (item.jd || '（创建时未记录对应 JD）') : '';
+  if (item) $('archiveTitle').value = item.title;
+}
+
+/** 改名：只改标签，不动简历内容 */
+function renameArchive(id, title){
+  const item = state.customs.filter((c) => String(c.id) === String(id))[0];
+  if (!item) return '';
+  item.title = String(title || '').trim();
+  persist();
+  renderArchiveList();
+  return item.title;
+}
+
+/** 名称留空时，恢复为从 JD 解析出的名称 */
+function fillArchiveTitleFallback(id){
+  const item = state.customs.filter((c) => String(c.id) === String(id))[0];
+  if (!item || item.title) return;
+  item.title = extractJdTitle(item.jd);
+  persist();
+  renderArchiveList();
+  $('archiveTitle').value = item.title;
+}
+
+function currentArchive(){
+  return state.customs.filter((c) => String(c.id) === String(state.selectedCustom))[0];
+}
+
+/** 删除一份定制简历：只影响存档，不触碰原始简历 */
+function removeArchive(id){
+  const before = state.customs.length;
+  state.customs = state.customs.filter((c) => String(c.id) !== String(id));
+  if (state.customs.length === before) return false;
+  if (String(state.selectedCustom) === String(id)) state.selectedCustom = '';
+  persist();
+  renderArchive();
+  toast('已删除这份定制简历，原始简历未受影响');
+  return true;
+}
+
+function confirmDeleteArchive(item){
+  return window.confirm('删除「' + item.title + '」？删除后无法恢复，原始简历不受影响。');
+}
+
+$('archiveList').addEventListener('click', (e) => {
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    const item = state.customs.filter((c) => String(c.id) === del.dataset.del)[0];
+    if (item && confirmDeleteArchive(item)) removeArchive(item.id);
+    return;
+  }
+  const el = e.target.closest('.archive-item');
+  if (!el) return;
+  state.selectedCustom = el.dataset.id;
+  renderArchive();
+});
+
+$('archiveTitle').addEventListener('input', () => {
+  renameArchive(state.selectedCustom, $('archiveTitle').value);
+});
+
+$('archiveTitle').addEventListener('blur', () => {
+  fillArchiveTitleFallback(state.selectedCustom);
+});
+
+$('copyArchive').addEventListener('click', async () => {
+  const item = currentArchive();
+  if (!item) { toast('请先选择一份定制简历'); return; }
+  const ok = await copyText(item.text);
+  toast(ok ? '定制简历已复制' : '复制失败，请手动选择');
+});
+
+$('deleteArchive').addEventListener('click', () => {
+  const item = currentArchive();
+  if (!item || !confirmDeleteArchive(item)) return;
+  removeArchive(item.id);
+});
+
+$('gotoArchive').addEventListener('click', () => switchView('archive'));
+/* ---------------- 改简历页事件 ---------------- */
+$('makeSuggest').addEventListener('click', () => {
+  if (!state.resume) { toast('请先到「我的简历」保存简历'); switchView('resume'); return; }
+  if (count(state.jd) < MIN_LEN) { toast('请先粘贴岗位 JD'); return; }
+  const result = buildResumeSuggestions();
+  state.suggestions = result.suggestions;
+  renderSuggestions(result);
+});
+
+$('sugList').addEventListener('change', (e) => {
+  const cb = e.target.closest('input[type="checkbox"]');
+  if (!cb) return;
+  const card = cb.closest('.sug-card');
+  const item = state.suggestions.filter((s) => s.id === card.dataset.id)[0];
+  if (!item) return;
+  item.adopted = cb.checked;
+  card.classList.toggle('adopted', cb.checked);
+  renderPreview();
+});
+
+$('copyCustom').addEventListener('click', async () => {
+  const ok = await copyText(composeCustomResume());
+  toast(ok ? '定制简历已复制' : '复制失败，请手动选择');
+});
+
+$('saveCustom').addEventListener('click', saveCustom);
+
+$('jd2').addEventListener('input', () => syncJd(jd2El));
+
+$('fillJd2').addEventListener('click', () => {
+  jd2El.value = SAMPLE_JD;
+  syncJd(jd2El);
+});
+
+$('clearCustom').addEventListener('click', () => {
+  state.suggestions = [];
+  $('sugList').hidden = true;
+  $('sugEmpty').hidden = false;
+  $('customPreview').textContent = '还没有生成改写建议';
+  $('adoptCount').textContent = '已采纳 0 条';
+  $('saveCustom').disabled = true;
+});
+
+$('resumeBar2').addEventListener('click', (e) => {
+  if (e.target.closest('[data-goto="resume"]')) switchView('resume');
+});
+/* ---------------- 事件绑定 ---------------- */
+$('collapseBtn').addEventListener('click', () => {
+  setCollapsed(!$('sidebar').classList.contains('collapsed'));
+});
+
+$('nav').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-view]');
+  if (btn) switchView(btn.dataset.view);
+});
+
+resumeEditor.addEventListener('input', refreshResumeEditor);
+$('saveResume').addEventListener('click', saveResume);
+
+$('fillResume').addEventListener('click', () => {
+  resumeEditor.value = SAMPLE_RESUME;
+  refreshResumeEditor();
+});
+
+$('revertResume').addEventListener('click', () => {
+  resumeEditor.value = state.resume;
+  hideImportBar($('resumeImportBar'));
+  $('blockPreview').hidden = true;
+  refreshResumeEditor();
+  toast('已还原为上次保存的内容');
+});
+
+jdEl.addEventListener('input', () => syncJd(jdEl));
+
+genBtn.addEventListener('click', generate);
+$('regen').addEventListener('click', generate);
+
+$('fillJd').addEventListener('click', () => {
+  jdEl.value = SAMPLE_JD;
+  syncJd(jdEl);
+});
+
+$('clearJd').addEventListener('click', () => {
+  jdEl.value = '';
+  $('emptyState').hidden = false;
+  $('resultState').hidden = true;
+  $('loadingState').hidden = true;
+  $('regen').hidden = true;
+  setStep(2, '');
+  setStep(3, '');
+  refreshGenerateState();
+  jdEl.focus();
+});
+
+$('resumeBar').addEventListener('click', (e) => {
+  if (e.target.closest('[data-goto="resume"]')) switchView('resume');
+});
+
+$('msgList').addEventListener('click', async (e) => {
+  const btn = e.target.closest('.copy');
+  if (!btn) return;
+  const card = btn.closest('.msg-card');
+  const body = card.querySelector('.msg-body');
+  const ok = await copyText(body.innerText.trim());
+  if (!ok) {
+    toast('浏览器拒绝了剪贴板权限，请手动选择复制');
+    return;
+  }
+
+  const index = card.dataset.index;
+  state.stats.copy += 1;
+  if (state.edited[index]) state.stats.dirtyCopy += 1;
+  renderStats();
+
+  card.querySelector('.copied').hidden = false;
+  window.setTimeout(() => { card.querySelector('.copied').hidden = true; }, 1600);
+  setStep(3, 'done');
+});
+
+$('msgList').addEventListener('input', (e) => {
+  const body = e.target.closest('.msg-body');
+  if (!body) return;
+  const card = body.closest('.msg-card');
+  state.edited[card.dataset.index] = true;
+  card.querySelector('.edit-flag').hidden = false;
+  card.querySelector('.wc').textContent = count(body.innerText.trim()) + ' 字';
+});
+
+/* ---------------- 导入（Demo V0.3：全部为本地模拟，不发任何网络请求） ---------------- */
+const MOCK_FILE_RESUME = `张某某 | Java 后端开发工程师 | 4 年经验
+
+工作经历
+2022.03 - 至今  某出行科技有限公司  后端开发工程师
+- 负责计价与订单核心服务，基于 Java、Spring Boot 支撑日均 300 万次下单
+- 主导计价链路性能优化，引入 Redis 多级缓存，P99 响应时间从 620ms 降到 150ms
+- 参与服务拆分，基于 Kafka 解耦订单与结算，跨服务同步调用减少 40%
+
+项目经历
+- 主导优惠券中心重构，抽象规则引擎，需求平均交付周期从 5 天缩短到 1 天
+
+专业技能
+Java、Spring Boot、MySQL、Redis、Kafka、微服务、Docker / Kubernetes
+
+教育背景
+某某大学  软件工程  本科  2021 届`;
+
+const MOCK_IMAGE_JD = `公司：某出行科技有限公司
+岗位：Java 后端开发工程师（高级）
+
+岗位职责
+1. 负责计价、订单等核心链路的后端设计与开发
+2. 参与高并发场景下的性能优化与稳定性建设
+3. 参与技术方案评审与代码评审
+
+任职要求
+1. 3 年以上 Java 开发经验，熟悉 Spring Boot、MySQL、Redis
+2. 有高并发、分布式系统实践经验，熟悉消息队列（Kafka / RocketMQ）
+3. 熟悉 Docker、Kubernetes 等容器化技术`;
+
+const SUPPORTED_RESUME_EXT = ['txt', 'md', 'docx', 'pdf'];
+const jdUndoStack = [];
+let jdImportNoticeOn = false;
+let modalConfirmHandler = null;
+
+function showImportBar(el, mode, html){
+  el.hidden = false;
+  el.className = 'import-bar' + (mode ? ' ' + mode : '');
+  el.innerHTML = html;
+}
+
+function hideImportBar(el){
+  el.hidden = true;
+  el.innerHTML = '';
+}
+
+/* 覆盖草稿前的二次确认 */
+function showConfirm(title, text, onOk){
+  $('modalTitle').textContent = title;
+  $('modalText').textContent = text;
+  $('modal').hidden = false;
+  modalConfirmHandler = onOk;
+}
+
+function closeModal(){
+  $('modal').hidden = true;
+  modalConfirmHandler = null;
+}
+
+/** 区块识别预览：复用简历区块切分规则，提前暴露「小标题丢失 → 全部锁定」 */
+function renderBlockPreview(text){
+  const el = $('blockPreview');
+  const blocks = parseResume(text);
+  const editable = blocks.filter((b) => b.kind === 'editable');
+  const locked = blocks.filter((b) => b.kind === 'locked');
+
+  el.hidden = false;
+  if (!editable.length) {
+    el.innerHTML = '<span>⚠️</span><span>没有识别到可改写的小标题，建议补上「工作经历 / 项目经历 / 专业技能」再保存</span>';
+    return {editable: 0, locked: locked.length};
+  }
+  el.innerHTML = '<span>🔎 区块识别</span>'
+    + editable.map((b) => '<span class="chip2">' + escapeHtml(b.title) + ' · 可改写</span>').join('')
+    + locked.map((b) => '<span class="chip2 lock">' + escapeHtml(b.title) + ' · 锁定</span>').join('');
+  return {editable: editable.length, locked: locked.length};
+}
+
+/** 导入只写草稿：不调保存接口，也不改写已保存的简历 */
+function applyImportedResume(fileName, text){
+  resumeEditor.value = text;
+  refreshResumeEditor();
+  renderBlockPreview(text);
+  showImportBar($('resumeImportBar'), 'ok',
+    '已从「' + escapeHtml(fileName) + '」导入 ' + count(text) + ' 字，请检查后保存');
+  toast('解析完成，记得点「保存简历」');
+}
+
+function simulateResumeImport(fileName){
+  const ext = (String(fileName).split('.').pop() || '').toLowerCase();
+  const bar = $('resumeImportBar');
+  $('blockPreview').hidden = true;
+
+  if (SUPPORTED_RESUME_EXT.indexOf(ext) < 0) {
+    showImportBar(bar, 'warn', '暂不支持该文件格式，请导入 PDF、Word、TXT 或 Markdown 文件');
+    return;
+  }
+
+  showImportBar(bar, 'loading',
+    '<span class="spin"></span><span>正在本机解析「' + escapeHtml(fileName) + '」…</span>');
+
+  window.setTimeout(() => {
+    if (/扫描|scan/i.test(fileName)) {
+      showImportBar(bar, 'warn',
+        '这份 PDF 没有可提取的文字，可能是扫描件。请直接粘贴简历文本，或改用 Word 文件');
+      return;
+    }
+    if (resumeEditor.value.trim()) {
+      showImportBar(bar, 'warn', '<span>⚠️</span><span>草稿里已有内容，导入会覆盖当前编辑</span>');
+      showConfirm('覆盖当前草稿？',
+        '导入「' + fileName + '」会覆盖草稿里已有的内容。覆盖后未保存前，仍可用「还原」恢复为上次保存的版本。',
+        () => applyImportedResume(fileName, MOCK_FILE_RESUME));
+      return;
+    }
+    applyImportedResume(fileName, MOCK_FILE_RESUME);
+  }, 900);
+}
+
+function pickResumeFile(){
+  const input = $('resumeFile');
+  input.value = '';
+  input.click();
+}
+
+/** 图片识别结果按顺序追加，不覆盖用户已输入的 JD */
+function applyJdImageImport(field, barId, text){
+  const before = field.value;
+  jdUndoStack.push(before);
+
+  field.value = before.trim() ? before.replace(/\s+$/, '') + '\n\n' + text : text;
+  syncJd(field);
+
+  jdImportNoticeOn = true;
+  showImportBar($(barId), 'warn',
+    '<span>👁</span><span>图片识别完成，请核对公司名称、岗位名称与技术名词后再生成</span>'
+    + '<button class="link act" data-undo-jd="1">撤销本次导入</button>');
+}
+
+function simulateJdImageImport(field, barId, fileName){
+  const bar = $(barId);
+  showImportBar(bar, 'loading',
+    '<span class="spin"></span><span>正在压缩图片「' + escapeHtml(fileName) + '」…</span>');
+
+  window.setTimeout(() => {
+    showImportBar(bar, 'loading', '<span class="spin"></span><span>识别中（本地模拟视觉模型）…</span>');
+    window.setTimeout(() => {
+      if (/失败|fail/i.test(fileName)) {
+        showImportBar(bar, 'warn', '图片识别失败，可重试一次，或直接粘贴 JD 文本');
+        return;
+      }
+      applyJdImageImport(field, barId, MOCK_IMAGE_JD);
+    }, 1100);
+  }, 400);
+}
+
+function undoJdImport(barId){
+  if (!jdUndoStack.length) return;
+  const prev = jdUndoStack.pop();
+  jdEl.value = prev;
+  jd2El.value = prev;
+  syncJd(jdEl);
+  jdImportNoticeOn = false;
+  hideImportBar($(barId));
+  toast('已撤销本次导入');
+}
+
+/* ---------------- 导入：事件绑定 ---------------- */
+$('importResume').addEventListener('click', pickResumeFile);
+$('resumeFile').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (file) simulateResumeImport(file.name);
+});
+
+resumeEditor.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  resumeEditor.classList.add('drop-on');
+});
+resumeEditor.addEventListener('dragleave', () => resumeEditor.classList.remove('drop-on'));
+resumeEditor.addEventListener('drop', (e) => {
+  e.preventDefault();
+  resumeEditor.classList.remove('drop-on');
+  const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (file) simulateResumeImport(file.name);
+});
+
+function pickJdImage(inputId){
+  const input = $(inputId);
+  input.value = '';
+  input.click();
+}
+
+$('importJdImage').addEventListener('click', () => pickJdImage('jdImage'));
+$('importJdImage2').addEventListener('click', () => pickJdImage('jdImage2'));
+$('jdImage').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (file) simulateJdImageImport(jdEl, 'jdImportBar', file.name);
+});
+$('jdImage2').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (file) simulateJdImageImport(jd2El, 'jdImportBar2', file.name);
+});
+
+/* 直接粘贴截图 */
+[jdEl, jd2El].forEach((el) => {
+  el.addEventListener('paste', (e) => {
+    const items = (e.clipboardData && e.clipboardData.items) || [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type && items[i].type.indexOf('image/') === 0) {
+        e.preventDefault();
+        simulateJdImageImport(el, el === jdEl ? 'jdImportBar' : 'jdImportBar2', '剪贴板截图.png');
+        return;
+      }
+    }
+  });
+  /* 用户一旦动手改 JD，校对提示自行消失 */
+  el.addEventListener('input', () => {
+    if (!jdImportNoticeOn) return;
+    jdImportNoticeOn = false;
+    hideImportBar($('jdImportBar'));
+    hideImportBar($('jdImportBar2'));
+  });
+});
+
+['jdImportBar', 'jdImportBar2'].forEach((id) => {
+  $(id).addEventListener('click', (e) => {
+    if (e.target.closest('[data-undo-jd]')) undoJdImport(id);
+  });
+});
+
+$('modalCancel').addEventListener('click', closeModal);
+$('modal').addEventListener('click', (e) => {
+  if (e.target === $('modal')) closeModal();
+});
+function runModalConfirm(){
+  const run = modalConfirmHandler;
+  closeModal();
+  if (run) run();
+}
+
+$('modalOk').addEventListener('click', runModalConfirm);
+
+$('demoImportResume').addEventListener('click', () => simulateResumeImport('张三-Java后端-简历.pdf'));
+$('demoImportJdImage').addEventListener('click', () => simulateJdImageImport(jdEl, 'jdImportBar', 'JD截图.png'));
+
+/* ---------------- 初始化 ---------------- */
+(function init(){
+  try {
+    const saved = localStorage.getItem(LS_RESUME);
+    const at = localStorage.getItem(LS_RESUME_AT);
+    const jd = localStorage.getItem(LS_JD);
+    const customs = localStorage.getItem(LS_CUSTOMS);
+    if (saved) state.resume = saved;
+    if (at) state.savedAt = Number(at) || 0;
+    if (jd) state.jd = jd;
+    if (customs) state.customs = JSON.parse(customs) || [];
+  } catch (e) { /* 忽略 */ }
+
+  resumeEditor.value = state.resume;
+  jdEl.value = state.jd;
+  jd2El.value = state.jd;
+  renderSavedBar();
+  renderResumeBar();
+  $('resumeBar2').innerHTML = $('resumeBar').innerHTML;
+  refreshResumeEditor();
+  refreshGenerateState();
+  refreshCustomState();
+  renderCustoms();
+  renderStats();
+  switchView(state.resume ? 'generate' : 'resume');
+  try {
+    setCollapsed(localStorage.getItem(LS_COLLAPSED) === '1');
+  } catch (e) { /* 忽略 */ }
+})();
+</script>
+</body>
+</html>
