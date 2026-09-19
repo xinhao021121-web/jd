@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>打招呼话术体验评分</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --line: #e4e7ec;
+        --ink: #1f2937;
+        --muted: #667085;
+        --brand: #2563eb;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 32px 20px 64px;
+        background: #f8fafc;
+        color: var(--ink);
+        font: 15px/1.7 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      }
+      main { max-width: 760px; margin: 0 auto; }
+      h1 { font-size: 22px; margin: 0 0 6px; }
+      h2 { font-size: 15px; margin: 0 0 10px; }
+      .lede { color: var(--muted); margin: 0 0 24px; }
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 18px 20px;
+        margin-bottom: 18px;
+      }
+      ol { margin: 0; padding-left: 20px; }
+      li { margin-bottom: 4px; }
+      .hint { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+      a { color: var(--brand); }
+      .sample-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+      .sample-head h2 { margin: 0; }
+      .tag {
+        font-size: 12px; color: var(--muted);
+        border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px;
+      }
+      .field { margin-top: 14px; }
+      .field-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+      .field-head span { font-size: 13px; color: var(--muted); }
+      textarea.src {
+        width: 100%; min-height: 118px; margin-top: 6px; padding: 10px 12px;
+        border: 1px solid var(--line); border-radius: 8px; resize: vertical;
+        font: 13px/1.6 ui-monospace, Consolas, monospace; color: #344054; background: #fcfcfd;
+      }
+      button {
+        border: 1px solid var(--line); background: #fff; color: var(--ink);
+        border-radius: 7px; padding: 5px 12px; font-size: 13px; cursor: pointer;
+      }
+      button:hover { border-color: #c8cdd6; }
+      button.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+      .q { margin-top: 16px; }
+      .q > p { margin: 0 0 6px; font-size: 14px; }
+      .scale { display: flex; gap: 6px; flex-wrap: wrap; }
+      .scale label {
+        border: 1px solid var(--line); border-radius: 7px; padding: 5px 0;
+        width: 52px; text-align: center; cursor: pointer; font-size: 13px; background: #fff;
+      }
+      .scale input { display: none; }
+      .scale input:checked + span { color: var(--brand); font-weight: 600; }
+      .scale label:has(input:checked) { border-color: var(--brand); background: #eff4ff; }
+      .anchor { font-size: 12px; color: var(--muted); margin: 4px 0 0; }
+      #tester {
+        border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px;
+        font-size: 14px; width: 200px;
+      }
+      #output {
+        width: 100%; min-height: 150px; margin-top: 12px; padding: 10px 12px;
+        border: 1px solid var(--line); border-radius: 8px;
+        font: 12px/1.6 ui-monospace, Consolas, monospace;
+      }
+      .row { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
+      .warn { color: #b42318; font-size: 13px; margin-top: 10px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>打招呼话术体验评分</h1>
+      <p class="lede">大约 10 分钟。请抱着挑毛病的心态打分，不用客气，也不用考虑是谁做的。</p>
+
+      <section class="card">
+        <h2>怎么做</h2>
+        <ol>
+          <li>打开体验地址：<a href="__URL__" target="_blank" rel="noreferrer">__URL__</a></li>
+          <li>在「我的简历」里粘贴下面第 1 组的简历，点保存；</li>
+          <li>切到「生成打招呼」，粘贴同一组的 JD，点生成，等结果出来；</li>
+          <li>回到本页，对这次生成的三条话术打分（1 分最低，5 分最高）；</li>
+          <li>换第 2、3 组重复一遍。</li>
+        </ol>
+        <p class="hint">三组样本都做完再导出结果。中途刷新本页会丢分，建议一次做完。</p>
+      </section>
+
+      <div id="samples"></div>
+
+      <section class="card">
+        <h2>导出</h2>
+        <div class="row">
+          <input id="tester" placeholder="你的代号，比如 T1" />
+          <button id="export" class="primary">生成结果</button>
+        </div>
+        <p class="warn" id="warn" hidden></p>
+        <textarea id="output" readonly hidden></textarea>
+        <div class="row">
+          <button id="copy" hidden>复制结果</button>
+          <span class="hint" id="copied" hidden>已复制，把它发回给发起人即可。</span>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const DATA = __DATA__;
+      const QUESTIONS = [
+        {
+          key: 'humanLike',
+          title: '读起来像不像真人手写的？',
+          low: '1 = 一眼看出是模板',
+          high: '5 = 完全像真人写的'
+        },
+        {
+          key: 'sendable',
+          title: '敢不敢一个字不改直接发出去？',
+          low: '1 = 不敢发',
+          high: '5 = 敢直接发'
+        },
+        {
+          key: 'truthful',
+          title: '有没有夸大或者编造？',
+          low: '1 = 明显夸大',
+          high: '5 = 完全没有夸大'
+        }
+      ];
+
+      function copyText(text, done) {
+        const fallback = () => {
+          const area = document.createElement('textarea');
+          area.value = text;
+          document.body.appendChild(area);
+          area.select();
+          document.execCommand('copy');
+          document.body.removeChild(area);
+          done();
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(done, fallback);
+        } else {
+          fallback();
+        }
+      }
+
+      function el(tag, props, children) {
+        const node = document.createElement(tag);
+        Object.assign(node, props || {});
+        (children || []).forEach((child) => node.appendChild(child));
+        return node;
+      }
+
+      function renderSample(sample, index) {
+        const card = el('section', { className: 'card' });
+        const head = el('div', { className: 'sample-head' });
+        head.appendChild(el('h2', { textContent: '第 ' + (index + 1) + ' 组' }));
+        head.appendChild(el('span', { className: 'tag', textContent: sample.note }));
+        card.appendChild(head);
+
+        ['简历', 'JD'].forEach((label) => {
+          const text = label === '简历' ? sample.resume : sample.jd;
+          const wrap = el('div', { className: 'field' });
+          const headRow = el('div', { className: 'field-head' });
+          headRow.appendChild(el('strong', { textContent: label, style: 'font-size:13px' }));
+          const btn = el('button', { textContent: '复制' });
+          btn.addEventListener('click', () => {
+            copyText(text, () => {
+              btn.textContent = '已复制';
+              setTimeout(() => (btn.textContent = '复制'), 1200);
+            });
+          });
+          headRow.appendChild(btn);
+          wrap.appendChild(headRow);
+          const area = el('textarea', { className: 'src', readOnly: true, value: text });
+          wrap.appendChild(area);
+          card.appendChild(wrap);
+        });
+
+        QUESTIONS.forEach((question) => {
+          const block = el('div', { className: 'q' });
+          block.appendChild(el('p', { textContent: question.title }));
+          const scale = el('div', { className: 'scale' });
+          for (let score = 1; score <= 5; score += 1) {
+            const labelEl = el('label');
+            const input = el('input', {
+              type: 'radio',
+              name: sample.id + '-' + question.key,
+              value: String(score)
+            });
+            labelEl.appendChild(input);
+            labelEl.appendChild(el('span', { textContent: String(score) }));
+            scale.appendChild(labelEl);
+          }
+          block.appendChild(scale);
+          block.appendChild(
+            el('p', { className: 'anchor', textContent: question.low + '　·　' + question.high })
+          );
+          card.appendChild(block);
+        });
+
+        return card;
+      }
+
+      const host = document.getElementById('samples');
+      DATA.samples.forEach((sample, index) => host.appendChild(renderSample(sample, index)));
+
+      const warn = document.getElementById('warn');
+      const output = document.getElementById('output');
+      const copyBtn = document.getElementById('copy');
+      const copied = document.getElementById('copied');
+
+      document.getElementById('export').addEventListener('click', () => {
+        const tester = document.getElementById('tester').value.trim();
+        if (!tester) {
+          warn.textContent = '请先填一个代号，方便区分是谁的评分。';
+          warn.hidden = false;
+          return;
+        }
+
+        const ratings = [];
+        let missing = 0;
+        DATA.samples.forEach((sample) => {
+          const rating = { sample: sample.id };
+          QUESTIONS.forEach((question) => {
+            const picked = document.querySelector(
+              'input[name="' + sample.id + '-' + question.key + '"]:checked'
+            );
+            if (!picked) missing += 1;
+            rating[question.key] = picked ? Number(picked.value) : null;
+          });
+          ratings.push(rating);
+        });
+
+        if (missing > 0) {
+          warn.textContent = '还有 ' + missing + ' 项没打分，补齐后再导出。';
+          warn.hidden = false;
+          return;
+        }
+
+        warn.hidden = true;
+        output.value = JSON.stringify(
+          { tester: tester, submittedAt: new Date().toISOString(), ratings: ratings },
+          null,
+          2
+        );
+        output.hidden = false;
+        copyBtn.hidden = false;
+      });
+
+      copyBtn.addEventListener('click', () => {
+        copyText(output.value, () => {
+          copied.hidden = false;
+        });
+      });
+    </script>
+  </body>
+</html>
