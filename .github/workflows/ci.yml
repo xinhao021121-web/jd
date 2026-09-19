@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: 类型检查 / 单测 / 文档一致性 / 构建
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 版本由 package.json 的 packageManager 字段决定
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 类型检查
+        run: pnpm typecheck
+
+      - name: 单元测试与集成测试
+        run: pnpm test
+
+      - name: PRD / 原型 / 技术方案一致性
+        run: pnpm test:docs
+
+      - name: 构建前端
+        run: pnpm build
+
+  e2e:
+    name: 端到端主流程（本地 mock 模型）
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 安装 Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      # 端到端全程使用本地 mock 模型，不需要任何密钥
+      - name: 运行端到端用例
+        run: pnpm test:e2e
+
+      - name: 失败时上传报告
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

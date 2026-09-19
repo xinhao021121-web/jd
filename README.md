@@ -4,6 +4,23 @@
 
 产品口径见 [直聘打招呼助手_PRD_V0.2.md](直聘打招呼助手_PRD_V0.2.md)，实现口径见 [docs/技术方案_V0.1.md](docs/技术方案_V0.1.md)。V0.2 的交互原型保留在 `直聘打招呼助手_Demo_V0.2.html`，仅用于对照，不是运行入口。
 
+## 界面
+
+| 生成打招呼 | 按 JD 改简历 |
+|-----------|-------------|
+| ![生成打招呼](docs/assets/02-generate.png) | ![按 JD 改简历](docs/assets/03-customize.png) |
+
+左边是生成页：先给本地计算的匹配分析（JD 关键要求 / 已命中 / 未覆盖），再流式出现 3 条话术，可编辑、可复制。右边是改简历页：建议逐条出现，勾选后右侧实时合成定制简历，个人信息与教育经历永远保持原文。
+
+<details>
+<summary>另外两个视图</summary>
+
+| 我的简历 | 定制简历 |
+|---------|---------|
+| ![我的简历](docs/assets/01-resume.png) | ![定制简历](docs/assets/04-archive.png) |
+
+</details>
+
 ## 仓库结构
 
 ```
@@ -46,6 +63,8 @@ pnpm typecheck    # tsc --noEmit
 
 首次跑端到端需要安装浏览器：`pnpm exec playwright install chromium`。
 
+CI（[.github/workflows/ci.yml](.github/workflows/ci.yml)）在 push 与 PR 时跑：类型检查 → 单测 → 文档一致性 → 前端构建，然后跑端到端主流程。端到端全程使用本地 mock 模型，**不需要在仓库或 Actions 里配置任何密钥**。
+
 ## 质量回归（需要真实模型）
 
 `tests/samples/quality-samples.json` 里是 8 组简历 + JD 样本。配好真实密钥后运行：
@@ -58,6 +77,22 @@ $env:DEEPSEEK_API_KEY="sk-..."; pnpm quality:samples
 脚本会把每组样本分别跑话术与改写建议，断言：话术 3 条且长度落在 100–160 字、数字与技能可溯源、无套话黑名单词、改写建议不越界且不引入新事实，并把逐条结论写到 `reports/质量回归_<时间>.md`（该目录默认不入库，需要留档时用 `git add -f`）。
 
 指向本地 mock 也能跑（`DEEPSEEK_BASE_URL=http://127.0.0.1:8788/v1`），用于验证脚本自身；mock 的模板话术偏短，会如实报出长度违规。
+
+结论留档见 [docs/质量回归_V0.1.md](docs/质量回归_V0.1.md)。
+
+## 部署（可选）
+
+前端是纯静态产物，服务端只有一个路由，两者都建议部署在境外（技术方案第十节）：
+
+```bash
+pnpm build                       # 前端产物在 apps/web/dist
+pnpm --filter @zhipin/api start  # 服务端常驻进程，读取环境变量
+```
+
+- 前端：任意静态托管（Cloudflare Pages / Vercel），构建命令 `pnpm --filter @zhipin/web build`，输出目录 `apps/web/dist`；
+- 服务端：Node 常驻进程或 Cloudflare Workers（Hono 换 adapter 即可，限流存储换成 KV / Redis）；
+- 前端与 API 建议同域，把 `/api/*` 反代到服务端，可省掉 CORS 配置；
+- 密钥只放部署平台的环境变量里，不要写进仓库，也不要用 `VITE_` 前缀（会被打进前端产物）。
 
 ## 边界说明
 

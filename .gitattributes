@@ -1,0 +1,14 @@
+# 统一按 LF 存储，避免 Windows 上出现整文件行尾 diff
+* text=auto eol=lf
+
+# 二进制资源不做行尾转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# 锁文件不计入语言统计，但仍保留可读 diff
+pnpm-lock.yaml linguist-generated=true
