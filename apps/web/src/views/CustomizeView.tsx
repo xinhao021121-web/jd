@@ -174,7 +174,8 @@ export function CustomizeView(): JSX.Element {
         </div>
       </Card>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      {/* 改写建议与预览始终一左一右：断点定在 768px，笔记本分屏与非全屏窗口也要分列 */}
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
         <div className="space-y-3">
           {missing.length > 0 && <Notice tone="warn">{uncoveredNotice(missing)}</Notice>}
 
@@ -218,7 +219,7 @@ export function CustomizeView(): JSX.Element {
           ))}
         </div>
 
-        <div className="lg:sticky lg:top-6 lg:self-start">
+        <div className="md:sticky md:top-6 md:self-start">
           <Card>
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-sm font-medium">定制简历预览</h3>

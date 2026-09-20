@@ -57,6 +57,17 @@ test('主流程：保存简历 → 生成话术 → 采纳建议 → 合成定�
   const firstSuggestion = page.getByTestId('suggestion-card').first();
   await expect(firstSuggestion).toBeVisible();
 
+  // 建议在左、预览在右：笔记本分屏这类窄窗口也不能退化成上下堆叠
+  for (const width of [1440, 1000]) {
+    await page.setViewportSize({ width, height: 900 });
+    const columns = await page.evaluate(() => {
+      const grid = document.querySelector('main div.grid');
+      return grid ? getComputedStyle(grid).gridTemplateColumns.split(' ').length : 0;
+    });
+    expect(columns, `${width}px 下建议与预览应左右分列`).toBe(2);
+  }
+  await page.setViewportSize({ width: 1280, height: 720 });
+
   // 采纳一条建议后预览实时合成，锁定区块保持原文
   await firstSuggestion.getByRole('checkbox').check();
   await expect(page.locator('#customPreview')).toContainText('（');
