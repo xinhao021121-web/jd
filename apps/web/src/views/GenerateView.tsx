@@ -78,6 +78,9 @@ function GreetingCard({
         <span className="chip bg-primary-soft text-primary">{item.style}</span>
         <span className="flex items-center gap-2 text-xs text-[#98a2b6]">
           {item.edited && <span className="text-[#b45309]">已编辑</span>}
+          {item.issues.length > 0 && (
+            <span className="text-[#b45309]">需核对 {item.issues.length} 处</span>
+          )}
           {lengthWarning && (
             <span className="text-[#b45309]">超出 {GREETING_LENGTH.min}~{GREETING_LENGTH.max} 字</span>
           )}
@@ -93,6 +96,14 @@ function GreetingCard({
         value={item.text}
         onChange={(event) => updateGreetingItem(item.index, event.target.value)}
       />
+
+      {item.issues.length > 0 && (
+        <div className="mt-2" data-testid="greeting-issues">
+          <Notice tone="warn">
+            本地自检：{item.issues.join('；')}。发送前建议先核对这一条。
+          </Notice>
+        </div>
+      )}
 
       <div className="mt-2">
         <button type="button" className="btn-ghost" onClick={onCopy}>

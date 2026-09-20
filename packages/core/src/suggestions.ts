@@ -28,6 +28,8 @@ export interface Suggestion {
   after: string;
   reason: string;
   suggestionType?: SuggestionType;
+  /** 本地自检命中的问题（服务端回填），命中只提示不丢弃 */
+  issues?: string[];
   adopted: boolean;
 }
 

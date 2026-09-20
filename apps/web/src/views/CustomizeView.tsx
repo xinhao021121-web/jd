@@ -37,6 +37,9 @@ function SuggestionCard({ suggestion }: { suggestion: Suggestion }): JSX.Element
           onChange={() => toggleSuggestion(suggestion.id)}
         />
         采纳这条建议
+        {suggestion.suggestionType && (
+          <span className="chip bg-[#f2f4f9] text-[#6b7688]">{suggestion.suggestionType}</span>
+        )}
       </label>
 
       <div className="mt-3 space-y-2 text-sm">
@@ -57,6 +60,15 @@ function SuggestionCard({ suggestion }: { suggestion: Suggestion }): JSX.Element
       </div>
 
       <p className="mt-2 text-xs text-[#98a2b6]">{suggestion.reason}</p>
+
+      {suggestion.issues && suggestion.issues.length > 0 && (
+        <p
+          className="mt-2 rounded-lg bg-[#fdf3e3] px-2 py-1 text-xs text-[#b45309]"
+          data-testid="suggestion-issues"
+        >
+          本地自检：{suggestion.issues.join('；')}
+        </p>
+      )}
     </div>
   );
 }

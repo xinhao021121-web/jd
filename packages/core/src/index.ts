@@ -5,3 +5,4 @@ export * from './jd';
 export * from './metrics';
 export * from './greetings';
 export * from './import';
+export * from './quality';

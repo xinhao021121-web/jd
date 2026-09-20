@@ -33,14 +33,14 @@ const GREETING_SYSTEM = [
   '硬性规则：',
   '1. 事实溯源：话术里出现的每一段经历、技能、数字都必须能在简历原文找到依据，禁止编造或推测简历中没有的内容；',
   '2. 结构：身份定位（年限 + 方向）→ 1~2 个与岗位强相关的匹配证据 → 明确意向；',
+  // 分风格目标字数来自质量回归的修正结论（docs/质量回归_V0.2.md）：只给区间下限时「简短直接型」会写飞
   `3. 长度：每条 ${GREETING_LENGTH.min}~${GREETING_LENGTH.max} 字（含标点），2~4 句。三条都必须落在这个区间，其中「技能匹配型」「经历相关型」以 120~150 字为目标、「简短直接型」以 110~140 字为目标，给字数统计差异留出余量；写不满 ${GREETING_LENGTH.min} 字就补 1 个可溯源的匹配证据，不要靠缩句解决；`,
   '4. 风格：不出现「贵公司」「非常感兴趣」「期待您的青睐」「希望得到您的回复」这类套话，不堆砌表情符号，读起来像真人手写；',
-  `5. 共输出 3 条互不重复的话术，style 依次为「${GREETING_STYLES.join('」「')}」；`,
+  `5. 共输出 3 条互不重复的话术，依次对应「${GREETING_STYLES.join('」「')}」三种切入点；风格标签由客户端按顺序标注，不需要你输出；`,
   '6. 简历与岗位直接匹配点很少时，不要冒认技能，改为可迁移能力表述，并说明方向差异；',
   '7. 年限、数字、技能名称只能来自简历原文：JD 里的年限要求（例如「3 年以上经验」）是招聘方的要求，绝不能写成自己的经验；简历里没有出现过的技能名称不要写进话术，哪怕岗位明确要求它；',
-  '8. 输出前逐条自检：字数是否落在区间内、每个数字是否能在简历里找到、每个技能名称是否在简历里出现过；',
   OUTPUT_CONTRACT,
-  '每行形如：{"type":"item","kind":"greeting","index":0,"style":"技能匹配型","text":"..."}'
+  '每行形如：{"type":"item","kind":"greeting","text":"..."}'
 ].join('\n');
 
 const SUGGESTIONS_SYSTEM = [
@@ -53,7 +53,7 @@ const SUGGESTIONS_SYSTEM = [
   '5. 岗位要求但简历完全没有依据的能力，不要生成建议；',
   '6. 优先给出 2~6 条最有价值的建议，宁少勿滥；',
   OUTPUT_CONTRACT,
-  '每行形如：{"type":"item","kind":"suggestion","index":0,"section":"工作经历","before":"...","after":"...","reason":"...","suggestionType":"术语对齐"}'
+  '每行形如：{"type":"item","kind":"suggestion","section":"工作经历","before":"...","after":"...","reason":"...","suggestionType":"术语对齐"}'
 ].join('\n');
 
 function editableBlockDigest(resume: string): string {
@@ -67,6 +67,14 @@ function editableBlockDigest(resume: string): string {
       return `【${block.title}】\n${body}`;
     })
     .join('\n');
+}
+
+/** 锁定区块只给标题：模型必须知道哪些不能碰，但不需要看到内容 */
+function lockedBlockDigest(resume: string): string {
+  const titles = parseResume(resume)
+    .filter((block) => block.kind === 'locked')
+    .map((block) => `「${block.title}」`);
+  return titles.join('、') || '（无）';
 }
 
 function matchDigest(resume: string, jd: string): string {
@@ -108,17 +116,17 @@ export function buildMessages(task: TaskKind, input: PromptInput): LlmMessage[] 
     {
       role: 'user',
       content: [
-        '【简历原文】',
-        resume,
+        '【可以改写的区块（section 只能取这些标题，before 必须是下列行里的原文片段）】',
+        editableBlockDigest(resume) || '（没有识别到可改写区块，请不要输出任何建议）',
+        '',
+        '【不能改动的部分（不要为它们生成建议，也不要引用其中内容作为事实）】',
+        lockedBlockDigest(resume),
         '',
         '【岗位 JD】',
         jd,
         '',
         '【本地匹配分析，仅供你参考，不要输出】',
         matchDigest(resume, jd),
-        '',
-        '【允许改写的区块（section 只能取这些标题，before 必须是下列行里的原文片段）】',
-        editableBlockDigest(resume) || '（没有识别到可改写区块，请不要输出任何建议）',
         '',
         '请输出 2~6 行 NDJSON，每行一条改写建议。'
       ].join('\n')

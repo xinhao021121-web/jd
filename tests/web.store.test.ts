@@ -173,6 +173,29 @@ describe('生成打招呼', () => {
     expect(store().greeting.status).toBe('idle');
   });
 
+  it('本地自检结果落到对应条目，缺 index / style 时按到达顺序补齐', async () => {
+    saveResume();
+    store().setJd(SAMPLE_JD);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      sseStream([
+        analysisEvent,
+        // 服务端会带 index / style 与 issues；这里故意只给 issues，验证前端兜底
+        { type: 'item', kind: 'greeting', text: greetingItems[0]!.text, issues: ['出现简历中没有的数字「9999万」'] },
+        { type: 'item', kind: 'greeting', text: greetingItems[1]!.text },
+        { type: 'item', kind: 'greeting', text: greetingItems[2]!.text },
+        { type: 'done', elapsedMs: 900 }
+      ])
+    );
+
+    await store().generateGreeting();
+
+    const items = store().greeting.items;
+    expect(items.map((item) => item.index)).toEqual([0, 1, 2]);
+    expect(items.map((item) => item.style)).toEqual(['技能匹配型', '经历相关型', '简短直接型']);
+    expect(items[0]?.issues).toEqual(['出现简历中没有的数字「9999万」']);
+    expect(items[1]?.issues).toEqual([]);
+  });
+
   it('服务端返回限流时记录错误码与错误事件', async () => {
     saveResume();
     store().setJd(SAMPLE_JD);
@@ -241,6 +264,25 @@ describe('按 JD 改简历', () => {
     expect(store().customization.suggestions).toHaveLength(1);
     expect(store().customization.suggestions[0]?.section).toBe('工作经历');
     expect(store().customization.droppedCount).toBe(1);
+  });
+
+  it('本地自检命中的建议带上 issues，供界面逐条提示', async () => {
+    saveResume();
+    store().setJd(SAMPLE_JD);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      sseStream([
+        analysisEvent,
+        { ...suggestionEvent, issues: ['建议引入新数字「300%」'] },
+        { type: 'done', elapsedMs: 800 }
+      ])
+    );
+
+    await store().generateSuggestions();
+
+    const suggestion = store().customization.suggestions[0];
+    expect(suggestion?.issues).toEqual(['建议引入新数字「300%」']);
+    // 建议类型现在会在卡片上显示，必须落到 store
+    expect(suggestion?.suggestionType).toBe('术语对齐');
   });
 
   it('未采纳任何建议时预览与原件一致，采纳后只替换锚点', async () => {

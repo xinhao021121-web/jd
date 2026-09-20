@@ -1,6 +1,6 @@
 /**
  * 外部盲测的纯逻辑：判定门槛、汇总与结果解析（评审标准六）。
- * 与 CLI 脚本分开便于单测，对应 scripts/quality-checks.ts 的既有做法。
+ * 与 CLI 脚本分开便于单测，与 packages/core 的 quality.ts 同一思路。
  */
 
 export interface BlindTestRating {

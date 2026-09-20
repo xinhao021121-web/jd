@@ -100,6 +100,30 @@ describe('buildMessages', () => {
     expect(user?.content).toContain('【专业技能】');
     expect(user?.content).not.toContain('【教育背景】');
   });
+
+  it('不让模型自检，也不要求输出本地已知的 index 与 style', () => {
+    const [greeting, greetingUser] = buildMessages('greeting', {
+      resume: SAMPLE_RESUME,
+      jd: SAMPLE_JD
+    });
+    const [suggestions] = buildMessages('suggestions', { resume: SAMPLE_RESUME, jd: SAMPLE_JD });
+
+    expect(greeting?.content).not.toContain('自检');
+    expect(greeting?.content).not.toContain('"style"');
+    expect(suggestions?.content).not.toContain('"index"');
+    expect(greetingUser?.content).toContain('【简历原文】');
+  });
+
+  it('建议任务不再重复投喂简历全文，只发可改写区块与锁定标题', () => {
+    const [, user] = buildMessages('suggestions', { resume: SAMPLE_RESUME, jd: SAMPLE_JD });
+    const content = String(user?.content);
+
+    // 锁定区块的正文不再进入请求体，只保留标题
+    expect(content).not.toContain('某某大学  计算机科学与技术');
+    expect(content).toContain('「教育背景」');
+    // 可改写区块的原文只出现一次
+    expect(content.split('主导订单查询接口性能优化，通过 Redis').length - 1).toBe(1);
+  });
 });
 
 function sseResponse(lines: string[]): Response {

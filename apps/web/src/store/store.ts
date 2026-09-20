@@ -8,6 +8,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import {
   composeCustomResume,
   extractJdTitle,
+  greetingStyleFor,
   parseResume,
   planSuggestions,
   type MatchAnalysis,
@@ -35,6 +36,8 @@ export interface GreetingItem {
   style: GreetingStyle;
   text: string;
   edited: boolean;
+  /** 本地自检命中的问题（服务端回填），只提示不阻断 */
+  issues: string[];
 }
 
 interface StreamState {
@@ -452,12 +455,20 @@ function applyGreetingEvent(
   }
 
   if (event.type === 'item' && event.kind === 'greeting') {
+    const items = get().greeting.items;
     set({
       greeting: {
         ...get().greeting,
         items: [
-          ...get().greeting.items,
-          { index: event.index, style: event.style, text: event.text, edited: false }
+          ...items,
+          {
+            // index 与 style 按到达顺序本地赋值：模型不输出或标错都不影响展示
+            index: event.index ?? items.length,
+            style: event.style ?? greetingStyleFor(items.length),
+            text: event.text,
+            issues: event.issues ?? [],
+            edited: false
+          }
         ]
       }
     });
@@ -524,7 +535,10 @@ function applySuggestionEvent(
   set({
     customization: {
       ...current,
-      suggestions: [...current.suggestions, { ...accepted, id: `s${current.suggestions.length}` }]
+      suggestions: [
+        ...current.suggestions,
+        { ...accepted, id: `s${current.suggestions.length}`, issues: event.issues ?? [] }
+      ]
     }
   });
 }

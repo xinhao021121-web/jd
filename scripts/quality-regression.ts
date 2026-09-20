@@ -14,7 +14,7 @@ import { createLlmClient } from '@zhipin/llm';
 import { planSuggestions } from '@zhipin/core';
 import { parseResume } from '@zhipin/core';
 import type { OutputEvent } from '@zhipin/shared';
-import { checkGreetings, checkSuggestions, type Violation } from './quality-checks';
+import { checkGreetings, checkSuggestions, type Violation } from '@zhipin/core';
 import { loadEnvFile } from '../apps/api/src/env';
 
 interface Sample {

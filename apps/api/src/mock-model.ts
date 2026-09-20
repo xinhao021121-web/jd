@@ -8,6 +8,13 @@ import { analyzeMatch, extractSkills, parseResume } from '@zhipin/core';
 
 const PORT = Number(process.env.MOCK_MODEL_PORT ?? 8788);
 
+/**
+ * 端到端用的自检开关：JD 里带上这个标记时，故意产出一句不可溯源的话术，
+ * 用来验证「本地自检命中 → 逐条提示 → 仍不阻断复制」这条链路。仅本地 mock 使用。
+ */
+const BAD_FACT_MARKER = 'MOCK_BAD_FACT';
+const BAD_FACT_SENTENCE = '贵公司岗位我非常感兴趣，我日均处理 9999 万次请求。';
+
 /** 视觉识别请求的固定返回：模拟「截图转文本」，只用于本地联调与端到端 */
 const MOCK_IMAGE_JD = `公司：某出行科技有限公司
 岗位：Java 后端开发工程师（高级）
@@ -26,6 +33,20 @@ function between(text: string, start: string, end: string): string {
   const after = text.split(start)[1];
   if (after === undefined) return '';
   return (after.split(end)[0] ?? '').trim();
+}
+
+/** 建议任务的提示词只带「可改写区块摘要」，mock 需要把它还原成能被 parseResume 识别的简历文本 */
+const EDITABLE_MARK = '【可以改写的区块';
+const LOCKED_MARK = '【不能改动的部分';
+
+function editableDigestToResume(userContent: string): string {
+  const section = userContent.split(EDITABLE_MARK)[1]?.split(LOCKED_MARK)[0] ?? '';
+  return section
+    .split('\n')
+    .slice(1) // 去掉「（section 只能取这些标题…）】」这一行
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join('\n');
 }
 
 function resumeFacts(resume: string): { highlight: string; skills: string } {
@@ -61,7 +82,11 @@ function greetingLines(resume: string, jd: string): string[] {
         `您好，${role}方向多年经验，熟悉${skills || '相关技能'}，和岗位要求比较匹配，方便聊聊吗？`
       ];
 
-  return texts.map((text, index) =>
+  const withFacts = jd.includes(BAD_FACT_MARKER)
+    ? texts.map((text) => `${text}${BAD_FACT_SENTENCE}`)
+    : texts;
+
+  return withFacts.map((text: string, index: number) =>
     JSON.stringify({
       type: 'item',
       kind: 'greeting',
@@ -149,9 +174,11 @@ const server = createServer((req, res) => {
     const firstContent = messages[0]?.content;
     const systemContent = typeof firstContent === 'string' ? firstContent : '';
 
-    const resume = between(userContent, '【简历原文】', '【岗位 JD】');
     const jd = between(userContent, '【岗位 JD】', '【本地匹配分析');
     const isSuggestion = systemContent.includes('简历顾问');
+    const resume = isSuggestion
+      ? editableDigestToResume(userContent)
+      : between(userContent, '【简历原文】', '【岗位 JD】');
     const lines = isSuggestion ? suggestionLines(resume, jd) : greetingLines(resume, jd);
     const content = lines.join('\n') + '\n';
 

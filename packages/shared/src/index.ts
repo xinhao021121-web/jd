@@ -140,20 +140,24 @@ export const AnalysisEventSchema = z.object({
 export const GreetingItemEventSchema = z.object({
   type: z.literal('item'),
   kind: z.literal('greeting'),
-  index: z.number().int().nonnegative(),
-  style: z.enum(GREETING_STYLES),
-  text: z.string().min(1)
+  /** index 与 style 由本地按输出顺序赋值，模型不必输出（写错也不影响展示） */
+  index: z.number().int().nonnegative().optional(),
+  style: z.enum(GREETING_STYLES).optional(),
+  text: z.string().min(1),
+  /** 本地自检命中的问题，由服务端计算后回填，模型输出一律被覆盖 */
+  issues: z.array(z.string()).optional()
 });
 
 export const SuggestionItemEventSchema = z.object({
   type: z.literal('item'),
   kind: z.literal('suggestion'),
-  index: z.number().int().nonnegative(),
+  index: z.number().int().nonnegative().optional(),
   section: z.string().min(1),
   before: z.string().min(1),
   after: z.string().min(1),
   reason: z.string().min(1),
-  suggestionType: z.enum(SUGGESTION_TYPES).optional()
+  suggestionType: z.enum(SUGGESTION_TYPES).optional(),
+  issues: z.array(z.string()).optional()
 });
 
 /** 模型必须按这些事件类型逐行输出 NDJSON（技术方案 5.2） */

@@ -4,7 +4,14 @@
  * 分析事件由本地 core 计算，模型只负责逐条输出内容。
  */
 import type { Context, Hono } from 'hono';
-import { analyzeMatch, isEditableAnchor, parseResume } from '@zhipin/core';
+import {
+  analyzeMatch,
+  checkGreetingText,
+  checkSuggestionText,
+  greetingStyleFor,
+  isEditableAnchor,
+  parseResume
+} from '@zhipin/core';
 import type { OutputEvent, TaskKind } from '@zhipin/shared';
 import {
   ERROR_HTTP_STATUS,
@@ -173,6 +180,7 @@ export function registerLlmRoute(app: Hono, deps: LlmRouteDeps): void {
     const blocks = task === 'suggestions' ? parseResume(resume) : [];
     let emittedItems = 0;
     let droppedItems = 0;
+    let flaggedItems = 0;
     const analysisEvent: StreamEvent = {
       type: 'analysis',
       requirements: analysis.requirements,
@@ -190,17 +198,51 @@ export function registerLlmRoute(app: Hono, deps: LlmRouteDeps): void {
             signal: abort.signal,
             onEvent: (event) => {
               if (event.type !== 'item') return;
+
+              // 本地自检：命中只标注不丢弃，用户仍能拿到完整 3 条并自行核对（技术方案 V0.3 增补）
+              const issues =
+                event.kind === 'greeting'
+                  ? checkGreetingText(resume, event.text)
+                  : checkSuggestionText(
+                      resume,
+                      {
+                        before: event.before,
+                        after: event.after,
+                        reason: event.reason,
+                        suggestionType: event.suggestionType
+                      },
+                      jd
+                    );
+
               if (event.kind === 'suggestion' && !isEditableAnchor(blocks, event.before)) {
                 droppedItems += 1;
                 return;
               }
+
+              if (issues.length) flaggedItems += 1;
+
+              // index / style 由本地按回传顺序赋值：模型不必输出，标错也不影响展示
+              const guarded: OutputEvent =
+                event.kind === 'greeting'
+                  ? {
+                      ...event,
+                      index: emittedItems,
+                      style: greetingStyleFor(emittedItems),
+                      issues: issues.length ? issues.map((item) => item.detail) : undefined
+                    }
+                  : {
+                      ...event,
+                      index: emittedItems,
+                      issues: issues.length ? issues.map((item) => item.detail) : undefined
+                    };
+
               emittedItems += 1;
               if (!startState.outcome) {
                 clearTimeout(firstTokenTimer);
                 settle({ ok: true });
                 queue.push(analysisEvent);
               }
-              queue.push(event);
+              queue.push(guarded);
             }
           }
         );
@@ -214,13 +256,19 @@ export function registerLlmRoute(app: Hono, deps: LlmRouteDeps): void {
         settle({ ok: true });
         queue.push({ type: 'done', elapsedMs: now() - startedAt });
         queue.close();
+        const notes = [
+          droppedItems ? `DROPPED_${droppedItems}` : '',
+          flaggedItems ? `FLAGGED_${flaggedItems}` : ''
+        ]
+          .filter(Boolean)
+          .join('_');
         deps.logger.log({
           event: 'ok',
           task,
           ipHash,
           elapsedMs: now() - startedAt,
           attempts: stats.attempts,
-          errorType: droppedItems ? `DROPPED_${droppedItems}` : undefined
+          errorType: notes || undefined
         });
       } catch (error) {
         if (timeoutCode) {

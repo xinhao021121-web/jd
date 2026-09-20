@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { OutputEvent } from '@zhipin/shared';
-import { checkGreetings, checkSuggestions } from '../scripts/quality-checks';
+import { checkGreetings, checkSuggestions } from '@zhipin/core';
 import { SAMPLE_RESUME } from './fixtures';
 import { SAMPLE_JD } from './fixtures';
 
