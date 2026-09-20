@@ -71,7 +71,7 @@ test('保真导出写清了保真口径、可用条件与异常兜底', () => {
   });
 
   assert.ok(exportSection.includes('格式继承'), '应说明改写后的格式继承取舍');
-  assert.ok(exportSection.includes('本次会话导入过 .docx'), '应写明导出按钮的可用条件');
+  assert.ok(exportSection.includes('最近一次导入的是 .docx'), '应写明导出按钮的可用条件');
   assert.ok(exportSection.includes('不要求先采纳建议'), '应写明未采纳建议也可导出');
   assert.ok(exportSection.includes('原文件名_定制.docx'), '应写明导出文件命名');
   assert.ok(exportSection.includes('不触网'), '应写明导出不触网');
