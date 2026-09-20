@@ -4,11 +4,19 @@ import {
   RESUME_HEAD_TITLE,
   classifyBlock,
   diffResumeLines,
+  isHeading,
   parseResume
 } from '@zhipin/core';
 import { SAMPLE_RESUME } from './fixtures';
 
 describe('parseResume / classifyBlock', () => {
+  it('小标题判定只认整行标题，行内的同名词不算标题', () => {
+    expect(isHeading('工作经历')).toBe(true);
+    expect(isHeading('  【专业技能】  ')).toBe(true);
+    expect(isHeading('工作经历：负责订单中心开发')).toBe(false);
+    expect(isHeading('负责订单中心核心链路开发')).toBe(false);
+  });
+
   it('按小标题切分区块，保留原始顺序与原文', () => {
     const blocks = parseResume(SAMPLE_RESUME);
 

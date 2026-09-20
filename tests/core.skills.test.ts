@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { analyzeMatch, extractSkills } from '@zhipin/core';
+import { analyzeMatch, extractSkills, hasKeyword } from '@zhipin/core';
 import { DESIGNER_RESUME, SAMPLE_JD, SAMPLE_RESUME } from './fixtures';
 
 describe('analyzeMatch', () => {
@@ -29,5 +29,10 @@ describe('analyzeMatch', () => {
 
   it('无技能关键词时返回空数组', () => {
     expect(extractSkills('负责团队日常沟通')).toEqual([]);
+  });
+
+  it('关键词匹配忽略大小写，空文本不抛错', () => {
+    expect(hasKeyword('使用 JAVA 与 spring boot 开发', 'java')).toBe(true);
+    expect(hasKeyword('', 'Java')).toBe(false);
   });
 });

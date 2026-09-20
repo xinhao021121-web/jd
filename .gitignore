@@ -7,5 +7,7 @@ dist/
 .wrangler/
 test-results/
 playwright-report/
+coverage/
+coverage-json/
 reports/
 *.log

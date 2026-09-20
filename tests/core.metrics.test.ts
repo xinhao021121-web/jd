@@ -3,6 +3,19 @@ import { calcMetrics } from '@zhipin/core';
 import type { TelemetryEvent } from '@zhipin/shared';
 
 describe('calcMetrics', () => {
+  it('未知事件类型被忽略，不污染任何指标', () => {
+    const events = [
+      { type: 'generate', at: 1 },
+      { type: 'unknown_event', at: 2 }
+    ] as unknown as TelemetryEvent[];
+
+    const metrics = calcMetrics(events);
+
+    expect(metrics.generateCount).toBe(1);
+    expect(metrics.copyCount).toBe(0);
+    expect(metrics.errorCount).toBe(0);
+  });
+
   it('空记录返回全零指标', () => {
     expect(calcMetrics([])).toEqual({
       generateCount: 0,

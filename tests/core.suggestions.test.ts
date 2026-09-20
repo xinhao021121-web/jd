@@ -62,6 +62,24 @@ describe('planSuggestions', () => {
     expect(suggestions).toHaveLength(0);
     expect(dropped[0]?.reason).toContain('跨行');
   });
+
+  it('缺原文或建议写法、原文与建议一致的条目都被丢弃', () => {
+    const missing = plan(makeSuggestion({ before: '' }));
+    expect(missing.suggestions).toHaveLength(0);
+    expect(missing.dropped[0]?.reason).toContain('缺少原文或建议写法');
+
+    const noop = plan(makeSuggestion({ after: quantifyLine }));
+    expect(noop.suggestions).toHaveLength(0);
+    expect(noop.dropped[0]?.reason).toContain('无需改写');
+  });
+
+  it('同一行同一改法的重复建议只保留一条', () => {
+    const { suggestions, dropped } = plan([makeSuggestion(), makeSuggestion()]);
+
+    expect(suggestions).toHaveLength(1);
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0]?.reason).toContain('重复建议');
+  });
 });
 
 describe('composeCustomResume', () => {

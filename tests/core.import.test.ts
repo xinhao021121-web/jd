@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   assembleDocxParagraphs,
   decodeTextFile,
@@ -59,6 +59,30 @@ describe('decodeTextFile', () => {
     // "简历" 的 GBK 编码：0xBC 0xF2 0xC0 0xFA
     const gbk = new Uint8Array([0xbc, 0xf2, 0xc0, 0xfa]);
     expect(decodeTextFile(gbk)).toBe('简历');
+  });
+
+  it('运行环境没有 GBK 解码器时退化为宽松 UTF-8，不让导入整条失败', () => {
+    // 浏览器与 Node 都带 GBK 解码表，这里显式模拟缺失环境，验证兜底分支仍能产出文本
+    const OriginalTextDecoder = globalThis.TextDecoder;
+    class NoGbkTextDecoder extends OriginalTextDecoder {
+      constructor(...args: ConstructorParameters<typeof OriginalTextDecoder>) {
+        if (typeof args[0] === 'string' && /^gbk$/i.test(args[0])) {
+          throw new RangeError('Unsupported encoding: gbk');
+        }
+        super(...args);
+      }
+    }
+    vi.stubGlobal('TextDecoder', NoGbkTextDecoder);
+
+    try {
+      const gbk = new Uint8Array([0xbc, 0xf2, 0xc0, 0xfa]);
+      const result = decodeTextFile(gbk);
+
+      expect(result).toBe(new OriginalTextDecoder('utf-8').decode(gbk));
+      expect(result.length).toBeGreaterThan(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 

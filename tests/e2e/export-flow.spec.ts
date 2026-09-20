@@ -45,10 +45,15 @@ test('导入 Word 后导出：文件名正确，导出的文件能被重新导�
   await expect(page.getByText('已采纳 1 条')).toBeVisible();
 
   // 3. 导出并使用原文件名
+  const exportStartedAt = Date.now();
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.locator('#exportDocx').click()
   ]);
+  const exportElapsedMs = Date.now() - exportStartedAt;
+  // PRD V0.4 增补的性能目标是 ≤1 秒；这里只拦数量级退化，实测值打到日志里留档
+  console.log(`导出 Word 耗时：${exportElapsedMs}ms`);
+  expect(exportElapsedMs).toBeLessThan(3000);
   expect(download.suggestedFilename()).toBe('resume-sample_定制.docx');
   await expect(page.getByText('已导出与原文件排版一致的 Word')).toBeVisible();
 

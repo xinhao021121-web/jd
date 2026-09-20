@@ -13,6 +13,10 @@ describe('话术长度校验', () => {
     expect(greetingLength('')).toBe(0);
   });
 
+  it('传入空值时按 0 字处理，不抛错', () => {
+    expect(greetingLength(undefined as unknown as string)).toBe(0);
+  });
+
   it('区间上下边界都算合规', () => {
     expect(isGreetingLengthOk('字'.repeat(GREETING_LENGTH.min))).toBe(true);
     expect(isGreetingLengthOk('字'.repeat(GREETING_LENGTH.max))).toBe(true);
