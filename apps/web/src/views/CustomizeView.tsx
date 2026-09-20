@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ABORTED_NOTICE,
   ERROR_MESSAGES,
+  EXPORT_FALLBACK_NOTICE,
+  EXPORT_TEMPLATE_NOTICE,
   LOCKED_NOTICE,
   MIN_TEXT_LENGTH,
   uncoveredNotice
@@ -17,6 +19,8 @@ import {
   composePreview,
   useAppStore
 } from '../store/store';
+import { downloadBlob } from '../utils/download';
+import { exportDocx, exportedFileName } from '../utils/export/docx';
 import { countChars } from '../utils/format';
 
 function SuggestionCard({ suggestion }: { suggestion: Suggestion }): JSX.Element {
@@ -55,7 +59,9 @@ function SuggestionCard({ suggestion }: { suggestion: Suggestion }): JSX.Element
           <span className="mt-0.5 flex-none rounded bg-[#e9f8ef] px-1.5 py-0.5 text-[11px] text-[#15a34a]">
             改
           </span>
-          <span className="text-[#1b2333]">{suggestion.after}</span>
+          <span className="text-[#1b2333]" data-testid="suggestion-after">
+            {suggestion.after}
+          </span>
         </div>
       </div>
 
@@ -82,9 +88,12 @@ export function CustomizeView(): JSX.Element {
   const resetCustomization = useAppStore((state) => state.resetCustomization);
   const saveCustomResume = useAppStore((state) => state.saveCustomResume);
   const preview = useAppStore((state) => composePreview(state));
+  const template = useAppStore((state) => state.resumeTemplate);
+  const record = useAppStore((state) => state.record);
   const adoptedCount = useAppStore(
     (state) => adoptedSuggestions(state.customization.suggestions).length
   );
+  const [exporting, setExporting] = useState(false);
 
   const streaming = customization.status === 'streaming';
   const missing = customization.analysis?.missing ?? [];
@@ -98,6 +107,35 @@ export function CustomizeView(): JSX.Element {
     });
     return [...map.entries()];
   }, [customization.suggestions]);
+
+  /** 导出：只把已采纳的建议写回原文件，版面与原件一致（PRD V0.4 增补 3.8） */
+  const handleExport = async (): Promise<void> => {
+    if (!template) return;
+    setExporting(true);
+    try {
+      const result = await exportDocx(template, adoptedSuggestions(customization.suggestions));
+      downloadBlob(exportedFileName(template.fileName), result.blob);
+      record({
+        type: 'custom_export',
+        at: Date.now(),
+        format: 'docx',
+        count: result.applied,
+        skipped: result.skipped,
+        sessionId: customization.sessionId ?? undefined
+      });
+      toast(
+        result.fallback
+          ? EXPORT_FALLBACK_NOTICE
+          : result.skipped > 0
+            ? `已导出，其中 ${result.skipped} 条建议没能对应到原文件，已按原文保留`
+            : '已导出与原文件排版一致的 Word'
+      );
+    } catch {
+      toast('导出失败，可改用「复制全文」');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div>
@@ -220,7 +258,22 @@ export function CustomizeView(): JSX.Element {
               >
                 复制全文
               </button>
+              <button
+                id="exportDocx"
+                type="button"
+                className="btn-ghost"
+                disabled={!template || exporting}
+                onClick={() => void handleExport()}
+              >
+                {exporting ? '导出中…' : '导出 Word'}
+              </button>
             </div>
+
+            {!template && (
+              <p className="mt-3 text-xs text-[#98a2b6]" data-testid="export-notice">
+                {EXPORT_TEMPLATE_NOTICE}
+              </p>
+            )}
 
             <p className="mt-3 text-xs text-[#98a2b6]">
               当前字数 {countChars(preview)} · 未采纳任何建议时，预览与原始简历完全一致

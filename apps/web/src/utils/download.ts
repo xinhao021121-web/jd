@@ -1,6 +1,5 @@
-/** 触发浏览器下载一个 JSON 文件；只在本机生成，不经过网络 */
-export function downloadJson(filename: string, data: unknown): void {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+/** 触发浏览器下载一个 Blob；只在本机生成，不经过网络 */
+export function downloadBlob(filename: string, blob: Blob): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -9,4 +8,9 @@ export function downloadJson(filename: string, data: unknown): void {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+/** 触发浏览器下载一个 JSON 文件 */
+export function downloadJson(filename: string, data: unknown): void {
+  downloadBlob(filename, new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
 }

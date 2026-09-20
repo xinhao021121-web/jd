@@ -24,6 +24,7 @@ import {
   type TelemetryEvent
 } from '@zhipin/shared';
 import { streamTask } from '../api/llm';
+import type { ResumeTemplate } from '../utils/import';
 import { createAppStorage, getBrowserStorage, type CustomResumeRecord } from './storage';
 
 export const VIEW_NAMES = ['resume', 'custom', 'archive', 'generate'] as const;
@@ -69,6 +70,8 @@ export interface AppStore {
   // 图片导入：撤销栈与校对态都是瞬时状态，不进 localStorage（技术方案增补 二）
   jdUndo: string[];
   jdReviewPending: boolean;
+  /** 保真导出用的原文件：只在内存里留存于当次会话，刷新即失效（PRD V0.4 增补 3.8） */
+  resumeTemplate: ResumeTemplate | null;
   // 结果
   greeting: GreetingState;
   customization: CustomizationState;
@@ -89,6 +92,7 @@ export interface AppStore {
   setJd: (text: string) => void;
   appendJdImport: (text: string) => void;
   undoJdImport: () => boolean;
+  setResumeTemplate: (template: ResumeTemplate | null) => void;
   generateGreeting: (options?: { regenerate?: boolean }) => Promise<void>;
   generateSuggestions: () => Promise<void>;
   abortGeneration: () => void;
@@ -162,6 +166,7 @@ export const useAppStore = create<AppStore>()(
       jdUpdatedAt: 0,
       jdUndo: [],
       jdReviewPending: false,
+      resumeTemplate: null,
       greeting: IDLE_GREETING,
       customization: IDLE_CUSTOMIZATION,
       archive: [],
@@ -175,6 +180,8 @@ export const useAppStore = create<AppStore>()(
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
 
       setResumeDraft: (text) => set({ resumeDraft: text }),
+
+      setResumeTemplate: (template) => set({ resumeTemplate: template }),
 
       saveResume: () => {
         const text = get().resumeDraft.trim();

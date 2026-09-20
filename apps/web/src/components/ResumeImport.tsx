@@ -33,6 +33,7 @@ export interface ResumeImportState {
 export function useResumeImport(): ResumeImportState {
   const draft = useAppStore((state) => state.resumeDraft);
   const setResumeDraft = useAppStore((state) => state.setResumeDraft);
+  const setResumeTemplate = useAppStore((state) => state.setResumeTemplate);
   const record = useAppStore((state) => state.record);
 
   const [busy, setBusy] = useState(false);
@@ -49,7 +50,7 @@ export function useResumeImport(): ResumeImportState {
 
     void (async () => {
       try {
-        const text = await parseResumeFile(file);
+        const parsed = await parseResumeFile(file);
         // 草稿已有内容时先二次确认，取消则草稿保持原样（PRD 增补 3.6）
         const confirmed =
           !draft.trim() ||
@@ -58,8 +59,10 @@ export function useResumeImport(): ResumeImportState {
           );
         if (!confirmed) return;
 
-        setResumeDraft(text);
-        const chars = [...text].length;
+        setResumeDraft(parsed.text);
+        // 模板始终跟着最近一次导入：导入非 Word 文件后不再保留上一份模板（PRD V0.4 增补 3.8）
+        setResumeTemplate(parsed.template);
+        const chars = [...parsed.text].length;
         setInfo({ fileName: file.name, chars });
         record({ type: 'resume_import', at: Date.now(), format: fileExtension(file.name), chars });
         toast('解析完成，记得点「保存简历」');

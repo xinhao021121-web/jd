@@ -108,6 +108,12 @@ export const LOW_MATCH_NOTICE =
 export const LOCKED_NOTICE = '个人信息与教育经历不会被改动，未识别的区块一律按锁定处理';
 export const DATA_FLOW_NOTICE = '简历与 JD 会发送给模型服务商（DeepSeek）用于生成，服务端不保存';
 
+/** Word 保真导出的入口提示（PRD V0.4 增补 3.8）：模板只在当次会话内存里 */
+export const EXPORT_TEMPLATE_NOTICE =
+  '只有在本次会话里导入过 Word 简历才能导出原样排版；如果你有这份简历的 Word 原件，导入它就能拿到与原文件一致的格式';
+/** 模板结构无法识别时的降级提示 */
+export const EXPORT_FALLBACK_NOTICE = '这份文件的排版无法安全改写，已按原样导出';
+
 export const uncoveredNotice = (items: string[]): string =>
   `岗位要求的「${items.join('、')}」在简历里找不到依据，建议不要写入简历`;
 
@@ -213,6 +219,7 @@ export const TELEMETRY_EVENT_TYPES = [
   'custom_save',
   'resume_import',
   'jd_image_import',
+  'custom_export',
   'error'
 ] as const;
 export type TelemetryEventType = (typeof TELEMETRY_EVENT_TYPES)[number];
@@ -232,6 +239,8 @@ export const TelemetryEventSchema = z.object({
   format: z.string().optional(),
   chars: z.number().optional(),
   images: z.number().optional(),
+  /** 导出时没能对应到原文件、按原文保留的建议条数（PRD V0.4 增补 4.2） */
+  skipped: z.number().optional(),
   errorType: z.string().optional()
 });
 export type TelemetryEvent = z.infer<typeof TelemetryEventSchema>;

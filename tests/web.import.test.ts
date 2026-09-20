@@ -44,6 +44,7 @@ function resetStore(): void {
     jdReviewPending: false,
     archive: [],
     selectedArchiveId: null,
+    resumeTemplate: null,
     sidebarCollapsed: false,
     view: 'resume',
     events: []
@@ -202,6 +203,43 @@ describe('JD 图片导入落点', () => {
     expect(
       TelemetryEventSchema.safeParse({ type: 'resume_import', at: 1, format: 'pdf', chars: 120 })
         .success
+    ).toBe(true);
+  });
+});
+
+describe('Word 保真导出的本地边界', () => {
+  it('原文件模板只留在内存，不写进本地存储，也不进行为记录', () => {
+    store().setResumeTemplate({ bytes: new Uint8Array([1, 2, 3]), fileName: '我的简历.docx' });
+    expect(store().resumeTemplate?.fileName).toBe('我的简历.docx');
+
+    store().record({
+      type: 'custom_export',
+      at: Date.now(),
+      format: 'docx',
+      count: 2,
+      skipped: 1
+    });
+
+    const stored = Object.values(STORAGE_KEYS)
+      .map((key) => storage.getItem(key) ?? '')
+      .join('\n');
+    expect(stored).not.toContain('我的简历.docx');
+    expect(stored).not.toContain('resumeTemplate');
+
+    // 导出事件只记可量化属性，不记文件名与正文
+    const events = JSON.parse(storage.getItem(STORAGE_KEYS.events) ?? '[]');
+    expect(events.at(-1)).toMatchObject({ type: 'custom_export', format: 'docx', count: 2, skipped: 1 });
+  });
+
+  it('导出事件的埋点字段在共享 schema 里合法', () => {
+    expect(
+      TelemetryEventSchema.safeParse({
+        type: 'custom_export',
+        at: 1,
+        format: 'docx',
+        count: 2,
+        skipped: 1
+      }).success
     ).toBe(true);
   });
 });
