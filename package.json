@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "vitest run",
-    "test:docs": "node --test tests/prd.sync.test.js tests/prd.nfr.test.js tests/prd.import.test.js tests/tech-design.test.js tests/tech.import.test.js tests/tech.quality.test.js tests/demo.smoke.test.js tests/demo.import.test.js tests/review.standard.test.js",
+    "test:docs": "node --test tests/prd.sync.test.js tests/prd.nfr.test.js tests/prd.import.test.js tests/prd.export.test.js tests/tech-design.test.js tests/tech.import.test.js tests/tech.export.test.js tests/tech.quality.test.js tests/demo.smoke.test.js tests/demo.import.test.js tests/review.standard.test.js",
     "test:all": "pnpm test && pnpm test:docs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "build": "pnpm --filter @zhipin/web build",
