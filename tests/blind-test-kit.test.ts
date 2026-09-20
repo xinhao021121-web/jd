@@ -34,6 +34,12 @@ describe('评分表模板', () => {
     expect(template).toContain('ratings: ratings');
     expect(template).toContain('rating[question.key]');
   });
+
+  it('时长与组数跟着样本数走，不写死数字', () => {
+    expect(template).not.toContain('大约 10 分钟');
+    expect(template).not.toContain('三组样本');
+    expect(template).toContain('DATA.samples.length * 2');
+  });
 });
 
 describe('模板导出的结果能被解析器接受', () => {

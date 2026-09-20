@@ -36,7 +36,8 @@ function buildKit(): void {
     new URL('../tests/samples/quality-samples.json', import.meta.url)
   );
   const samplesPath = argValue('samples', defaultSamples);
-  const count = Number(argValue('count', '3'));
+  // 默认 8 组：对齐差距诊断 G5 的「≥3 名评分者 × ≥8 组样本」口径
+  const count = Number(argValue('count', '8'));
   const url = argValue(
     'url',
     process.env.BLIND_TEST_URL ?? 'https://zhipin.xinhao02.ccwu.cc'
@@ -69,9 +70,9 @@ function buildKit(): void {
     [
       '# 发给测试者的话（可直接复制）',
       '',
-      '> 我把一个求职小工具做出来了，想请你帮我打个分，大概 10 分钟。',
+      `> 我把一个求职小工具做出来了，想请你帮我打个分，大概 ${samples.length * 2} 分钟。`,
       '>',
-      '> 需要你做的事：打开附件里的 `评分表.html`，按上面的步骤操作（里面有三组现成的简历和岗位 JD，复制粘贴就行），',
+      `> 需要你做的事：打开附件里的 \`评分表.html\`，按上面的步骤操作（里面有 ${samples.length} 组现成的简历和岗位 JD，复制粘贴就行），`,
       '> 然后在评分表里给结果打 1–5 分，点「生成结果」，把导出的那段文字发回给我。',
       '>',
       '> 随便挑毛病，不用客气——我需要的是真实评价，不是鼓励。',
@@ -138,6 +139,22 @@ function buildReport(): void {
     `| 有没有夸大或编造 | ${summary.dimensions.truthful} |`,
     `| **总均分** | **${summary.overall}** |`
   ];
+
+  lines.push('', '## 评分者一致率', '');
+  if (summary.agreement.cells) {
+    lines.push(
+      `- 统计单元格：${summary.agreement.cells} 个（样本 × 维度，且该样本至少有 2 位评分者）`,
+      `- 分数极差 ≤1 的比例：${(summary.agreement.withinOneRate * 100).toFixed(0)}%`,
+      `- 各维度平均极差：像真人 ${summary.agreement.avgRange.humanLike} / 敢发送 ${summary.agreement.avgRange.sendable} / 无夸大 ${summary.agreement.avgRange.truthful}`,
+      '',
+      '> 极差越小说明评分者越一致。一致率低意味着该维度的结论依赖具体评分者，不能当成稳定信号——',
+      '> 这时应当先统一评分口径（例如补锚点示例）再补人，而不是直接采信均分。'
+    );
+  } else {
+    lines.push(
+      '每位样本的评分者都不足 2 人，无法计算一致率：至少要有两位测试者评过同一组样本，主观结论才谈得上可靠。'
+    );
+  }
 
   if (results.length) {
     lines.push(

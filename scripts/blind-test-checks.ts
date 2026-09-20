@@ -26,6 +26,17 @@ export interface BlindTestSummary {
   overall: number;
   passed: boolean;
   reason: string;
+  /** 评分者一致率：主观分数靠不靠得住，靠它判断 */
+  agreement: BlindTestAgreement;
+}
+
+export interface BlindTestAgreement {
+  /** 参与统计的单元格数：样本 × 维度，且该样本至少有 2 位评分者 */
+  cells: number;
+  /** 各评分者分数极差 ≤1 的单元格比例，0–1 */
+  withinOneRate: number;
+  /** 每个维度的平均极差（越小越一致） */
+  avgRange: { humanLike: number; sendable: number; truthful: number };
 }
 
 export const BLIND_TEST_THRESHOLD = 3.5;
@@ -34,11 +45,64 @@ export const BLIND_TEST_MAX_TESTERS = 5;
 
 const round2 = (value: number): number => Math.round(value * 100) / 100;
 
+const meanOrZero = (values: number[]): number =>
+  values.length ? round2(values.reduce((sum, value) => sum + value, 0) / values.length) : 0;
+
+const DIMENSIONS = ['humanLike', 'sendable', 'truthful'] as const;
+
+/**
+ * 评分者一致率。只统计同一样本上至少两位评分者的单元格——
+ * 一个人打的分算不出分歧，把它算进去会把一致率虚高到 100%。
+ */
+export function computeAgreement(ratings: BlindTestRating[]): BlindTestAgreement {
+  const bySample = new Map<string, BlindTestRating[]>();
+  ratings.forEach((rating) => {
+    const list = bySample.get(rating.sample) ?? [];
+    list.push(rating);
+    bySample.set(rating.sample, list);
+  });
+
+  const ranges: Record<(typeof DIMENSIONS)[number], number[]> = {
+    humanLike: [],
+    sendable: [],
+    truthful: []
+  };
+  let cells = 0;
+  let withinOne = 0;
+
+  bySample.forEach((list) => {
+    if (list.length < 2) return;
+    DIMENSIONS.forEach((dimension) => {
+      const scores = list.map((rating) => rating[dimension]);
+      const range = Math.max(...scores) - Math.min(...scores);
+      ranges[dimension].push(range);
+      cells += 1;
+      if (range <= 1) withinOne += 1;
+    });
+  });
+
+  return {
+    cells,
+    withinOneRate: cells ? round2(withinOne / cells) : 0,
+    avgRange: {
+      humanLike: meanOrZero(ranges.humanLike),
+      sendable: meanOrZero(ranges.sendable),
+      truthful: meanOrZero(ranges.truthful)
+    }
+  };
+}
+
 /** 汇总评分：人数不足与均分不足都判不通过，理由写清是哪一条 */
 export function summarize(results: BlindTestResult[]): BlindTestSummary {
   const ratings = results.flatMap((result) => result.ratings ?? []);
   const testers = new Set(results.map((result) => result.tester)).size;
   const dimensions = { humanLike: 0, sendable: 0, truthful: 0 };
+
+  const emptyAgreement: BlindTestAgreement = {
+    cells: 0,
+    withinOneRate: 0,
+    avgRange: { humanLike: 0, sendable: 0, truthful: 0 }
+  };
 
   if (!ratings.length) {
     return {
@@ -47,7 +111,8 @@ export function summarize(results: BlindTestResult[]): BlindTestSummary {
       dimensions,
       overall: 0,
       passed: false,
-      reason: '还没有收到任何评分结果。'
+      reason: '还没有收到任何评分结果。',
+      agreement: emptyAgreement
     };
   }
 
@@ -63,7 +128,13 @@ export function summarize(results: BlindTestResult[]): BlindTestSummary {
   dimensions.truthful = round2(truthful);
 
   const overall = round2((humanLike + sendable + truthful) / 3);
-  const base = { testers, ratings: ratings.length, dimensions, overall };
+  const base = {
+    testers,
+    ratings: ratings.length,
+    dimensions,
+    overall,
+    agreement: computeAgreement(ratings)
+  };
 
   if (testers < BLIND_TEST_MIN_TESTERS) {
     return {

@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BLIND_TEST_THRESHOLD,
+  computeAgreement,
   parseResultJson,
   summarize,
   type BlindTestRating,
@@ -80,6 +81,52 @@ describe('summarize', () => {
     expect(summary.testers).toBe(3);
     expect(summary.ratings).toBe(4);
     expect(summary.dimensions.humanLike).toBe(4);
+  });
+});
+
+describe('computeAgreement', () => {
+  it('分数相同或相差 1 分算一致，差 2 分不算', () => {
+    const agreement = computeAgreement([
+      rating('S1', 4, 4, 5),
+      rating('S1', 5, 5, 5),
+      rating('S1', 4, 3, 4)
+    ]);
+
+    // 极差：像真人 1、敢发送 2、无夸大 1
+    expect(agreement.cells).toBe(3);
+    expect(agreement.withinOneRate).toBe(0.67);
+    expect(agreement.avgRange).toEqual({ humanLike: 1, sendable: 2, truthful: 1 });
+  });
+
+  it('只有一位评分者的样本不参与统计，避免把一致率虚高', () => {
+    const agreement = computeAgreement([
+      rating('S1', 4, 4, 4),
+      rating('S1', 5, 5, 5),
+      rating('S2', 1, 1, 1)
+    ]);
+
+    expect(agreement.cells).toBe(3);
+    expect(agreement.withinOneRate).toBe(1);
+    expect(agreement.avgRange).toEqual({ humanLike: 1, sendable: 1, truthful: 1 });
+  });
+
+  it('没有任何评分时是 0 而不是 100%', () => {
+    const agreement = computeAgreement([]);
+
+    expect(agreement.cells).toBe(0);
+    expect(agreement.withinOneRate).toBe(0);
+  });
+
+  it('汇总结果里带上一致率', () => {
+    const summary = summarize([
+      result('T1', [rating('S1', 5, 4, 5)]),
+      result('T2', [rating('S1', 4, 4, 4)]),
+      result('T3', [rating('S1', 5, 3, 4)])
+    ]);
+
+    expect(summary.agreement.cells).toBe(3);
+    expect(summary.agreement.withinOneRate).toBe(1);
+    expect(summary.passed).toBe(true);
   });
 });
 

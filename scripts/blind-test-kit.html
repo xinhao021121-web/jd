@@ -82,7 +82,7 @@
   <body>
     <main>
       <h1>打招呼话术体验评分</h1>
-      <p class="lede">大约 10 分钟。请抱着挑毛病的心态打分，不用客气，也不用考虑是谁做的。</p>
+      <p class="lede" id="lede">请抱着挑毛病的心态打分，不用客气，也不用考虑是谁做的。</p>
 
       <section class="card">
         <h2>怎么做</h2>
@@ -91,9 +91,9 @@
           <li>在「我的简历」里粘贴下面第 1 组的简历，点保存；</li>
           <li>切到「生成打招呼」，粘贴同一组的 JD，点生成，等结果出来；</li>
           <li>回到本页，对这次生成的三条话术打分（1 分最低，5 分最高）；</li>
-          <li>换第 2、3 组重复一遍。</li>
+          <li>换下一组重复一遍，直到做完上面列出的所有组。</li>
         </ol>
-        <p class="hint">三组样本都做完再导出结果。中途刷新本页会丢分，建议一次做完。</p>
+        <p class="hint">全部做完再导出结果。中途刷新本页会丢分；时间紧也可以先做完前几组再导出。</p>
       </section>
 
       <div id="samples"></div>
@@ -213,6 +213,12 @@
 
       const host = document.getElementById('samples');
       DATA.samples.forEach((sample, index) => host.appendChild(renderSample(sample, index)));
+
+      // 时长按样本组数算，避免样本数变了文案还停在旧数字
+      document.getElementById('lede').textContent =
+        '大约 ' +
+        DATA.samples.length * 2 +
+        ' 分钟。请抱着挑毛病的心态打分，不用客气，也不用考虑是谁做的。';
 
       const warn = document.getElementById('warn');
       const output = document.getElementById('output');

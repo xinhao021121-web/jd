@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>直聘打招呼助手 · AI 产品经理作品集</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --brand: #2563eb;
+        --ink: #1f2937;
+        --muted: #667085;
+        --line: #e4e7ec;
+        --soft: #f8fafc;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--soft);
+        color: var(--ink);
+        font: 15px/1.75 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      }
+      main { max-width: 900px; margin: 0 auto; padding: 56px 24px 96px; }
+      h1 { font-size: 34px; margin: 6px 0 14px; letter-spacing: -0.5px; }
+      h2 {
+        font-size: 20px; margin: 0 0 14px; padding-top: 8px;
+        border-top: 1px solid var(--line);
+      }
+      h3 { font-size: 15px; margin: 0 0 6px; }
+      section { margin-top: 44px; }
+      p { margin: 0 0 12px; }
+      .kicker {
+        color: var(--brand); font-size: 13px; font-weight: 600;
+        letter-spacing: 1px; margin: 0;
+      }
+      .lede { font-size: 17px; color: #344054; max-width: 46em; }
+      .meta { color: var(--muted); font-size: 13px; }
+      .meta a { color: var(--brand); }
+      video {
+        width: 100%; margin-top: 18px; border-radius: 12px;
+        border: 1px solid var(--line); background: #000;
+      }
+      .caption { color: var(--muted); font-size: 13px; margin-top: 8px; }
+      .facts {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+        margin-top: 32px;
+      }
+      .facts div {
+        background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+      }
+      .facts b { display: block; font-size: 26px; line-height: 1.2; color: var(--brand); }
+      .facts span { color: var(--muted); font-size: 12.5px; }
+      .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      .card {
+        background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px;
+      }
+      .card p:last-child { margin-bottom: 0; }
+      table { width: 100%; border-collapse: collapse; background: #fff; font-size: 14px; }
+      th, td { border: 1px solid var(--line); padding: 9px 12px; text-align: left; vertical-align: top; }
+      th { background: #f2f4f7; font-weight: 600; }
+      td.num { white-space: nowrap; }
+      ul { margin: 0 0 12px; padding-left: 20px; }
+      li { margin-bottom: 6px; }
+      .tag {
+        display: inline-block; font-size: 12px; color: var(--muted);
+        border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; margin-right: 6px;
+      }
+      .todo {
+        border: 1px dashed #f79009; background: #fffaeb; border-radius: 12px; padding: 16px 20px;
+      }
+      .todo h3 { color: #b54708; }
+      .shot { width: 100%; border: 1px solid var(--line); border-radius: 12px; display: block; }
+      .figs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 6px; }
+      footer { margin-top: 52px; border-top: 1px solid var(--line); padding-top: 16px; color: var(--muted); font-size: 13px; }
+      @media (max-width: 720px) {
+        .facts, .grid2, .figs { grid-template-columns: 1fr; }
+        main { padding: 32px 16px 64px; }
+      }
+      @media print {
+        body { background: #fff; }
+        section { break-inside: avoid; }
+        video { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="kicker">AI 产品经理作品集</p>
+        <h1>直聘打招呼助手</h1>
+        <p class="lede">
+          给求职者的工具：粘贴一段岗位 JD，用已保存的简历生成 3 条可直接发送的打招呼话术，以及逐条可采纳的简历改写建议；改完的简历能<b>按原文件的排版</b>导出。
+          所有内容必须能在简历原文找到依据——<b>编造即失败</b>。
+        </p>
+        <p class="meta">
+          在线体验：<a href="https://zhipin.xinhao02.ccwu.cc" target="_blank" rel="noreferrer">zhipin.xinhao02.ccwu.cc</a>
+          ｜ 单人项目（产品判断 + 实现 + 评测）｜ 数据截至 2026/09/21
+        </p>
+        <video controls preload="metadata" poster="docs/assets/02-generate.png" src="docs/assets/demo-flow.webm"></video>
+        <p class="caption">
+          66 秒主流程：保存简历 → 生成话术与匹配分析 → 复制（自动入历史）→ 按 JD 改简历 → 存为定制简历。
+        </p>
+      </header>
+
+      <section class="facts">
+        <div><b>1.7 s</b><span>完整生成耗时（8 组样本实测，线上含公网往返 2.9 s）</span></div>
+        <div><b>0 例</b><span>编造（8 组样本 × 2 轮，数字与技能全部可溯源）</span></div>
+        <div><b>92.41%</b><span>测试覆盖率（阈值 80% 写在配置里）</span></div>
+        <div><b>469 项</b><span>自动化测试（单测 280 + 文档一致性 170 + 端到端 19）</span></div>
+      </section>
+
+      <section>
+        <h2>一、问题与目标用户</h2>
+        <p>求职者在直聊类平台主动投递时有两件重复劳动：</p>
+        <ul>
+          <li><b>逐条写打招呼</b>：复制同一段会被招聘者一眼看出模板，手写一条要 5–10 分钟，而招聘者通常只读前两句；</li>
+          <li><b>为每个岗位改简历</b>：成本高于打招呼本身，多数人干脆一份通用简历投所有岗位。</li>
+        </ul>
+        <p>
+          现有通用 AI 写作工具的问题在于：要用户自己调提示词，且倾向产出「贵公司岗位非常感兴趣」这类无信息量套话，甚至编造简历里没有的经历和数字。
+        </p>
+        <p>
+          <b>目标用户</b>：互联网技术岗与产品岗的主动投递者——JD 硬性要求明确，与简历的对照关系最清晰，最容易验证生成质量。
+          <b>目标</b>：从粘贴 JD 到复制一条敢直接发送的话术 ≤ 30 秒。
+        </p>
+        <p class="todo" style="margin-top: 14px">
+          <b>依据强度</b>：以上来自自身场景与公开讨论的推演，<b>尚无访谈或问卷的一手数据</b>。这正是我列在复盘里的第一个短板，补齐计划见文末。
+        </p>
+      </section>
+
+      <section>
+        <h2>二、四条关键判断</h2>
+        <div class="grid2">
+          <div class="card">
+            <h3>1. 不信任模型：把不可让渡的规则放在模型外面</h3>
+            <p>
+              个人信息与教育经历绝不允许被改写。最直接的做法是写进提示词，我没有这么做——模型是不可靠的执行者，越界是静默的。
+              最终方案是：模型只输出「原文 → 建议写法」的片段，<b>替换由本地确定性代码执行</b>，锚点匹配不上就丢弃。
+              这样「逐字不变」从一句依赖模型自觉的期望，变成了一条普通单元测试。
+            </p>
+          </div>
+          <div class="card">
+            <h3>2. 先建评测，再调提示词</h3>
+            <p>
+              第一轮真实模型回归，8 组样本里违规 11 条。逐条归因后分成三类：只写长度区间没强调下限、检查器把「2022.06」误判为编造、模型把 JD 的年限要求写成用户自己的经验。
+              分别对应三种处置，修正后条级合规率 95.8%。<b>这套归因链比「效果变好了」有用</b>——每次改提示词，回归脚本会告诉你哪条规则退化了。
+            </p>
+          </div>
+          <div class="card">
+            <h3>3. 把「复制率」从条级改成会话级</h3>
+            <p>
+              原目标「零修改直接复制率 ≥ 50%」的口径是被复制话术中未经编辑的比例，这个数天然接近 1/3——用户在三选一里挑一条发，等于要求每 2 条就有 1 条不用改。
+              改为<b>会话级 ≥ 80%</b>（这一次有没有拿到敢发的话），更贴合产品目标；条级 40% 降为质量辅助线。
+            </p>
+          </div>
+          <div class="card">
+            <h3>4. 导出的保真度不靠重新排版，靠原地回填</h3>
+            <p>
+              用户要的是「和原来排版一样」的简历。把简历解析成结构化数据再渲染，那是<b>重排</b>——字体、页边距、表格、页眉页脚都得重新对齐，误差不可控。
+              我选的是相反方向：原文件当模板，只替换被采纳建议所在的那几行文字，其余字节原样保留。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>三、被放弃的方案</h2>
+        <table>
+          <tr><th>看起来更省事的路</th><th>为什么不做</th></tr>
+          <tr>
+            <td>让模型自己「输出前自检」字数与数字</td>
+            <td>等于让它猜自己的输出：结论不可验证，还要为这段自审多付输出 token。数字是否出现在简历里、有没有用黑名单词，本地是几行确定性比较。</td>
+          </tr>
+          <tr>
+            <td>PDF 先转 Word 再导出</td>
+            <td>转换本身是版面重建而非还原，同一份 PDF 用不同工具转出来的结果并不相同，导出结果不可预测。</td>
+          </tr>
+          <tr>
+            <td>在原 PDF 上覆盖改写</td>
+            <td>要嵌入中文字体，与「导出不触网」冲突；改写让文字变长还会溢出原行。</td>
+          </tr>
+          <tr>
+            <td>引入第二个模型做审核</td>
+            <td>既增加成本，又把「有没有编造」这个可判定的问题重新变成不可判定的问题。</td>
+          </tr>
+        </table>
+      </section>
+
+      <section>
+        <h2>四、评测体系</h2>
+        <table>
+          <tr><th>项目</th><th>结果</th></tr>
+          <tr><td>事实溯源</td><td>8 组样本 × 2 轮，<b>0 例编造</b>；数字、技能、学历均可在简历原文找到</td></tr>
+          <tr><td>话术条级合规率</td><td>95.8%（48 条中 2 条长度越界）。这是<b>合规率</b>不是质量率——它判不了「像不像真人写的」</td></tr>
+          <tr><td>Word 往返一致性</td><td>不采纳任何建议时，导出文件的正文与原件逐字一致；导出件能被自己的导入通道重新解析</td></tr>
+          <tr><td>模型选型</td><td>同批 8 组样本跑了三个候选：在用的模型延迟与 token 用量都最低，另两个分别是它的 5.6 倍与 30 倍耗时，且质量并未更好</td></tr>
+          <tr><td>外部盲测</td><td><b>待回收</b>：评分表与汇总工具已就绪（8 组样本，含评分者一致率），3–5 人尚未完成</td></tr>
+        </table>
+        <p class="caption" style="margin-top: 10px">
+          关键点：<b>判定规则只有一份</b>——线上逐条自检与离线质量回归调用同一个函数；提示词是目标，自检是红线。
+        </p>
+      </section>
+
+      <section>
+        <h2>五、结果</h2>
+        <div class="figs">
+          <div>
+            <img class="shot" src="docs/assets/02-generate.png" alt="生成打招呼页：匹配分析在前，话术在后" />
+            <p class="caption">本地计算匹配分析（JD 关键要求 / 已命中 / 未覆盖），再流式出现 3 条话术。</p>
+          </div>
+          <div>
+            <img class="shot" src="docs/assets/03-customize.png" alt="按 JD 改简历页：建议在左，预览在右" />
+            <p class="caption">建议逐条可采纳，右侧实时合成；个人信息与教育经历永远保持原文。</p>
+          </div>
+        </div>
+        <table style="margin-top: 16px">
+          <tr><th>指标</th><th>目标</th><th>实测</th></tr>
+          <tr><td>首字到达</td><td class="num">≤ 5 s</td><td class="num">0.46 s（16 次平均）；线上 2.20 s</td></tr>
+          <tr><td>完整结果</td><td class="num">≤ 30 s</td><td class="num">1.69 s（16 次平均）；线上 2.89 s</td></tr>
+          <tr><td>Word 保真导出</td><td class="num">≤ 1 s</td><td class="num">48–60 ms（全程本地，断网可用）</td></tr>
+          <tr><td>限流与配额</td><td>超限不消耗模型调用</td><td>压测三场景（60 / 200 / 160 个请求），模型调用数与配额完全一致</td></tr>
+          <tr><td>成本硬顶</td><td>公开传播可控</td><td>单日 300 次调用上限；一次完整生成约 1443 输入 + 596 输出 token</td></tr>
+        </table>
+        <p class="caption" style="margin-top: 10px">
+          部署形态：一个 Cloudflare Worker 同时托管前端与 API，同域、无 CORS；密钥只在 Worker Secret。
+          简历与 JD 只存在浏览器本地，服务端只转发不存储。
+        </p>
+      </section>
+
+      <section>
+        <h2>六、复盘：已知不足</h2>
+        <ul>
+          <li><b>用户侧证据缺失</b>：没有访谈、问卷或竞品实测，痛点来自推演。这是当前最大的短板。</li>
+          <li><b>评测样本是自造的</b>：8 组样本格式规整，没有真实简历的噪声（多栏、中英混排、排版混乱）。</li>
+          <li><b>核心价值指标没有真实数据</b>：会话级复制率与建议采纳率的口径和采集已落地，但数据只存在用户本机、没有回流通道，目前为空。</li>
+          <li><b>单位经济性只到 token 实测</b>：token 是实测值，但供应商单价未从账单核对，因此成本仍是公式而非结论。</li>
+          <li><b>保真导出只覆盖 Word 来源</b>：PDF 与粘贴来源的用户只能拿到文本。</li>
+          <li><b>国内直连依赖 IPv6</b>：IPv4 出口到 Cloudflare 的部分网段被阻断，纯 IPv4 网络需要代理。</li>
+        </ul>
+        <p>
+          补齐顺序：先用内测回收一批真实使用记录并请 3–5 人做外部盲测（评分工具已就绪），再做用户访谈把痛点从推演换成一手证据。
+        </p>
+      </section>
+
+      <section>
+        <h2>七、我的角色</h2>
+        <div class="todo">
+          <h3>本节待本人认领后填写</h3>
+          <p>
+            需要明确回答的四件事：产品定位与目标用户是怎么确定的、三条硬边界（禁止编造 / 锁定区块 / 不做自动发送）为什么不可让渡、
+            评测体系的设计意图、以及在实现过程中本人提出与验收了哪些部分。
+          </p>
+          <p>没有这一节，读者无法判断哪些判断来自本人；这也是我在复盘里点出的、比缺数据更靠前的问题。</p>
+        </div>
+      </section>
+
+      <footer>
+        <p>
+          更细的证据链见仓库文档：作品集主文档 V1.3（三分钟读完）、六版 PRD 与六版技术方案增补、质量回归 V0.2、模型选型对比 V1.0、
+          项目评审标准 V0.2、上线前评审记录 V1.0、运维与回滚 V1.0。
+        </p>
+        <p>
+          <span class="tag">在线可体验</span>
+          <span class="tag">469 项自动化测试</span>
+          <span class="tag">可回滚</span>
+          <span class="tag">数据不出本机</span>
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
