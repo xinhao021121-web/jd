@@ -71,15 +71,19 @@ test('保真导出写清了保真口径、可用条件与异常兜底', () => {
   });
 
   assert.ok(exportSection.includes('格式继承'), '应说明改写后的格式继承取舍');
+  assert.ok(exportSection.includes('「定制简历」存档详情'), '应写明存档页也有导出入口');
   assert.ok(exportSection.includes('最近一次导入的是 .docx'), '应写明导出按钮的可用条件');
   assert.ok(exportSection.includes('不要求先采纳建议'), '应写明未采纳建议也可导出');
   assert.ok(exportSection.includes('原文件名_定制.docx'), '应写明导出文件命名');
+  assert.ok(exportSection.includes('记录名_定制.docx'), '应写明存档页的文件命名');
+  assert.ok(exportSection.includes('行级比对'), '应写明存档记录靠行级比对反推改动');
   assert.ok(exportSection.includes('不触网'), '应写明导出不触网');
 
   [
     '未导入 Word',
     '刷新后原文件已失效',
     '建议在模板中定位不到',
+    '原始简历在该记录之后改动过',
     '模板结构无法识别',
     '导出过程出错'
   ].forEach((item) => {

@@ -44,6 +44,12 @@ export async function exportDocx(
 }
 
 /** 导出文件名：在原文件名后加后缀，便于用户覆盖自己的旧版本（PRD V0.4 增补 待确认 22） */
+/** 文件名里的非法字符换成下划线：存档记录名来自 JD 解析，可能带斜杠一类的符号 */
+export function safeFileName(name: string): string {
+  const cleaned = name.replace(/[\\/:*?"<>|]/g, '_').trim();
+  return cleaned || '简历';
+}
+
 export function exportedFileName(original: string): string {
-  return `${original.replace(/\.docx$/i, '')}_定制.docx`;
+  return `${safeFileName(original.replace(/\.docx$/i, ''))}_定制.docx`;
 }

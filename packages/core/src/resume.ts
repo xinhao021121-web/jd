@@ -68,3 +68,40 @@ export function parseResume(text: string): ResumeBlock[] {
 export function joinBlocks(blocks: ResumeBlock[]): string {
   return blocks.map((block) => block.lines.join('\n')).join('\n');
 }
+
+export interface LineChange {
+  before: string;
+  after: string;
+}
+
+/**
+ * 从「原始简历」与「定制简历全文」反推被改动过的行（存档记录的导出用）。
+ *
+ * 合成只做行内替换、不增删行，所以逐行比较就够了。反过来，**行数不一致就意味着
+ * 原始简历在存档之后被改过**，此时逐行对齐不再可信——硬比会把甲行的文字填到乙行，
+ * 用户很难发现。这种静默错误比「这份记录暂时导不出来」严重得多，因此直接放弃。
+ *
+ * 行数一致时仍要求「该行文本在原文里唯一出现」，避免同文行被替换到别处。
+ */
+export function diffResumeLines(resume: string, content: string): LineChange[] {
+  const source = (resume || '').split('\n');
+  const target = (content || '').split('\n');
+  if (source.length !== target.length) return [];
+
+  const occurrences = new Map<string, number>();
+  source.forEach((line) => occurrences.set(line, (occurrences.get(line) ?? 0) + 1));
+
+  const changes: LineChange[] = [];
+
+  for (let index = 0; index < source.length; index += 1) {
+    const before = source[index] as string;
+    const after = target[index] as string;
+    if (before === after) continue;
+    // 空行变化没有可回填的内容，也避免拿空字符串去定位
+    if (!before.trim() || !after.trim()) continue;
+    if (occurrences.get(before) !== 1) continue;
+    changes.push({ before, after });
+  }
+
+  return changes;
+}

@@ -51,6 +51,7 @@ test('模块落点区分纯逻辑与浏览器适配层', () => {
       assert.ok(modules.includes(fn), 'core 应新增：' + fn);
     }
   );
+  assert.ok(modules.includes('diffResumeLines(resume, content)'), 'core 应新增存档反推：diffResumeLines');
   assert.ok(modules.includes('packages/core'), '应说明纯逻辑下沉 core');
   assert.ok(modules.includes('utils/export/docx.ts'), '应说明浏览器适配层位置');
   assert.ok(modules.includes('downloadBlob'), '应新增下载函数');
@@ -71,6 +72,17 @@ test('回填算法写清了四项关键决策', () => {
   ['applied', 'skipped', 'fallback'].forEach((field) => {
     assert.ok(algorithm.includes(field), '返回值应包含：' + field);
   });
+});
+
+test('存档记录的反推写清了行级比对与两条安全约束', () => {
+  const algorithm = section('## 三、回填算法', '## 四、被否决的方案');
+
+  assert.ok(algorithm.includes('### 3.8 存档记录的反推'), '回填算法应包含存档反推一节');
+  assert.ok(algorithm.includes('没有保留建议列表'), '应说明为什么需要反推');
+  assert.ok(algorithm.includes('行数不一致就直接放弃'), '应写明行数不一致时放弃');
+  assert.ok(algorithm.includes('唯一出现'), '应写明唯一性约束');
+  assert.ok(algorithm.includes('静默错误'), '应说明放弃而不是硬比的理由');
+  assert.ok(algorithm.includes('同一条回填路径'), '应说明与改写页共用回填路径');
 });
 
 test('被否决方案保留了 PDF 两条路线的判断依据', () => {

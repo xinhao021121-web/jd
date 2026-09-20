@@ -1,12 +1,16 @@
+import { useState } from 'react';
 import type { CustomResumeRecord } from '../store/storage';
-import { MAX_TITLE_LENGTH } from '@zhipin/shared';
+import { diffResumeLines } from '@zhipin/core';
+import { EXPORT_FALLBACK_NOTICE, EXPORT_TEMPLATE_NOTICE, MAX_TITLE_LENGTH } from '@zhipin/shared';
 import { copyText } from '../api/copy';
 import { toast } from '../components/Toast';
 import { Card, Notice, PageTitle } from '../components/ui';
 import { archiveTitle, useAppStore } from '../store/store';
+import { downloadBlob } from '../utils/download';
+import { exportDocx, safeFileName } from '../utils/export/docx';
 import { formatTime } from '../utils/format';
 
-/** 定制简历存档：按岗位归类，可改名、复制、删除，删除不影响原始简历（PRD 3.4） */
+/** 定制简历存档：按岗位归类，可改名、复制、导出、删除，删除不影响原始简历（PRD 3.4） */
 export function ArchiveView(): JSX.Element {
   const archive = useAppStore((state) => state.archive);
   const selectedId = useAppStore((state) => state.selectedArchiveId);
@@ -14,9 +18,51 @@ export function ArchiveView(): JSX.Element {
   const renameArchive = useAppStore((state) => state.renameArchive);
   const removeArchive = useAppStore((state) => state.removeArchive);
   const setView = useAppStore((state) => state.setView);
+  const resume = useAppStore((state) => state.resume);
+  const template = useAppStore((state) => state.resumeTemplate);
+  const logEvent = useAppStore((state) => state.record);
+  const [exporting, setExporting] = useState(false);
 
   const selected =
     archive.find((record) => record.id === selectedId) ?? archive[0] ?? null;
+
+  /**
+   * 存档里只留了定制简历全文，没有保留建议列表，所以导出时用行级比对反推被改过的行
+   * （PRD V0.4 增补 3.8）。行对不上就不导，避免把内容填错行。
+   */
+  const exportRecord = async (record: CustomResumeRecord): Promise<void> => {
+    if (!template) return;
+
+    const changes = diffResumeLines(resume, record.content);
+    if (!changes.length) {
+      toast('原始简历在这份记录之后改动过，行位置对不上，建议重新生成后再导出');
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const result = await exportDocx(template, changes);
+      downloadBlob(`${safeFileName(archiveTitle(record))}_定制.docx`, result.blob);
+      logEvent({
+        type: 'custom_export',
+        at: Date.now(),
+        format: 'docx',
+        count: result.applied,
+        skipped: result.skipped
+      });
+      toast(
+        result.fallback
+          ? EXPORT_FALLBACK_NOTICE
+          : result.skipped > 0
+            ? `已导出，其中 ${result.skipped} 处改动没能对应到原文件，已按原文保留`
+            : '已导出与原文件排版一致的 Word'
+      );
+    } catch {
+      toast('导出失败，可改用「复制全文」');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const confirmAndRemove = (record: CustomResumeRecord) => {
     const ok = window.confirm(
@@ -140,6 +186,15 @@ export function ArchiveView(): JSX.Element {
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <button
+                id="exportArchive"
+                type="button"
+                className="btn-ghost"
+                disabled={!template || exporting}
+                onClick={() => void exportRecord(selected)}
+              >
+                {exporting ? '导出中…' : '导出 Word'}
+              </button>
+              <button
                 id="copyArchive"
                 type="button"
                 className="btn-ghost"
@@ -159,6 +214,12 @@ export function ArchiveView(): JSX.Element {
                 删除这份
               </button>
             </div>
+
+            {!template && (
+              <p className="mt-3 text-xs text-[#98a2b6]" data-testid="archive-export-notice">
+                {EXPORT_TEMPLATE_NOTICE}
+              </p>
+            )}
 
             <div className="mt-3">
               <Notice tone="muted">
