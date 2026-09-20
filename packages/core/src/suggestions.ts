@@ -20,13 +20,30 @@ export interface RawSuggestion {
 }
 
 /**
- * 改写建议的长度上限（PRD V0.4 增补 三）：改写只有在行内原地替换才能保住原版面，
- * 行变长会让 Word 重新折行。口径为「至多比原文长 20%，最少允许长 5 个字」，
- * 提示词与本函数共用同一份规则。
+ * 改写建议的长度口径（PRD V0.4 增补 三）。改写只有在行内原地替换才能保住原版面，
+ * 行变长会让 Word 重新折行，所以提示词要求模型「最多比原文长 20%」。
+ *
+ * 本地自检另取一条更宽的**红线**：实测（8 组样本 31 条建议）模型在 20% 要求下的自然
+ * 增量多数落在 26%~35%（最大 +50%），用目标值判定会把四成正常改写标成问题、把回归报告淹掉；
+ * 红线取 40%，只拦明显撑长原文行的情况。两个比例都定义在这里，避免口径漂移——
+ * 这与话术「提示词给 120~150 的目标区间、自检按 100~160 判定」是同一套做法。
  */
-export function suggestionLengthLimit(before: string, margin = 5): number {
+export const SUGGESTION_LENGTH_TARGET_RATIO = 0.2;
+export const SUGGESTION_LENGTH_LIMIT_RATIO = 0.4;
+
+/** 短句按比例只能多一两个字，会把正常改写框死，因此设一个固定下限 */
+const MIN_LENGTH_MARGIN = 5;
+
+/** 提示词里的目标：模型应把增长控制在这个比例内 */
+export const SUGGESTION_LENGTH_TARGET_PERCENT = SUGGESTION_LENGTH_TARGET_RATIO * 100;
+
+/** 本地自检的上限：超出即判为「改写长度」违规 */
+export function suggestionLengthLimit(
+  before: string,
+  ratio = SUGGESTION_LENGTH_LIMIT_RATIO
+): number {
   const length = [...before].length;
-  return length + Math.max(Math.ceil(length * 0.2), margin);
+  return length + Math.max(Math.ceil(length * ratio), MIN_LENGTH_MARGIN);
 }
 
 export interface Suggestion {

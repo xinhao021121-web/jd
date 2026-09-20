@@ -309,8 +309,12 @@ describe('fillDocxTemplate', () => {
 });
 
 describe('suggestionLengthLimit', () => {
-  it('长句按 20% 给余量', () => {
-    expect(suggestionLengthLimit('负'.repeat(100))).toBe(120);
+  it('默认按 40% 的红线判定', () => {
+    expect(suggestionLengthLimit('负'.repeat(100))).toBe(140);
+  });
+
+  it('可以按提示词的目标比例（20%）单独取值', () => {
+    expect(suggestionLengthLimit('负'.repeat(100), 0.2)).toBe(120);
   });
 
   it('短句按 5 个字给固定余量，不把正常改写框死', () => {
@@ -319,7 +323,7 @@ describe('suggestionLengthLimit', () => {
   });
 
   it('中英文混排按字符数计算', () => {
-    // 'Java 开发' 共 7 个字符，20% 只多出 1 个字，按 5 个字的固定余量给
+    // 'Java 开发' 共 7 个字符，40% 只多出 3 个字，按 5 个字的固定余量给
     expect(suggestionLengthLimit('Java 开发')).toBe(12);
   });
 });

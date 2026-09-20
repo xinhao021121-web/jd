@@ -126,4 +126,43 @@ describe('checkSuggestions', () => {
     expect(violations.map((item) => item.rule)).toContain('改写数字');
     expect(violations.map((item) => item.rule)).toContain('改写技能');
   });
+
+  it('改写明显撑长原文行时标注长度问题', () => {
+    const before = '参与微服务拆分，基于 Kafka 实现订单状态异步通知，日均处理消息 40 万条';
+    const section = '工作经历';
+
+    const tooLong = checkSuggestions(
+      SAMPLE_RESUME,
+      [
+        {
+          section,
+          before,
+          after: `${before}，同时负责订单履约、库存扣减、对账清算与结算单推送等全链路改造`,
+          reason: '补上全链路术语'
+        }
+      ],
+      SAMPLE_JD
+    );
+    expect(tooLong.map((item) => item.rule)).toContain('改写长度');
+    expect(tooLong.some((item) => item.detail.includes('允许的'))).toBe(true);
+  });
+
+  it('超出提示词目标但在自检红线内不标注，避免淹没正常改写', () => {
+    const before = '参与微服务拆分，基于 Kafka 实现订单状态异步通知，日均处理消息 40 万条';
+
+    // 增长 10 字（25%）：高于提示词的 20% 目标，低于自检的 40% 红线
+    const withinLimit = checkSuggestions(
+      SAMPLE_RESUME,
+      [
+        {
+          section: '工作经历',
+          before,
+          after: `${before}（高并发与链路治理）`,
+          reason: '补上术语标签'
+        }
+      ],
+      SAMPLE_JD
+    );
+    expect(withinLimit.map((item) => item.rule)).not.toContain('改写长度');
+  });
 });

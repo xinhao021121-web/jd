@@ -96,6 +96,7 @@ describe('buildMessages', () => {
 
     expect(system?.content).toContain('教育经历');
     expect(system?.content).toContain('不得跨行');
+    expect(system?.content).toContain('撑长原文行');
     expect(user?.content).toContain('【工作经历】');
     expect(user?.content).toContain('【专业技能】');
     expect(user?.content).not.toContain('【教育背景】');

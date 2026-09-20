@@ -87,15 +87,15 @@ test('保真导出写清了保真口径、可用条件与异常兜底', () => {
   });
 });
 
-test('长度约束写清了上限口径与处置方式', () => {
+test('长度约束写清了双口径、实测依据与处置方式', () => {
   const length = section('## 三、改写长度约束', '## 四、其他章节的改动');
 
-  assert.ok(length.includes('max(before × 20% 向上取整, 5)'), '应写明上限口径');
-  assert.ok(length.includes('提示词'), '应说明提示词侧约束');
-  assert.ok(length.includes('系统提示词'), '应写明落在系统提示词');
-  assert.ok(length.includes('服务端逐条校验'), '应说明本地自检');
+  assert.ok(length.includes('最多留 20% 的余量'), '应写明提示词的目标口径');
+  assert.ok(length.includes('本地自检按 40% 判定'), '应写明自检红线');
+  assert.ok(length.includes('为什么两套口径'), '应解释双口径的理由');
   assert.ok(length.includes('只标注不丢弃'), '应写明超长不丢弃');
   assert.ok(length.includes('行变长会让 Word 重新折行'), '应说明为什么放在生成环节');
+  assert.ok(length.includes('实测记录'), '应留下实测依据');
 });
 
 test('差异清单指明了落点，并登记 V0.5 功能项', () => {

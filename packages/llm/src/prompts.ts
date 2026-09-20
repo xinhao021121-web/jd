@@ -3,7 +3,12 @@
  * 产品规则（区块锁定、长度、事实溯源、禁用套话）写进系统提示，
  * 但真正的兜底在本地确定性代码：任何越界建议都会被 planSuggestions 丢弃。
  */
-import { EDITABLE_TITLES, analyzeMatch, parseResume } from '@zhipin/core';
+import {
+  EDITABLE_TITLES,
+  SUGGESTION_LENGTH_TARGET_PERCENT,
+  analyzeMatch,
+  parseResume
+} from '@zhipin/core';
 import {
   GREETING_LENGTH,
   GREETING_STYLES,
@@ -48,10 +53,11 @@ const SUGGESTIONS_SYSTEM = [
   '硬性规则：',
   `1. 只允许改写这些区块：${EDITABLE_TITLES.join('、')}；个人信息、教育经历以及其他未识别的小标题一律不许改动，也不要为它们生成建议；`,
   '2. before 必须是简历原文中真实存在的一段连续文字，且位于同一行内，不得跨行、不得跨区块；',
-  '3. after 不得新增原简历中不存在的事实、技能、数字或经历，只允许三类改写：术语对齐（已有量化结果的句子补上岗位关注的术语标签）、技能补充（简历正文里有依据但未列进技能清单的技能）、关键词补充（自我评价中补充已具备的岗位关键词）；',
-  '4. reason 用一句面向求职者的话说明为什么改，不写空话；',
-  '5. 岗位要求但简历完全没有依据的能力，不要生成建议；',
-  '6. 优先给出 2~6 条最有价值的建议，宁少勿滥；',
+  `3. 长度：after 要尽量不比 before 长——改写是让原文更贴合岗位，不是往里加内容。补术语导致的增长最多留 ${SUGGESTION_LENGTH_TARGET_PERCENT}% 的余量（不足 5 个字时留 5 个字）；用户的成品会按原简历的排版导出，撑长原文行会让版面走样，能换更短的写法就换短的；`,
+  '4. after 不得新增原简历中不存在的事实、技能、数字或经历，只允许三类改写：术语对齐（已有量化结果的句子补上岗位关注的术语标签）、技能补充（简历正文里有依据但未列进技能清单的技能）、关键词补充（自我评价中补充已具备的岗位关键词）；',
+  '5. reason 用一句面向求职者的话说明为什么改，不写空话；',
+  '6. 岗位要求但简历完全没有依据的能力，不要生成建议；',
+  '7. 优先给出 2~6 条最有价值的建议，宁少勿滥；',
   OUTPUT_CONTRACT,
   '每行形如：{"type":"item","kind":"suggestion","section":"工作经历","before":"...","after":"...","reason":"...","suggestionType":"术语对齐"}'
 ].join('\n');

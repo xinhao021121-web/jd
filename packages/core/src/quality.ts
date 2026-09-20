@@ -6,7 +6,7 @@
 import { GREETING_LENGTH, type OutputEvent } from '@zhipin/shared';
 import { parseResume } from './resume';
 import { extractSkills } from './skills';
-import { planSuggestions, type RawSuggestion } from './suggestions';
+import { planSuggestions, suggestionLengthLimit, type RawSuggestion } from './suggestions';
 
 /** PRD 3.2 明确禁止的套话 */
 export const CLICHE_BLACKLIST = [
@@ -88,7 +88,7 @@ export function checkGreetingText(resume: string, text: string): Violation[] {
   return violations;
 }
 
-/** 单条改写建议的事实自检：不得引入原文没有的数字与技能 */
+/** 单条改写建议的事实与长度自检：不得引入原文没有的数字与技能，也不得撑长原文行 */
 export function checkSuggestionText(
   resume: string,
   suggestion: RawSuggestion,
@@ -97,6 +97,17 @@ export function checkSuggestionText(
   const violations: Violation[] = [];
   const resumeSkills = extractSkills(resume);
   const jdSkills = extractSkills(jd);
+
+  // 长度红线：改写按原版面导出，撑长原文行会让排版走样（PRD V0.4 增补 三）
+  const beforeLength = [...suggestion.before].length;
+  const afterLength = [...suggestion.after].length;
+  const limit = suggestionLengthLimit(suggestion.before);
+  if (afterLength > limit) {
+    violations.push({
+      rule: '改写长度',
+      detail: `改写后 ${afterLength} 字，超出 ${beforeLength} 字原文允许的 ${limit} 字`
+    });
+  }
 
   const beforeNumbers = numbersIn(suggestion.before);
   const afterNumbers = numbersIn(suggestion.after);
