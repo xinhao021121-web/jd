@@ -2,7 +2,7 @@
 
 面向求职者的轻量工具：维护一份长期简历，针对具体岗位 JD 生成可直接发送的打招呼话术，以及逐条可采纳的简历改写建议。
 
-只看一份文档的话，看 [docs/作品集主文档_V1.1.md](docs/作品集主文档_V1.1.md)：三分钟读完产品判断、评测体系与已知不足。
+只看一份文档的话，看 [docs/作品集主文档_V1.2.md](docs/作品集主文档_V1.2.md)：三分钟读完产品判断、评测体系与已知不足。
 
 产品口径见 [直聘打招呼助手_PRD_V0.2.md](直聘打招呼助手_PRD_V0.2.md)，增量设计见四份增补：[PRD V0.3](直聘打招呼助手_PRD_V0.3_增补.md)（导入能力）、[PRD V0.4](直聘打招呼助手_PRD_V0.4_增补.md)（Word 保真导出）、[PRD V0.5](直聘打招呼助手_PRD_V0.5_增补.md)（话术历史）、[PRD V0.6](直聘打招呼助手_PRD_V0.6_增补.md)（界面布局与交互收口）；实现口径见 [docs/技术方案_V0.1.md](docs/技术方案_V0.1.md) 与五份增补：[V0.2](docs/技术方案_V0.2_增补.md)（导入能力）、[V0.3](docs/技术方案_V0.3_增补.md)（本地自检与提示词收缩）、[V0.4](docs/技术方案_V0.4_增补.md)（Word 保真导出）、[V0.5](docs/技术方案_V0.5_增补.md)（话术历史）、[V0.6](docs/技术方案_V0.6_增补.md)（界面布局的响应式口径）。
 
@@ -115,8 +115,13 @@ pnpm test         # Vitest：core 纯逻辑、模型协议、服务端集成、�
 pnpm test:docs    # node:test：PRD / 原型 / 技术方案一致性
 pnpm test:all     # 上面两项
 pnpm test:e2e     # Playwright：构建前端 + 启动 mock 模型与真实服务端，跑主流程
+pnpm coverage     # 覆盖率（范围＝三个包 + 服务端，阈值 80%）
+pnpm loadtest     # 限流与配额压测，写出 reports/压测_<时间>.md
+pnpm smoke:prod   # 线上冒烟：静态、健康检查、真实生成、真实图片识别（各 1 次模型调用）
 pnpm typecheck    # tsc --noEmit
 ```
+
+`pnpm smoke:prod` 打的是真实域名，会消耗当日额度；只做静态与健康检查时加 `-- --static-only`。依赖漏洞扫描注意用官方源：`pnpm audit --registry=https://registry.npmjs.org`（国内镜像没有审计端点）。
 
 导入与导出共用固定样本：`tests/samples/import/` 放了一份文本层 PDF、一份 docx、一份双栏 text item 样本与一张 JD 截图。前两者由端到端用例真实解析，双栏样本用于 `rebuildPdfText` 的回归，同一份 docx 还用于「不采纳任何建议时正文逐字一致」的往返回归（`tests/core.docx-roundtrip.test.ts`）。
 
@@ -182,6 +187,8 @@ npx wrangler secret put DEEPSEEK_API_KEY  # 首次部署后写入密钥，不进
 - `[[routes]]`：自定义域名，不需要可以删掉，只留 `workers.dev`。
 
 **国内访问的注意事项**：`*.workers.dev` 在国内会被 DNS 污染且 TLS 连接被重置，直连打不开，必须挂自有域名。实测同一账号下不同 Cloudflare 出口 IP 的可达性并不一致（`104.16.x` 可直连，`104.21.x` / `172.67.x` 被重置），自定义域名也可能只有 IPv6 能直连，发布前应实测。
+
+上线后的监控阈值、日志字段与回滚步骤见 [docs/运维与回滚_V1.0.md](docs/运维与回滚_V1.0.md)（含一次真实回滚演练的记录）；每次发布的证据与结论见 [docs/评审记录_V1.0.md](docs/评审记录_V1.0.md)。
 
 ### 临时公网地址（隧道预览）
 
