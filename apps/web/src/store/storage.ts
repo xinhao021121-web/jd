@@ -5,6 +5,8 @@
  */
 import { z } from 'zod';
 import {
+  GREETING_STYLES,
+  MAX_GREETING_HISTORY,
   MAX_CUSTOM_RESUMES,
   TelemetryEventSchema,
   type TelemetryEvent
@@ -14,6 +16,7 @@ export const STORAGE_KEYS = {
   resume: 'zhipin-assistant:v1:resume',
   jd: 'zhipin-assistant:v1:jd',
   customResumes: 'zhipin-assistant:v1:customResumes',
+  greetingHistory: 'zhipin-assistant:v1:greetingHistory',
   events: 'zhipin-assistant:v1:events',
   ui: 'zhipin-assistant:v1:ui'
 } as const;
@@ -31,6 +34,51 @@ export const CustomResumeRecordSchema = z.object({
   createdAt: z.number()
 });
 export type CustomResumeRecord = z.infer<typeof CustomResumeRecordSchema>;
+
+const MatchAnalysisSchema = z.object({
+  requirements: z.array(z.string()),
+  matched: z.array(z.string()),
+  missing: z.array(z.string()),
+  lowMatch: z.boolean()
+});
+
+const GreetingHistoryItemSchema = z.object({
+  /** 话术在本次生成里的序号，copiedIndexes 与它对应 */
+  index: z.number().int().nonnegative(),
+  style: z.enum(GREETING_STYLES),
+  text: z.string(),
+  edited: z.boolean()
+});
+
+/** 话术历史记录：一次生成一条，含当时的三条候选与对应 JD（PRD V0.5 增补 3.9） */
+export const GreetingHistoryRecordSchema = z.object({
+  id: z.string().min(1),
+  /** 本次生成的会话标识，同一次生成只留一条记录 */
+  sessionId: z.string().min(1),
+  jdText: z.string(),
+  items: z.array(GreetingHistoryItemSchema).max(3),
+  analysis: MatchAnalysisSchema.nullable(),
+  /** 复制过哪几条，回看时知道当时发的是哪条 */
+  copiedIndexes: z.array(z.number().int().nonnegative()),
+  createdAt: z.number(),
+  elapsedMs: z.number().nullable()
+});
+export type GreetingHistoryRecord = z.infer<typeof GreetingHistoryRecordSchema>;
+
+export type GreetingHistoryItem = z.infer<typeof GreetingHistoryItemSchema>;
+
+/**
+ * 历史是可丢弃的旁路数据：坏掉的单条丢掉、其余保留，不像简历那样整份回退
+ * （技术方案 V0.5 增补 四）。
+ */
+const GreetingHistorySliceSchema = z.array(z.unknown()).transform((items) =>
+  items
+    .flatMap((item): GreetingHistoryRecord[] => {
+      const parsed = GreetingHistoryRecordSchema.safeParse(item);
+      return parsed.success ? [parsed.data] : [];
+    })
+    .slice(0, MAX_GREETING_HISTORY)
+);
 
 const ResumeSliceSchema = z.object({
   text: z.string(),
@@ -59,6 +107,7 @@ export interface PersistedSlice {
   jd: string;
   jdUpdatedAt: number;
   archive: CustomResumeRecord[];
+  greetingHistory: GreetingHistoryRecord[];
   events: TelemetryEvent[];
   sidebarCollapsed: boolean;
 }
@@ -70,17 +119,22 @@ const EMPTY_SLICE: PersistedSlice = {
   jd: '',
   jdUpdatedAt: 0,
   archive: [],
+  greetingHistory: [],
   events: [],
   sidebarCollapsed: false
 };
 
-function readKey<T>(storage: Storage, key: string, schema: z.ZodType<T>, fallback: T): T {
+/**
+ * schema 用 `ZodTypeAny`：带 transform 的 schema 推断不出与 T 一致的输入输出类型，
+ * 一致性由调用点与单测保证（见技术方案 V0.5 增补 四）。
+ */
+function readKey<T>(storage: Storage, key: string, schema: z.ZodTypeAny, fallback: T): T {
   const raw = storage.getItem(key);
   if (raw === null) return fallback;
 
   try {
     const parsed = schema.safeParse(JSON.parse(raw));
-    if (parsed.success) return parsed.data;
+    if (parsed.success) return parsed.data as T;
   } catch {
     /* 解析失败按校验失败处理 */
   }
@@ -106,6 +160,12 @@ export function readSlice(storage: Storage): PersistedSlice | null {
   });
   const jd = readKey(storage, STORAGE_KEYS.jd, JdSliceSchema, { text: '', updatedAt: 0 });
   const archive = readKey(storage, STORAGE_KEYS.customResumes, CustomResumesSliceSchema, []);
+  const greetingHistory = readKey(
+    storage,
+    STORAGE_KEYS.greetingHistory,
+    GreetingHistorySliceSchema,
+    []
+  );
   const events = readKey(storage, STORAGE_KEYS.events, EventsSliceSchema, []);
   const ui = readKey(storage, STORAGE_KEYS.ui, UiSliceSchema, { sidebarCollapsed: false });
 
@@ -116,6 +176,7 @@ export function readSlice(storage: Storage): PersistedSlice | null {
     jd: jd.text,
     jdUpdatedAt: jd.updatedAt,
     archive,
+    greetingHistory,
     events: events.slice(-MAX_STORED_EVENTS),
     sidebarCollapsed: ui.sidebarCollapsed
   };
@@ -128,6 +189,7 @@ export function writeSlice(storage: Storage, slice: PersistedSlice): void {
   );
   storage.setItem(STORAGE_KEYS.jd, JSON.stringify({ text: slice.jd, updatedAt: slice.jdUpdatedAt }));
   storage.setItem(STORAGE_KEYS.customResumes, JSON.stringify(slice.archive));
+  storage.setItem(STORAGE_KEYS.greetingHistory, JSON.stringify(slice.greetingHistory));
   storage.setItem(
     STORAGE_KEYS.events,
     JSON.stringify(slice.events.slice(-MAX_STORED_EVENTS))

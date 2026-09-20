@@ -5,6 +5,7 @@ import { useAppStore } from './store/store';
 import { ArchiveView } from './views/ArchiveView';
 import { CustomizeView } from './views/CustomizeView';
 import { GenerateView } from './views/GenerateView';
+import { HistoryView } from './views/HistoryView';
 import { ResumeView } from './views/ResumeView';
 
 export default function App(): JSX.Element {
@@ -20,6 +21,7 @@ export default function App(): JSX.Element {
           {view === 'generate' && <GenerateView />}
           {view === 'custom' && <CustomizeView />}
           {view === 'archive' && <ArchiveView />}
+          {view === 'history' && <HistoryView />}
 
           {view !== 'archive' && (
             <p className="mt-6 text-center text-xs text-[#98a2b6]">{DATA_FLOW_NOTICE}</p>

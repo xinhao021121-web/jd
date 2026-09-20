@@ -51,6 +51,7 @@ function GreetingCard({
   const updateGreetingItem = useAppStore((state) => state.updateGreetingItem);
   const record = useAppStore((state) => state.record);
   const sessionId = useAppStore((state) => state.greeting.sessionId);
+  const saveGreetingToHistory = useAppStore((state) => state.saveGreetingToHistory);
 
   const onCopy = async () => {
     const ok = await copyText(item.text);
@@ -66,7 +67,9 @@ function GreetingCard({
       edited: item.edited,
       count: countChars(item.text)
     });
-    toast('已复制');
+    // 复制即入历史：写在埋点之后，历史本身失败不影响复制结果（PRD V0.5 增补 3.9）
+    const saved = saveGreetingToHistory(item.index);
+    toast(saved ? '已复制，并保存到话术历史' : '已复制');
   };
 
   return (

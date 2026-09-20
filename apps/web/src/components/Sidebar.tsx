@@ -4,11 +4,12 @@ const NAV_ITEMS: { view: ViewName; label: string; icon: string }[] = [
   { view: 'resume', label: '我的简历', icon: '📄' },
   { view: 'custom', label: '按 JD 改简历', icon: '🛠' },
   { view: 'archive', label: '定制简历', icon: '🗂' },
-  { view: 'generate', label: '生成打招呼', icon: '💬' }
+  { view: 'generate', label: '生成打招呼', icon: '💬' },
+  { view: 'history', label: '话术历史', icon: '🕘' }
 ];
 
 /** 后续规划分组：本版本占位，避免主流程加入未验证的入口（PRD 2.4） */
-const PLANNED_ITEMS = ['话术历史', '设置'];
+const PLANNED_ITEMS = ['设置'];
 
 export function Sidebar(): JSX.Element {
   const view = useAppStore((state) => state.view);
@@ -16,6 +17,7 @@ export function Sidebar(): JSX.Element {
   const setView = useAppStore((state) => state.setView);
   const setCollapsed = useAppStore((state) => state.setSidebarCollapsed);
   const archiveCount = useAppStore((state) => state.archive.length);
+  const historyCount = useAppStore((state) => state.greetingHistory.length);
   const hasResume = useAppStore((state) => state.resume.length > 0);
 
   return (
@@ -61,6 +63,9 @@ export function Sidebar(): JSX.Element {
                 )}
                 {item.view === 'archive' && archiveCount > 0 && (
                   <span className="ml-1 text-[11px] text-[#98a2b6]">{archiveCount}</span>
+                )}
+                {item.view === 'history' && historyCount > 0 && (
+                  <span className="ml-1 text-[11px] text-[#98a2b6]">{historyCount}</span>
                 )}
               </span>
             )}

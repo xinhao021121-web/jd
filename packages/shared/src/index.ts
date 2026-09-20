@@ -10,6 +10,9 @@ export const MIN_TEXT_LENGTH = 20;
 /** 定制简历容量上限（PRD 3.4） */
 export const MAX_CUSTOM_RESUMES = 20;
 
+/** 话术历史容量上限（PRD V0.5 增补 3.9） */
+export const MAX_GREETING_HISTORY = 20;
+
 /** 定制简历记录名称长度上限（PRD 3.4） */
 export const MAX_TITLE_LENGTH = 40;
 

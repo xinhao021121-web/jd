@@ -15,6 +15,7 @@ import {
   type Suggestion
 } from '@zhipin/core';
 import {
+  MAX_GREETING_HISTORY,
   MAX_CUSTOM_RESUMES,
   MAX_TITLE_LENGTH,
   MIN_TEXT_LENGTH,
@@ -25,9 +26,14 @@ import {
 } from '@zhipin/shared';
 import { streamTask } from '../api/llm';
 import type { ResumeTemplate } from '../utils/import';
-import { createAppStorage, getBrowserStorage, type CustomResumeRecord } from './storage';
+import {
+  createAppStorage,
+  getBrowserStorage,
+  type CustomResumeRecord,
+  type GreetingHistoryRecord
+} from './storage';
 
-export const VIEW_NAMES = ['resume', 'custom', 'archive', 'generate'] as const;
+export const VIEW_NAMES = ['resume', 'custom', 'archive', 'generate', 'history'] as const;
 export type ViewName = (typeof VIEW_NAMES)[number];
 
 export type StreamStatus = 'idle' | 'streaming' | 'done' | 'error' | 'aborted';
@@ -78,6 +84,9 @@ export interface AppStore {
   // 存档
   archive: CustomResumeRecord[];
   selectedArchiveId: string | null;
+  // 话术历史：复制过的那次生成自动留档（PRD V0.5 增补 3.9）
+  greetingHistory: GreetingHistoryRecord[];
+  selectedHistoryId: string | null;
   // 界面
   view: ViewName;
   sidebarCollapsed: boolean;
@@ -103,6 +112,10 @@ export interface AppStore {
   selectArchive: (id: string | null) => void;
   renameArchive: (id: string, name: string) => void;
   removeArchive: (id: string) => boolean;
+  saveGreetingToHistory: (index: number) => GreetingHistoryRecord | null;
+  selectHistory: (id: string | null) => void;
+  removeGreetingRecord: (id: string) => boolean;
+  clearGreetingHistory: () => number;
   record: (event: TelemetryEvent) => void;
 }
 
@@ -144,6 +157,11 @@ export function archiveTitle(record: CustomResumeRecord): string {
   return record.name.trim() || extractJdTitle(record.jdText);
 }
 
+/** 话术历史的展示名：沿用 PRD 3.4 的命名规则，不支持手动改名（PRD V0.5 增补 3.9） */
+export function historyTitle(record: GreetingHistoryRecord): string {
+  return extractJdTitle(record.jdText);
+}
+
 export function adoptedSuggestions(suggestions: Suggestion[]): Suggestion[] {
   return suggestions.filter((suggestion) => suggestion.adopted);
 }
@@ -171,6 +189,8 @@ export const useAppStore = create<AppStore>()(
       customization: IDLE_CUSTOMIZATION,
       archive: [],
       selectedArchiveId: null,
+      greetingHistory: [],
+      selectedHistoryId: null,
       view: 'resume',
       sidebarCollapsed: false,
       events: [],
@@ -406,6 +426,82 @@ export const useAppStore = create<AppStore>()(
             get().selectedArchiveId === id ? (archive[0]?.id ?? null) : get().selectedArchiveId
         });
         return true;
+      },
+
+      /**
+       * 复制即入历史（PRD V0.5 增补 3.9）：同一次生成只留一条记录，
+       * 再次复制同批话术时只合并标记与刷新内容，不新增条目。
+       * 复制成功才调用，因此不检查剪贴板权限。
+       */
+      saveGreetingToHistory: (index) => {
+        const state = get();
+        const { sessionId, items, analysis, elapsedMs } = state.greeting;
+        if (!sessionId || !items.length) return null;
+
+        const snapshot = items.slice(0, 3).map((item) => ({
+          index: item.index,
+          style: item.style,
+          text: item.text,
+          edited: item.edited
+        }));
+        const existing = state.greetingHistory.find((record) => record.sessionId === sessionId);
+
+        if (existing) {
+          const updated: GreetingHistoryRecord = {
+            ...existing,
+            items: snapshot,
+            analysis,
+            copiedIndexes: existing.copiedIndexes.includes(index)
+              ? existing.copiedIndexes
+              : [...existing.copiedIndexes, index].sort((a, b) => a - b)
+          };
+          set({
+            greetingHistory: state.greetingHistory.map((record) =>
+              record.id === existing.id ? updated : record
+            )
+          });
+          return updated;
+        }
+
+        const record: GreetingHistoryRecord = {
+          id: `h${Date.now()}${Math.floor(Math.random() * 10_000)}`,
+          sessionId,
+          jdText: state.jd,
+          items: snapshot,
+          analysis,
+          copiedIndexes: [index],
+          createdAt: Date.now(),
+          elapsedMs
+        };
+
+        set({
+          greetingHistory: [record, ...state.greetingHistory].slice(0, MAX_GREETING_HISTORY),
+          selectedHistoryId: record.id
+        });
+        return record;
+      },
+
+      selectHistory: (id) => set({ selectedHistoryId: id }),
+
+      removeGreetingRecord: (id) => {
+        const before = get().greetingHistory;
+        const greetingHistory = before.filter((record) => record.id !== id);
+        if (greetingHistory.length === before.length) return false;
+
+        set({
+          greetingHistory,
+          selectedHistoryId:
+            get().selectedHistoryId === id
+              ? (greetingHistory[0]?.id ?? null)
+              : get().selectedHistoryId
+        });
+        return true;
+      },
+
+      clearGreetingHistory: () => {
+        const count = get().greetingHistory.length;
+        set({ greetingHistory: [], selectedHistoryId: null });
+        return count;
       }
     }),
     {
@@ -431,6 +527,7 @@ export const useAppStore = create<AppStore>()(
         jd: state.jd,
         jdUpdatedAt: state.jdUpdatedAt,
         archive: state.archive,
+        greetingHistory: state.greetingHistory,
         events: state.events,
         sidebarCollapsed: state.sidebarCollapsed
       })
