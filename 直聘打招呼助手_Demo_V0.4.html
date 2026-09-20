@@ -514,9 +514,8 @@
   </section>
 
   <section class="view" id="view-custom" hidden>
-    <div class="workspace">
-      <section class="col">
-        <div class="resume-bar" id="resumeBar2"></div>
+    <div class="col" style="margin-bottom:18px">
+      <div class="resume-bar" id="resumeBar2"></div>
 
         <div class="card">
           <div class="card-head">
@@ -537,12 +536,13 @@
         </div>
 
         <div class="actions">
-          <button class="btn primary" id="makeSuggest" disabled>生成改写建议</button>
+          <button class="btn primary fixed" id="makeSuggest" disabled>生成改写建议</button>
           <button class="btn ghost" id="clearCustom">清空</button>
         </div>
-        <p class="hint-line" id="customHint"></p>
-      </section>
+      <p class="hint-line" id="customHint"></p>
+    </div>
 
+    <div class="workspace">
       <section class="col">
         <div class="card">
           <div class="card-head">
@@ -619,8 +619,10 @@
             </div>
             <div class="preview" id="archiveJd"></div>
             <div class="actions right">
+              <button class="btn ghost" id="exportArchive" disabled>导出 Word</button>
               <button class="btn ghost fixed" id="deleteArchive">删除这份</button>
             </div>
+            <p class="hint-line" id="archiveExportHint"></p>
           </div>
           <p class="hint-line">记录名称可以直接修改，改完自动保存；留空会自动恢复为从 JD 解析的名称</p>
         </div>
@@ -867,6 +869,7 @@ function switchView(name){
     : (name === 'history' ? '话术历史' : '生成打招呼')));
   if (name === 'history') renderHistory();
   if (name === 'custom') refreshExportState();
+  if (name === 'archive') refreshArchiveExport();
 }
 
 /* ---------------- 侧边栏收起 ---------------- */
@@ -1567,6 +1570,31 @@ function refreshExportState(){
     : '原型演示：真实版本只在本次会话导入过 Word 简历时才可导出。如果你有这份简历的 Word 原件，导入它就能拿到与原文件一致的格式';
 }
 
+/** 与产品同口径的行级比对：行数不一致、或该行在原文里不唯一，就跳过 */
+function diffDemoLines(resume, content){
+  const source = String(resume || '').split('\n');
+  const target = String(content || '').split('\n');
+  if (source.length !== target.length) return [];
+
+  const changes = [];
+  for (let i = 0; i < source.length; i += 1){
+    if (source[i] === target[i]) continue;
+    if (!source[i].trim() || !target[i].trim()) continue;
+    if (source.filter((line) => line === source[i]).length !== 1) continue;
+    changes.push({ before: source[i], after: target[i] });
+  }
+  return changes;
+}
+
+/** 存档页的导出入口：与「按 JD 改简历」同一条可用条件（PRD V0.4 增补 3.8） */
+function refreshArchiveExport(){
+  const ready = state.resumeSource === 'docx';
+  $('exportArchive').disabled = !ready;
+  $('archiveExportHint').textContent = ready
+    ? '导出的是与原文件同版式的 .docx（原型只演示交互，不生成真实文件）'
+    : '原型演示：真实版本只在本次会话导入过 Word 简历时可导出；如果你有这份简历的 Word 原件，导入它就能拿到与原文件一致的格式';
+}
+
 $('archiveList').addEventListener('click', (e) => {
   const del = e.target.closest('[data-del]');
   if (del) {
@@ -1653,6 +1681,17 @@ $('clearHistory').addEventListener('click', () => {
 $('exportDocx').addEventListener('click', () => {
   if (state.resumeSource !== 'docx') return;
   toast('已导出与原文件同版式的 .docx（原型演示，未生成真实文件）');
+});
+
+$('exportArchive').addEventListener('click', () => {
+  const item = currentArchive();
+  if (!item || state.resumeSource !== 'docx') return;
+  /* 存档只留了定制简历全文，导出时靠行级比对反推改过的行；对不上就不导 */
+  if (!diffDemoLines(state.resume, item.text).length) {
+    toast('原始简历在这份记录之后改动过，行位置对不上，建议重新生成后再导出');
+    return;
+  }
+  toast('已导出「' + item.title + '_定制.docx」（原型演示，未生成真实文件）');
 });
 
 /* ---------------- 改简历页事件 ---------------- */
@@ -1893,6 +1932,7 @@ function applyImportedResume(fileName, text){
   /* 只有 Word 来源能保真导出；模板跟着最近一次导入（PRD V0.4 增补 3.8） */
   state.resumeSource = (String(fileName).split('.').pop() || '').toLowerCase();
   refreshExportState();
+  refreshArchiveExport();
   showImportBar($('resumeImportBar'), 'ok',
     '已从「' + escapeHtml(fileName) + '」导入 ' + count(text) + ' 字，请检查后保存'
     + (state.resumeSource === 'docx' ? '；已保留原文件模板，可导出同版式 Word' : ''));
@@ -2076,6 +2116,7 @@ $('demoImportJdImage').addEventListener('click', () => simulateJdImageImport(jdE
   renderCustoms();
   renderHistory();
   refreshExportState();
+  refreshArchiveExport();
   renderStats();
   switchView(state.resume ? 'generate' : 'resume');
   try {

@@ -83,3 +83,47 @@ test('Demo V0.4：复制话术进入历史，历史页可回看，导出入口�
   await page.locator('[data-view="custom"]').click();
   await expect(page.locator('#exportDocx')).toBeDisabled();
 });
+
+test('Demo V0.4：改写建议独立在左半边，存档页也能导出', async ({ page }) => {
+  // 1. 布局：JD 占上半区，下方左列是改写建议、右列是预览
+  const layout = await page.evaluate(() => {
+    const view = document.getElementById('view-custom');
+    const workspace = view.querySelector('.workspace');
+    return {
+      top: view.querySelector('.card h2').textContent.trim(),
+      left: workspace.querySelector('.col .card h2').textContent.trim()
+    };
+  });
+  expect(layout.top).toBe('目标岗位 JD');
+  expect(layout.left).toBe('改写建议');
+
+  // 2. 生成建议、采纳一条、存成定制简历
+  await page.locator('[data-view="resume"]').click();
+  await page.locator('#fillResume').click();
+  await page.locator('#saveResume').click();
+
+  await page.locator('[data-view="custom"]').click();
+  await page.locator('#fillJd2').click();
+  await page.locator('#makeSuggest').click();
+  await expect(page.locator('.sug-card').first()).toBeVisible();
+  await page.locator('.sug-card input[type="checkbox"]').first().check();
+  await page.locator('#saveCustom').click();
+
+  // 3. 存档页：没有导入过 Word 时导出置灰
+  await page.locator('[data-view="archive"]').click();
+  await expect(page.locator('#exportArchive')).toBeDisabled();
+
+  // 4. 模拟导入 Word 后可用，点击给出导出提示
+  await page.locator('.demo-help summary').click();
+  await page.locator('[data-view="resume"]').click();
+  await page.locator('#resumeEditor').fill('');
+  await page.locator('#demoImportResume').click();
+  await expect(page.locator('#resumeImportBar')).toContainText('可导出同版式 Word', {
+    timeout: 5_000
+  });
+
+  await page.locator('[data-view="archive"]').click();
+  await expect(page.locator('#exportArchive')).toBeEnabled();
+  await page.locator('#exportArchive').click();
+  await expect(page.locator('#toast')).toContainText('_定制.docx');
+});

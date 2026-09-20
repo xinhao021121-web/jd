@@ -60,7 +60,8 @@ function loadDemo() {
   const exported = eval(
     match[1]
     + '\n;({state, HISTORY_MAX, saveGreetingToHistory, renderHistory, removeHistory,'
-    + ' clearHistory, refreshExportState, applyImportedResume, MOCK_FILE_RESUME})'
+    + ' clearHistory, refreshExportState, refreshArchiveExport, diffDemoLines,'
+    + ' applyImportedResume, MOCK_FILE_RESUME})'
   );
   const flush = () => {
     let guard = 0;
@@ -220,6 +221,41 @@ test('导出入口只在导入过 Word 时可用，其它来源给出引导', ()
   // 换成 PDF 导入：模板随之失效
   demo.applyImportedResume('张三-简历.pdf', demo.MOCK_FILE_RESUME);
   assert.strictEqual(demo.els.get('exportDocx').disabled, true, '换成 PDF 后应重新置灰');
+});
+
+test('存档页的导出入口与产品同口径', () => {
+  const demo = loadDemo();
+
+  demo.refreshArchiveExport();
+  assert.strictEqual(demo.els.get('exportArchive').disabled, true, '没有模板时应置灰');
+
+  demo.applyImportedResume('张三-简历.docx', demo.MOCK_FILE_RESUME);
+  assert.strictEqual(demo.els.get('exportArchive').disabled, false, '导入 Word 后应可用');
+  assert.ok(
+    demo.els.get('archiveExportHint').textContent.includes('同版式'),
+    '应说明导出的是什么'
+  );
+});
+
+test('行级比对：只认行数一致且该行在原文里唯一的改动', () => {
+  const demo = loadDemo();
+  const resume = '- 负责订单系统\n- 负责对账系统';
+
+  assert.deepStrictEqual(
+    demo.diffDemoLines(resume, '- 负责订单系统（高并发）\n- 负责对账系统'),
+    [{ before: '- 负责订单系统', after: '- 负责订单系统（高并发）' }]
+  );
+  assert.deepStrictEqual(demo.diffDemoLines(resume, resume), [], '内容一致时没有改动');
+  assert.deepStrictEqual(
+    demo.diffDemoLines(resume, `${resume}\n- 多出来的一行`),
+    [],
+    '行数不一致时放弃比对'
+  );
+  assert.deepStrictEqual(
+    demo.diffDemoLines('- 负责订单系统\n- 负责订单系统', '- 负责订单系统（高并发）\n- 负责订单系统'),
+    [],
+    '同一行在原文里重复出现时不参与比对'
+  );
 });
 
 test('历史详情渲染三条话术并标出复制与编辑状态', () => {
