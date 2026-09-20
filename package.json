@@ -9,7 +9,7 @@
   "scripts": {
     "test": "vitest run",
     "coverage": "vitest run --coverage",
-    "test:docs": "node --test tests/prd.sync.test.js tests/prd.nfr.test.js tests/prd.import.test.js tests/prd.export.test.js tests/prd.history.test.js tests/prd.layout.test.js tests/tech-design.test.js tests/tech.import.test.js tests/tech.export.test.js tests/tech.history.test.js tests/tech.layout.test.js tests/tech.quality.test.js tests/demo.smoke.test.js tests/demo.import.test.js tests/demo.export-history.test.js tests/review.standard.test.js tests/portfolio.doc.test.js tests/gap-diagnosis.test.js tests/ops.runbook.test.js",
+    "test:docs": "node --test tests/prd.sync.test.js tests/prd.nfr.test.js tests/prd.import.test.js tests/prd.export.test.js tests/prd.history.test.js tests/prd.layout.test.js tests/tech-design.test.js tests/tech.import.test.js tests/tech.export.test.js tests/tech.history.test.js tests/tech.layout.test.js tests/tech.quality.test.js tests/demo.smoke.test.js tests/demo.import.test.js tests/demo.export-history.test.js tests/review.standard.test.js tests/portfolio.doc.test.js tests/gap-diagnosis.test.js tests/interview.outline.test.js tests/metrics.channel.test.js tests/ops.runbook.test.js",
     "test:all": "pnpm test && pnpm test:docs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "build": "pnpm --filter @zhipin/web build",
