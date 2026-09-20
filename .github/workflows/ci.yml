@@ -64,6 +64,10 @@ jobs:
       - name: 运行端到端用例
         run: pnpm test:e2e
 
+      # 作品集主文档与评审标准里写死了三层测试条数，用列举模式重算一遍比对
+      - name: 文档里的测试条数
+        run: pnpm test:counts
+
       - name: 失败时上传报告
         if: failure()
         uses: actions/upload-artifact@v4

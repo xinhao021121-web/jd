@@ -16,6 +16,7 @@
     "dev:web": "pnpm --filter @zhipin/web dev",
     "mock:model": "pnpm --filter @zhipin/api mock:model",
     "test:e2e": "pnpm --filter @zhipin/web build && playwright test",
+    "test:counts": "tsx scripts/check-counts.ts",
     "quality:samples": "tsx scripts/quality-regression.ts",
     "blind-test:kit": "tsx scripts/blind-test.ts kit",
     "blind-test:report": "tsx scripts/blind-test.ts report",

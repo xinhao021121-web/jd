@@ -88,10 +88,10 @@ test('Demo V0.4：改写建议独立在左半边，存档页也能导出', async
   // 1. 布局：JD 占上半区，下方左列是改写建议、右列是预览
   const layout = await page.evaluate(() => {
     const view = document.getElementById('view-custom');
-    const workspace = view.querySelector('.workspace');
+    const workspace = view?.querySelector('.workspace');
     return {
-      top: view.querySelector('.card h2').textContent.trim(),
-      left: workspace.querySelector('.col .card h2').textContent.trim()
+      top: view?.querySelector('.card h2')?.textContent?.trim() ?? '',
+      left: workspace?.querySelector('.col .card h2')?.textContent?.trim() ?? ''
     };
   });
   expect(layout.top).toBe('目标岗位 JD');
