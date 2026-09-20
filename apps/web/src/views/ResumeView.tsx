@@ -1,4 +1,7 @@
+import { useMemo } from 'react';
+import { parseResume } from '@zhipin/core';
 import { MIN_TEXT_LENGTH } from '@zhipin/shared';
+import { ResumeImportButton, useResumeImport } from '../components/ResumeImport';
 import { toast } from '../components/Toast';
 import { Card, Notice, PageTitle } from '../components/ui';
 import { useAppStore } from '../store/store';
@@ -12,11 +15,22 @@ export function ResumeView(): JSX.Element {
   const setResumeDraft = useAppStore((state) => state.setResumeDraft);
   const saveResume = useAppStore((state) => state.saveResume);
   const revertResumeDraft = useAppStore((state) => state.revertResumeDraft);
+  const importState = useResumeImport();
 
   const draftCount = countChars(draft);
   const changed = draft.trim() !== resume;
   const tooShort = draftCount < MIN_TEXT_LENGTH;
   const canSave = !tooShort && changed;
+
+  // 区块识别预览：导入后立刻暴露「小标题丢失 → 全部锁定」（PRD 增补 3.6）
+  const imported = importState.info;
+  const { editable, locked } = useMemo(() => {
+    const blocks = imported ? parseResume(draft) : [];
+    return {
+      editable: blocks.filter((block) => block.kind === 'editable'),
+      locked: blocks.filter((block) => block.kind === 'locked')
+    };
+  }, [imported, draft]);
 
   return (
     <div>
@@ -26,6 +40,8 @@ export function ResumeView(): JSX.Element {
       />
 
       <Card>
+        <ResumeImportButton state={importState} />
+
         <div className="mb-2 flex items-center justify-between">
           <label htmlFor="resumeEditor" className="text-sm font-medium">
             简历内容
@@ -35,13 +51,16 @@ export function ResumeView(): JSX.Element {
           </span>
         </div>
 
-        <textarea
-          id="resumeEditor"
-          className="field min-h-[320px]"
-          placeholder="把简历文本粘贴到这里，建议保留「工作经历 / 项目经历 / 自我评价 / 专业技能 / 教育背景」这类小标题，便于按行识别可改写区块"
-          value={draft}
-          onChange={(event) => setResumeDraft(event.target.value)}
-        />
+        {/* 拖到输入框也能导入，与按钮共用同一套解析逻辑 */}
+        <div onDragOver={importState.onDragOver} onDragLeave={importState.onDragLeave} onDrop={importState.onDrop}>
+          <textarea
+            id="resumeEditor"
+            className="field min-h-[320px]"
+            placeholder="把简历文本粘贴到这里，建议保留「工作经历 / 项目经历 / 自我评价 / 专业技能 / 教育背景」这类小标题，便于按行识别可改写区块"
+            value={draft}
+            onChange={(event) => setResumeDraft(event.target.value)}
+          />
+        </div>
 
         <div className="mt-2">
           {draftCount > 0 && tooShort ? (
@@ -57,6 +76,32 @@ export function ResumeView(): JSX.Element {
           )}
         </div>
 
+        {imported && (
+          <div className="mt-2 rounded-xl bg-[#f6f8fc] px-3 py-3 text-xs" data-testid="block-preview">
+            <p className="text-[#1f52d6]">
+              已从「{imported.fileName}」导入 {imported.chars} 字，请检查后保存
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="text-[#98a2b6]">区块识别</span>
+              {editable.map((block) => (
+                <span key={block.title} className="chip bg-[#e9f8ef] text-[#15a34a]">
+                  {block.title} · 可改写
+                </span>
+              ))}
+              {locked.map((block) => (
+                <span key={block.title} className="chip bg-[#f2f4f9] text-[#6b7688]">
+                  {block.title} · 锁定
+                </span>
+              ))}
+            </div>
+            {editable.length === 0 && (
+              <p className="mt-2 text-[#b45309]">
+                没有识别到可改写的小标题，建议补上「工作经历 / 项目经历 / 专业技能」再保存，否则后续生成不会有任何改写建议
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="mt-4 flex items-center gap-3">
           <button
             id="saveResume"
@@ -64,7 +109,10 @@ export function ResumeView(): JSX.Element {
             className="btn-primary"
             disabled={!canSave}
             onClick={() => {
-              if (saveResume()) toast('简历已保存，生成时会自动读取');
+              if (saveResume()) {
+                importState.reset();
+                toast('简历已保存，生成时会自动读取');
+              }
             }}
           >
             保存简历
@@ -76,6 +124,7 @@ export function ResumeView(): JSX.Element {
             disabled={!changed}
             onClick={() => {
               revertResumeDraft();
+              importState.reset();
               toast('已还原为上次保存的内容');
             }}
           >

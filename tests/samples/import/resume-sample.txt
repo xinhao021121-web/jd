@@ -1,0 +1,12 @@
+李某某 | Java 后端开发工程师 | 3 年经验
+
+工作经历
+2023.06 - 至今  某电商科技有限公司  后端开发工程师
+- 负责订单中心核心链路开发，使用 Java、Spring Boot 搭建订单创建与履约服务
+- 主导订单查询接口性能优化，通过 Redis 缓存与 SQL 优化将 P99 响应时间从 800ms 降到 180ms
+
+专业技能
+Java、Spring Boot、MySQL、Redis、Kafka、微服务、Docker / Kubernetes
+
+教育背景
+某某大学  计算机科学与技术  本科  2021 届

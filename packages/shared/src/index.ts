@@ -22,6 +22,23 @@ export const RATE_LIMIT = { perMinute: 10, perDay: 100 } as const;
 /** 性能预算：首字 ≤5 秒、完整结果 ≤30 秒（PRD 4.3） */
 export const LATENCY_BUDGET = { firstTokenMs: 5000, totalMs: 30000 } as const;
 
+/** 简历文件导入：支持范围与体积上限（PRD 增补 3.6） */
+export const MAX_RESUME_FILE_BYTES = 10 * 1024 * 1024;
+export const RESUME_FILE_EXTENSIONS = ['txt', 'md', 'markdown', 'docx', 'pdf'] as const;
+
+/** JD 图片导入：体积、张数与压缩口径（PRD 增补 3.7） */
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_IMAGE_COUNT = 3;
+export const MAX_IMAGE_EDGE = 1600;
+export const IMAGE_JPEG_QUALITY = 0.8;
+export const IMAGE_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
+
+/** /api/vision 入参上限：单图 32 MiB 按 base64 折算（技术方案增补 3.1、四） */
+export const MAX_IMAGE_DATA_URL_LENGTH = 45 * 1024 * 1024;
+
+/** 单张图片识别耗时上限（技术方案增补 3.1：15 秒） */
+export const VISION_TIMEOUT_MS = 15_000;
+
 /* ------------------------------ 错误码 ------------------------------ */
 
 export const ERROR_CODES = [
@@ -30,7 +47,14 @@ export const ERROR_CODES = [
   'UPSTREAM_ERROR',
   'INVALID_OUTPUT',
   'FIRST_TOKEN_TIMEOUT',
-  'TOTAL_TIMEOUT'
+  'TOTAL_TIMEOUT',
+  'UNSUPPORTED_FILE',
+  'FILE_TOO_LARGE',
+  'NO_TEXT_LAYER',
+  'PARSE_EMPTY',
+  'VISION_FAILED',
+  'VISION_EMPTY',
+  'VISION_UNAVAILABLE'
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -41,18 +65,38 @@ export const ERROR_HTTP_STATUS: Record<ErrorCode, number> = {
   UPSTREAM_ERROR: 502,
   INVALID_OUTPUT: 502,
   FIRST_TOKEN_TIMEOUT: 504,
-  TOTAL_TIMEOUT: 504
+  TOTAL_TIMEOUT: 504,
+  UNSUPPORTED_FILE: 400,
+  FILE_TOO_LARGE: 400,
+  NO_TEXT_LAYER: 422,
+  PARSE_EMPTY: 422,
+  VISION_FAILED: 502,
+  VISION_EMPTY: 502,
+  VISION_UNAVAILABLE: 502
 };
 
-/** 前端文案，与 PRD 2.3.1 全局异常处理表逐条对应 */
+/** 前端文案，与 PRD 2.3.1 全局异常处理表（含 V0.3 增补新增的 10 条）逐条对应 */
 export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   INVALID_INPUT: '请先粘贴简历和 JD 内容',
   RATE_LIMITED: '请求过于频繁，请稍后再试',
   UPSTREAM_ERROR: '生成失败，请稍后重试',
   INVALID_OUTPUT: '生成结果异常，请重新生成',
   FIRST_TOKEN_TIMEOUT: '生成超时，请重试',
-  TOTAL_TIMEOUT: '生成超时，请重试'
+  TOTAL_TIMEOUT: '生成超时，请重试',
+  UNSUPPORTED_FILE: '暂不支持该文件格式，请导入 PDF、Word、TXT 或 Markdown 文件',
+  FILE_TOO_LARGE: '文件超过 10MB，请压缩后重试（图片为 5MB）',
+  NO_TEXT_LAYER: '这份 PDF 没有可提取的文字，可能是扫描件',
+  PARSE_EMPTY: '没有从文件里读到内容，请确认文件内容后重试',
+  VISION_FAILED: '图片识别失败，可重试一次，或直接粘贴 JD 文本',
+  VISION_EMPTY: '没有识别到文字，建议截取更清晰的范围',
+  VISION_UNAVAILABLE: '图片识别暂不可用，直接粘贴 JD 文本不影响生成'
 };
+
+/** /api/vision 入参不合法时的文案（前端已先做格式与体积校验） */
+export const VISION_INPUT_MESSAGE = '图片数据无效，请重新选择或截图后再试';
+
+/** 图片识别完成后进入校对态的提示（PRD 增补 3.7） */
+export const JD_REVIEW_NOTICE = '图片识别完成，请核对公司名称、岗位名称与技术名词后再生成';
 
 /* ------------------------------ 状态文案 ------------------------------ */
 
@@ -163,6 +207,8 @@ export const TELEMETRY_EVENT_TYPES = [
   'suggest_generate',
   'suggest_adopt',
   'custom_save',
+  'resume_import',
+  'jd_image_import',
   'error'
 ] as const;
 export type TelemetryEventType = (typeof TELEMETRY_EVENT_TYPES)[number];
@@ -178,6 +224,10 @@ export const TelemetryEventSchema = z.object({
   edited: z.boolean().optional(),
   count: z.number().optional(),
   section: z.string().optional(),
+  /** 导入事件只记可量化属性：格式、字数与张数，不含文件名与内容（PRD 增补 4.2） */
+  format: z.string().optional(),
+  chars: z.number().optional(),
+  images: z.number().optional(),
   errorType: z.string().optional()
 });
 export type TelemetryEvent = z.infer<typeof TelemetryEventSchema>;

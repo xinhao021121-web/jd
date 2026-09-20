@@ -50,6 +50,7 @@ describe('readEnv', () => {
       apiKey: 'sk-abc',
       baseUrl: 'https://api.deepseek.com/v1',
       model: 'deepseek-chat',
+      visionModel: 'deepseek-flash',
       port: 8787,
       dailyCallAlert: 500,
       dailyCallCap: 1500
@@ -62,6 +63,7 @@ describe('readEnv', () => {
         DEEPSEEK_API_KEY: ' sk-abc ',
         DEEPSEEK_BASE_URL: 'http://127.0.0.1:8788/v1',
         DEEPSEEK_MODEL: 'mock-chat',
+        DEEPSEEK_VISION_MODEL: 'mock-vision',
         PORT: '9000',
         DAILY_CALL_ALERT: '10',
         DAILY_CALL_CAP: '20'
@@ -70,6 +72,7 @@ describe('readEnv', () => {
       apiKey: 'sk-abc',
       baseUrl: 'http://127.0.0.1:8788/v1',
       model: 'mock-chat',
+      visionModel: 'mock-vision',
       port: 9000,
       dailyCallAlert: 10,
       dailyCallCap: 20

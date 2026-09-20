@@ -63,6 +63,9 @@ export interface AppStore {
   // 当前 JD：生成打招呼与按 JD 改简历共用
   jd: string;
   jdUpdatedAt: number;
+  // 图片导入：撤销栈与校对态都是瞬时状态，不进 localStorage（技术方案增补 二）
+  jdUndo: string[];
+  jdReviewPending: boolean;
   // 结果
   greeting: GreetingState;
   customization: CustomizationState;
@@ -81,6 +84,8 @@ export interface AppStore {
   saveResume: () => boolean;
   revertResumeDraft: () => void;
   setJd: (text: string) => void;
+  appendJdImport: (text: string) => void;
+  undoJdImport: () => boolean;
   generateGreeting: (options?: { regenerate?: boolean }) => Promise<void>;
   generateSuggestions: () => Promise<void>;
   abortGeneration: () => void;
@@ -152,6 +157,8 @@ export const useAppStore = create<AppStore>()(
       resumeDraft: '',
       jd: '',
       jdUpdatedAt: 0,
+      jdUndo: [],
+      jdReviewPending: false,
       greeting: IDLE_GREETING,
       customization: IDLE_CUSTOMIZATION,
       archive: [],
@@ -176,7 +183,37 @@ export const useAppStore = create<AppStore>()(
 
       revertResumeDraft: () => set({ resumeDraft: get().resume }),
 
-      setJd: (text) => set({ jd: text, jdUpdatedAt: Date.now() }),
+      // 用户手动编辑 JD 即退出识别校对态（PRD 增补 3.7）
+      setJd: (text) => set({ jd: text, jdUpdatedAt: Date.now(), jdReviewPending: false }),
+
+      /** 识别结果只追加不覆盖：JD 为空时填入，非空时按导入顺序接在后面 */
+      appendJdImport: (text) => {
+        const current = get().jd;
+        const appended = current.trim() ? `${current.replace(/\s+$/, '')}\n\n${text}` : text;
+
+        set({
+          jd: appended,
+          jdUpdatedAt: Date.now(),
+          jdUndo: [...get().jdUndo, current],
+          jdReviewPending: true
+        });
+        // 只记可量化属性，不记文件名、图片内容与识别文本（PRD 增补 4.2）
+        get().record({ type: 'jd_image_import', at: Date.now(), images: 1, chars: text.length });
+      },
+
+      /** 支持连续撤销：每次回退到本次导入前的 JD 内容 */
+      undoJdImport: () => {
+        const stack = get().jdUndo;
+        if (!stack.length) return false;
+
+        set({
+          jd: stack[stack.length - 1] ?? '',
+          jdUpdatedAt: Date.now(),
+          jdUndo: stack.slice(0, -1),
+          jdReviewPending: stack.length > 1
+        });
+        return true;
+      },
 
       record: (event) => set({ events: [...get().events, event].slice(-500) }),
 

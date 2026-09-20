@@ -8,6 +8,20 @@ import { analyzeMatch, extractSkills, parseResume } from '@zhipin/core';
 
 const PORT = Number(process.env.MOCK_MODEL_PORT ?? 8788);
 
+/** 视觉识别请求的固定返回：模拟「截图转文本」，只用于本地联调与端到端 */
+const MOCK_IMAGE_JD = `公司：某出行科技有限公司
+岗位：Java 后端开发工程师（高级）
+
+岗位职责
+1. 负责计价、订单等核心链路的后端设计与开发
+2. 参与高并发场景下的性能优化与稳定性建设
+3. 参与技术方案评审与代码评审
+
+任职要求
+1. 3 年以上 Java 开发经验，熟悉 Spring Boot、MySQL、Redis
+2. 有高并发、分布式系统实践经验，熟悉消息队列（Kafka / RocketMQ）
+3. 熟悉 Docker、Kubernetes 等容器化技术`;
+
 function between(text: string, start: string, end: string): string {
   const after = text.split(start)[1];
   if (after === undefined) return '';
@@ -113,17 +127,27 @@ const server = createServer((req, res) => {
     body += chunk;
   });
   req.on('end', async () => {
-    let userContent = '';
-    let systemContent = '';
+    type MockMessage = { content?: string | unknown[] };
+    let messages: MockMessage[] = [];
     try {
-      const parsed = JSON.parse(body) as { messages?: { content?: string }[] };
-      // 只解析最后一条用户消息，避免把系统提示词当成简历或 JD
-      userContent = parsed.messages?.at(-1)?.content ?? '';
-      systemContent = parsed.messages?.[0]?.content ?? '';
+      messages = (JSON.parse(body) as { messages?: MockMessage[] }).messages ?? [];
     } catch {
-      userContent = '';
-      systemContent = '';
+      messages = [];
     }
+
+    const lastContent = messages.at(-1)?.content;
+
+    // 视觉请求：content 是 blocks 数组（图片只能放在 user 消息里），返回非流式识别结果
+    if (Array.isArray(lastContent)) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ choices: [{ message: { content: MOCK_IMAGE_JD } }] }));
+      return;
+    }
+
+    // 只解析最后一条用户消息，避免把系统提示词当成简历或 JD
+    const userContent = typeof lastContent === 'string' ? lastContent : '';
+    const firstContent = messages[0]?.content;
+    const systemContent = typeof firstContent === 'string' ? firstContent : '';
 
     const resume = between(userContent, '【简历原文】', '【岗位 JD】');
     const jd = between(userContent, '【岗位 JD】', '【本地匹配分析');

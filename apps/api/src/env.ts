@@ -5,6 +5,7 @@ export interface ApiEnv {
   apiKey: string;
   baseUrl: string;
   model: string;
+  visionModel: string;
   port: number;
   dailyCallAlert: number;
   dailyCallCap: number;
@@ -70,6 +71,7 @@ export function readEnv(env: NodeJS.ProcessEnv = process.env): ApiEnv {
     apiKey,
     baseUrl: (env.DEEPSEEK_BASE_URL ?? 'https://api.deepseek.com/v1').trim(),
     model: (env.DEEPSEEK_MODEL ?? 'deepseek-chat').trim(),
+    visionModel: (env.DEEPSEEK_VISION_MODEL ?? 'deepseek-flash').trim(),
     port: Number(env.PORT ?? 8787),
     dailyCallAlert: Number(env.DAILY_CALL_ALERT ?? 500),
     dailyCallCap: Number(env.DAILY_CALL_CAP ?? 1500)

@@ -4,7 +4,7 @@
 
 只看一份文档的话，看 [docs/作品集主文档_V1.0.md](docs/作品集主文档_V1.0.md)：三分钟读完产品判断、评测体系与已知不足。
 
-产品口径见 [直聘打招呼助手_PRD_V0.2.md](直聘打招呼助手_PRD_V0.2.md)，导入能力的增量设计见 [直聘打招呼助手_PRD_V0.3_增补.md](直聘打招呼助手_PRD_V0.3_增补.md)（文档先行、尚未实现），实现口径见 [docs/技术方案_V0.1.md](docs/技术方案_V0.1.md) 与 [docs/技术方案_V0.2_增补.md](docs/技术方案_V0.2_增补.md)。V0.2 的交互原型保留在 `直聘打招呼助手_Demo_V0.2.html`，仅用于对照，不是运行入口；导入流程的可点击原型是 [直聘打招呼助手_Demo_V0.3.html](直聘打招呼助手_Demo_V0.3.html)，解析与识别均为本地模拟数据，打开即可用。
+产品口径见 [直聘打招呼助手_PRD_V0.2.md](直聘打招呼助手_PRD_V0.2.md)，导入能力的增量设计见 [直聘打招呼助手_PRD_V0.3_增补.md](直聘打招呼助手_PRD_V0.3_增补.md)，实现口径见 [docs/技术方案_V0.1.md](docs/技术方案_V0.1.md) 与 [docs/技术方案_V0.2_增补.md](docs/技术方案_V0.2_增补.md)。V0.2 的交互原型保留在 `直聘打招呼助手_Demo_V0.2.html`，仅用于对照，不是运行入口；导入流程的可点击原型是 [直聘打招呼助手_Demo_V0.3.html](直聘打招呼助手_Demo_V0.3.html)，解析与识别均为本地模拟数据，打开即可用。
 
 ## 界面
 
@@ -22,6 +22,17 @@
 | ![我的简历](docs/assets/01-resume.png) | ![定制简历](docs/assets/04-archive.png) |
 
 </details>
+
+## 导入能力
+
+两条录入路径把「粘贴长文本」换成「传个文件」，两条都不改变原有约束：简历永远是唯一的长期资产，JD 永远在生成前可校对。
+
+| 入口 | 支持 | 落点与边界 |
+|------|------|-----------|
+| 我的简历 · 导入简历文件 | TXT / Markdown / Word（.docx）/ 文本层 PDF，单文件 ≤ 10MB | 浏览器本地解析（pdfjs-dist / fflate 动态加载），文件与解析结果都不上传；结果只写草稿，覆盖前二次确认，并在草稿下方给出「可改写 / 锁定」区块预览 |
+| JD 输入区 · 导入 JD 截图 | PNG / JPG / WebP，单张 ≤ 5MB，单次 ≤ 3 张，也可直接粘贴截图 | 前端压到长边 1600px、JPEG 0.8 后调 `POST /api/vision` 转文本；结果按顺序追加、不覆盖既有 JD，进入校对态并可连续撤销；图片只在当次请求内转发，服务端不落盘、不写日志 |
+
+视觉识别沿用现有的 DeepSeek 密钥与 OpenAI 兼容客户端（`DEEPSEEK_VISION_MODEL`，默认 `deepseek-flash`；`deepseek-v4-pro` 不支持图片输入），与文本生成共用同一套 IP 限流与每日配额，不单列图片额度。扫描件 / 图片型 PDF 不做解析，会提示改用粘贴或 Word。
 
 ## 仓库结构
 
@@ -51,7 +62,7 @@ pnpm dev:api
 pnpm dev:web
 ```
 
-接入真实模型时，把 `DEEPSEEK_API_KEY`、`DEEPSEEK_BASE_URL`、`DEEPSEEK_MODEL` 配好即可，前端与代码都不需要改（可参考 `.env.example`）。
+接入真实模型时，把 `DEEPSEEK_API_KEY`、`DEEPSEEK_BASE_URL`、`DEEPSEEK_MODEL`、`DEEPSEEK_VISION_MODEL` 配好即可，前端与代码都不需要改（可参考 `.env.example`）。
 
 ## 测试
 
@@ -62,6 +73,8 @@ pnpm test:all     # 上面两项
 pnpm test:e2e     # Playwright：构建前端 + 启动 mock 模型与真实服务端，跑主流程
 pnpm typecheck    # tsc --noEmit
 ```
+
+导入能力另有两类固定输入：`tests/samples/import/` 放了一份文本层 PDF、一份 docx、一份双栏 text item 样本与一张 JD 截图，前两者由端到端用例真实解析，双栏样本用于 `rebuildPdfText` 的回归。
 
 首次跑端到端需要安装浏览器：`pnpm exec playwright install chromium`。
 
@@ -150,6 +163,8 @@ Vite 默认只接受本机 Host，未注入 `PREVIEW_ALLOWED_HOSTS`（逗号分�
 
 - 密钥只存在于服务端环境变量，前端代码与响应体里都不会出现；
 - 服务端不落盘：请求内容只用于转发，日志只记录任务类型、耗时与 IP 哈希；
+- 简历文件只在浏览器内解析，不上传；JD 截图压到 1600px 后只在当次识别请求内转发，服务端不落盘、不进缓存；
 - 服务端有两层用量控制：按 IP 每分钟 10 次 / 每日 100 次，以及全局单日用量告警阈值与硬上限（`DAILY_CALL_ALERT` / `DAILY_CALL_CAP`）；
 - 简历、JD、定制简历存档与行为记录都保存在使用者浏览器本地，键名前缀 `zhipin-assistant:v1:`；
+- 导入埋点只记格式、字数与张数（`resume_import` / `jd_image_import`），不记文件名、图片内容与识别文本；文件名只出现在当次提示里；
 - 锁定区块（个人信息、教育经历、未识别小标题）在服务端与前端各校验一次，任何模型输出都无法绕过。

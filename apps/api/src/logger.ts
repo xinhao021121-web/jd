@@ -7,6 +7,8 @@ export interface LogRecord {
   event: 'ok' | 'rate_limited' | 'invalid_input' | 'error' | 'usage_alert';
   task?: string | null;
   ipHash: string;
+  /** 图片识别只记录字节数，不记录图片内容与识别文本 */
+  imageBytes?: number;
   elapsedMs?: number;
   errorType?: string;
   attempts?: number;

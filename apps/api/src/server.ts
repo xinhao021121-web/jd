@@ -1,6 +1,6 @@
 import { serve } from '@hono/node-server';
 import { fileURLToPath } from 'node:url';
-import { createLlmClient } from '@zhipin/llm';
+import { createLlmClient, createVisionClient } from '@zhipin/llm';
 import { RATE_LIMIT } from '@zhipin/shared';
 import { createApp } from './app';
 import { loadEnvFile, readEnv } from './env';
@@ -17,9 +17,16 @@ const client = createLlmClient({
   apiKey: env.apiKey,
   model: env.model
 });
+// 视觉识别与文本生成共用同一把密钥与端点，只是模型不同（技术方案增补 四）
+const vision = createVisionClient({
+  baseUrl: env.baseUrl,
+  apiKey: env.apiKey,
+  model: env.visionModel
+});
 
 const app = createApp({
   runner: client,
+  vision,
   limiter: createRateLimiter({ perMinute: RATE_LIMIT.perMinute, perDay: RATE_LIMIT.perDay }),
   logger: createLogger(),
   usage: createUsageGuard({

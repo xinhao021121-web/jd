@@ -3,6 +3,8 @@
 
 # 二进制资源不做行尾转换
 *.png binary
+*.pdf binary
+*.docx binary
 *.jpg binary
 *.jpeg binary
 *.gif binary

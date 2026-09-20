@@ -17,6 +17,8 @@ run_worker_first = true
 [vars]
 DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
 DEEPSEEK_MODEL = "deepseek-chat"
+# JD 截图识别用的视觉模型（deepseek-v4-pro 不支持图片输入）
+DEEPSEEK_VISION_MODEL = "deepseek-flash"
 # 公开演示：额度比本地更保守，避免链接外传后耗尽密钥余额
 DAILY_CALL_ALERT = "100"
 DAILY_CALL_CAP = "300"

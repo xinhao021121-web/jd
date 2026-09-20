@@ -33,6 +33,7 @@ export default defineConfig({
         DEEPSEEK_API_KEY: 'sk-e2e-local',
         DEEPSEEK_BASE_URL: 'http://127.0.0.1:8788/v1',
         DEEPSEEK_MODEL: 'mock-chat',
+        DEEPSEEK_VISION_MODEL: 'mock-vision',
         PORT: '8787'
       }
     },
