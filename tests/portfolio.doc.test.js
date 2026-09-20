@@ -9,7 +9,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 
 const ROOT = path.join(__dirname, '..');
-const DOC_PATH = path.join(ROOT, 'docs', '作品集主文档_V1.2.md');
+const DOC_PATH = path.join(ROOT, 'docs', '作品集主文档_V1.3.md');
 const doc = fs.readFileSync(DOC_PATH, 'utf8');
 
 test('标注版本，并保留三类信息的阅读约定', () => {

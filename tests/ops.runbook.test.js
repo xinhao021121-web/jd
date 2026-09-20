@@ -57,7 +57,7 @@ test('评审记录具备发布留档的必备段落', () => {
 });
 
 test('评审记录引用的小时级证据文件与文档都真实存在', () => {
-  ['docs/运维与回滚_V1.0.md', 'docs/项目评审标准_V0.2.md', 'docs/质量回归_V0.2.md', 'docs/作品集主文档_V1.2.md'].forEach(
+  ['docs/运维与回滚_V1.0.md', 'docs/项目评审标准_V0.2.md', 'docs/质量回归_V0.2.md', 'docs/作品集主文档_V1.3.md'].forEach(
     (file) => {
       assert.ok(record.includes(file), `评审记录应引用：${file}`);
       assert.ok(fs.existsSync(path.join(ROOT, file)), `被引用的文件应存在：${file}`);

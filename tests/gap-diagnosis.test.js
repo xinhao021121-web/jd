@@ -94,7 +94,7 @@ test('文档里引用的 Markdown 链接都真实存在', () => {
 });
 
 test('与作品集主文档的已知不足保持同一口径', () => {
-  const portfolio = fs.readFileSync(path.join(DOCS_DIR, '作品集主文档_V1.2.md'), 'utf8');
+  const portfolio = fs.readFileSync(path.join(DOCS_DIR, '作品集主文档_V1.3.md'), 'utf8');
 
   ['尚无访谈或问卷', '外部盲测', '单位经济性'].forEach((keyword) => {
     assert.ok(portfolio.includes(keyword), '主文档应保留已知不足：' + keyword);

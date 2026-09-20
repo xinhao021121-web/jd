@@ -54,7 +54,7 @@ interface Counts {
 /** 文档里写死的数字：两处引用必须一起更新，因此在这里集中比对 */
 const targets: { file: string; pattern: RegExp; pick: (m: RegExpMatchArray) => Counts }[] = [
   {
-    file: 'docs/作品集主文档_V1.2.md',
+    file: 'docs/作品集主文档_V1.3.md',
     pattern: /自动化测试 \| (\d+) 项（单测与集成 (\d+) \+ 文档一致性 (\d+) \+ 端到端 (\d+)）/,
     pick: (m) => ({
       total: Number(m[1]),

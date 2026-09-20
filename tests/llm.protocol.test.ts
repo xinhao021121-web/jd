@@ -141,6 +141,28 @@ function sseResponse(lines: string[]): Response {
   return new Response(stream, { status: 200 });
 }
 
+/** 兼容端点在 include_usage 下把用量放在最后一个 chunk，且该 chunk 通常不带 content */
+function sseResponseWithUsage(
+  lines: string[],
+  usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number }
+): Response {
+  const payload = lines
+    .map((line) => `data: ${JSON.stringify({ choices: [{ delta: { content: line } }] })}\n\n`)
+    .join('');
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(
+        encoder.encode(
+          `${payload}data: ${JSON.stringify({ choices: [], usage })}\n\ndata: [DONE]\n\n`
+        )
+      );
+      controller.close();
+    }
+  });
+  return new Response(stream, { status: 200 });
+}
+
 function makeClient(handler: FetchLike) {
   return createLlmClient({
     baseUrl: 'https://example.test/v1/',
@@ -175,7 +197,62 @@ describe('createLlmClient', () => {
     const [url, init] = fetchImpl.mock.calls[0]!;
     expect(url).toBe('https://example.test/v1/chat/completions');
     expect(init.headers.Authorization).toBe('Bearer sk-test-key');
-    expect(JSON.parse(init.body)).toMatchObject({ model: 'deepseek-chat', stream: true });
+    expect(JSON.parse(init.body)).toMatchObject({
+      model: 'deepseek-chat',
+      stream: true,
+      stream_options: { include_usage: true }
+    });
+  });
+
+  it('把 token 用量带回结果，供成本观测使用', async () => {
+    const client = makeClient(async () =>
+      sseResponseWithUsage([`${greetingLine}\n`], {
+        prompt_tokens: 1200,
+        completion_tokens: 90,
+        total_tokens: 1290
+      })
+    );
+    const result = await client.runTask('greeting', { resume: SAMPLE_RESUME, jd: SAMPLE_JD });
+
+    expect(result.tokenUsage).toEqual({
+      promptTokens: 1200,
+      completionTokens: 90,
+      totalTokens: 1290
+    });
+  });
+
+  it('端点不返回用量时保持 0，不报错也不阻断生成', async () => {
+    const client = makeClient(async () => sseResponse([`${greetingLine}\n`]));
+    const result = await client.runTask('greeting', { resume: SAMPLE_RESUME, jd: SAMPLE_JD });
+
+    expect(result.validEvents).toBe(1);
+    expect(result.tokenUsage).toEqual({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
+  });
+
+  it('重试时两次用量一起计入：上游两次都已经计费', async () => {
+    let attempt = 0;
+    const client = makeClient(async () => {
+      attempt += 1;
+      return attempt === 1
+        ? sseResponseWithUsage(['完全不是 JSON 的回复\n'], {
+            prompt_tokens: 100,
+            completion_tokens: 10,
+            total_tokens: 110
+          })
+        : sseResponseWithUsage([`${greetingLine}\n`], {
+            prompt_tokens: 100,
+            completion_tokens: 20,
+            total_tokens: 120
+          });
+    });
+    const result = await client.runTask('greeting', { resume: SAMPLE_RESUME, jd: SAMPLE_JD });
+
+    expect(result.attempts).toBe(2);
+    expect(result.tokenUsage).toEqual({
+      promptTokens: 200,
+      completionTokens: 30,
+      totalTokens: 230
+    });
   });
 
   it('整份输出无法解析时重试一次，第二次成功则正常返回', async () => {
@@ -218,6 +295,30 @@ describe('createLlmClient', () => {
     await expect(
       client.runTask('greeting', { resume: SAMPLE_RESUME, jd: SAMPLE_JD })
     ).rejects.toBeInstanceOf(LlmUpstreamError);
+  });
+
+  it('data 行里出现非法 JSON 时跳过该行，不影响后面的内容', async () => {
+    const encoder = new TextEncoder();
+    const client = makeClient(async () => {
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(encoder.encode('data: {这不是 JSON\n\n'));
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ choices: [{ delta: { content: `${greetingLine}\n` } }] })}\n\n`
+            )
+          );
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
+        }
+      });
+      return new Response(stream, { status: 200 });
+    });
+
+    const result = await client.runTask('greeting', { resume: SAMPLE_RESUME, jd: SAMPLE_JD });
+
+    expect(result.validEvents).toBe(1);
+    expect(result.invalidLines).toBe(0);
   });
 
   it('请求头与请求体里带上密钥，但密钥不会出现在返回结果中', async () => {

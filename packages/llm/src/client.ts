@@ -43,6 +43,17 @@ export interface RunTaskResult {
   firstTokenMs: number | null;
   elapsedMs: number;
   attempts: number;
+  /**
+   * 本次任务消耗的 token（含重试的那次：上游确实计费）。
+   * 端点未返回 usage 时保持 0，调用方据此判断「拿不到」而不是「没花钱」。
+   */
+  tokenUsage: TokenUsage;
+}
+
+export interface TokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
 }
 
 export class LlmUpstreamError extends Error {
@@ -55,8 +66,13 @@ export class LlmUpstreamError extends Error {
   }
 }
 
-/** 从一行 SSE 里取出增量文本，非 data 行与无法解析的行直接跳过 */
-function parseSseLine(line: string): string | null {
+interface SseChunk {
+  content: string | null;
+  usage: TokenUsage | null;
+}
+
+/** 从一行 SSE 里取出增量文本与用量，非 data 行与无法解析的行直接跳过 */
+function parseSseLine(line: string): SseChunk | null {
   const trimmed = line.trim();
   if (!trimmed || trimmed.startsWith(':') || trimmed.startsWith('event:')) return null;
   if (!trimmed.startsWith('data:')) return null;
@@ -67,15 +83,31 @@ function parseSseLine(line: string): string | null {
   try {
     const parsed = JSON.parse(payload) as {
       choices?: { delta?: { content?: string }; message?: { content?: string } }[];
+      usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
     };
     const choice = parsed.choices?.[0];
-    return choice?.delta?.content ?? choice?.message?.content ?? null;
+    const content = choice?.delta?.content ?? choice?.message?.content ?? null;
+
+    // OpenAI 兼容端点在 stream_options.include_usage 下把用量放在最后一个 chunk 里，
+    // 那个 chunk 通常没有 content，所以两者要分开判断
+    const raw = parsed.usage;
+    const usage: TokenUsage | null =
+      raw && typeof raw.prompt_tokens === 'number'
+        ? {
+            promptTokens: raw.prompt_tokens,
+            completionTokens: raw.completion_tokens ?? 0,
+            totalTokens: raw.total_tokens ?? 0
+          }
+        : null;
+
+    if (!content && !usage) return null;
+    return { content, usage };
   } catch {
     return null;
   }
 }
 
-async function* readContentDeltas(response: Response): AsyncGenerator<string> {
+async function* readStreamChunks(response: Response): AsyncGenerator<SseChunk> {
   const body = response.body;
   if (!body) throw new LlmUpstreamError('模型未返回响应体');
 
@@ -93,8 +125,8 @@ async function* readContentDeltas(response: Response): AsyncGenerator<string> {
       while (index >= 0) {
         const line = buffer.slice(0, index);
         buffer = buffer.slice(index + 1);
-        const delta = parseSseLine(line);
-        if (delta) yield delta;
+        const chunk = parseSseLine(line);
+        if (chunk) yield chunk;
         index = buffer.indexOf('\n');
       }
     }
@@ -124,6 +156,8 @@ export function createLlmClient(config: LlmClientConfig) {
       body: JSON.stringify({
         model: config.model,
         stream: true,
+        // 让兼容端点回传 token 用量，用于成本观测；不返回该字段的端点会忽略它
+        stream_options: { include_usage: true },
         temperature: config.temperature ?? 0.3,
         messages
       }),
@@ -149,6 +183,7 @@ export function createLlmClient(config: LlmClientConfig) {
       let validEvents = 0;
       let invalidLines = 0;
       let firstTokenMs: number | null = null;
+      const tokenUsage: TokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
       while (attempts < maxAttempts) {
         attempts += 1;
@@ -161,12 +196,19 @@ export function createLlmClient(config: LlmClientConfig) {
 
         const response = await callModel(buildMessages(task, input), options.signal);
 
-        for await (const delta of readContentDeltas(response)) {
-          if (firstTokenMs === null) {
-            firstTokenMs = Date.now() - startedAt;
-            options.onFirstToken?.(firstTokenMs);
+        for await (const chunk of readStreamChunks(response)) {
+          if (chunk.content) {
+            if (firstTokenMs === null) {
+              firstTokenMs = Date.now() - startedAt;
+              options.onFirstToken?.(firstTokenMs);
+            }
+            for (const event of decoder.push(chunk.content)) await emit(event);
           }
-          for (const event of decoder.push(delta)) await emit(event);
+          if (chunk.usage) {
+            tokenUsage.promptTokens += chunk.usage.promptTokens;
+            tokenUsage.completionTokens += chunk.usage.completionTokens;
+            tokenUsage.totalTokens += chunk.usage.totalTokens;
+          }
         }
         for (const event of decoder.flush()) await emit(event);
 
@@ -182,7 +224,8 @@ export function createLlmClient(config: LlmClientConfig) {
         invalidLines,
         firstTokenMs,
         elapsedMs: Date.now() - startedAt,
-        attempts
+        attempts,
+        tokenUsage
       };
     }
   };
