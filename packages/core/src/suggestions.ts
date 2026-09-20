@@ -19,6 +19,16 @@ export interface RawSuggestion {
   suggestionType?: SuggestionType;
 }
 
+/**
+ * 改写建议的长度上限（PRD V0.4 增补 三）：改写只有在行内原地替换才能保住原版面，
+ * 行变长会让 Word 重新折行。口径为「至多比原文长 20%，最少允许长 5 个字」，
+ * 提示词与本函数共用同一份规则。
+ */
+export function suggestionLengthLimit(before: string, margin = 5): number {
+  const length = [...before].length;
+  return length + Math.max(Math.ceil(length * 0.2), margin);
+}
+
 export interface Suggestion {
   id: string;
   section: string;

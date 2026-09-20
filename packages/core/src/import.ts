@@ -4,6 +4,7 @@
  * 这些函数不碰文件与浏览器 API，浏览器适配层只负责把字节读进来。
  */
 import { MIN_TEXT_LENGTH } from '@zhipin/shared';
+import { normalizeParagraphLine } from './text-normalize';
 
 export type SniffedFileType = 'pdf' | 'docx' | 'text' | 'unknown';
 
@@ -222,18 +223,6 @@ export function rebuildPdfText(
     })
     .filter((page) => page.length > 0)
     .join('\n\n')
-    .trim();
-}
-
-const BULLET_PATTERN = /^\s*[•·▪◦●○‣∙※*]\s*/;
-const NUMBER_PATTERN = /^(\d{1,2})\s*[.、．)）]\s*(?=\S)/;
-
-function normalizeParagraphLine(line: string): string {
-  return line
-    .replace(/[\u00a0\u3000]/g, ' ')
-    .replace(BULLET_PATTERN, '- ')
-    .replace(NUMBER_PATTERN, '$1. ')
-    .replace(/[ \t]+/g, ' ')
     .trim();
 }
 

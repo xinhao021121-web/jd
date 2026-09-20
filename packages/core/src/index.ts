@@ -6,3 +6,5 @@ export * from './metrics';
 export * from './greetings';
 export * from './import';
 export * from './quality';
+export * from './text-normalize';
+export * from './docx-fill';
