@@ -160,6 +160,18 @@ describe('POST /api/vision', () => {
     expect(calls).toHaveLength(1);
   });
 
+  it('无效入参不占用全局每日额度：口径与 /api/llm 一致', async () => {
+    const { app, calls } = buildApp({ usage: { alertThreshold: 1, dailyCap: 1 } });
+
+    for (let index = 0; index < 4; index += 1) {
+      expect((await post(app, { image: 'https://example.com/a.png' }, `6.6.8.${index}`)).status).toBe(400);
+    }
+
+    expect((await post(app, { image: IMAGE }, '6.6.9.1')).status).toBe(200);
+    expect((await post(app, { image: IMAGE }, '6.6.9.2')).status).toBe(429);
+    expect(calls).toHaveLength(1);
+  });
+
   it('日志只记任务类型、字节数、耗时与结果状态，不含图片内容与识别文本', async () => {
     const logs: string[] = [];
     const { app } = buildApp({ logs });

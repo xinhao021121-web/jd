@@ -79,6 +79,23 @@ export function registerVisionRoute(app: Hono, deps: VisionRouteDeps): void {
       );
     }
 
+    let payload: unknown;
+    try {
+      payload = await c.req.json();
+    } catch {
+      payload = null;
+    }
+
+    const parsed = VisionRequestSchema.safeParse(payload);
+    if (!parsed.success) {
+      deps.logger.warn({ event: 'invalid_input', task: 'vision', ipHash, errorType: 'INVALID_INPUT' });
+      return c.json(
+        { code: 'INVALID_INPUT', message: VISION_INPUT_MESSAGE },
+        ERROR_HTTP_STATUS.INVALID_INPUT as 400
+      );
+    }
+
+    // 全局单日用量：口径与 /api/llm 一致，放在入参校验之后，只统计真正会发起模型调用的请求
     if (deps.usage) {
       const usage = await deps.usage.check();
       if (usage.exceeded) {
@@ -97,22 +114,6 @@ export function registerVisionRoute(app: Hono, deps: VisionRouteDeps): void {
           elapsedMs: (await deps.usage.snapshot()).count
         });
       }
-    }
-
-    let payload: unknown;
-    try {
-      payload = await c.req.json();
-    } catch {
-      payload = null;
-    }
-
-    const parsed = VisionRequestSchema.safeParse(payload);
-    if (!parsed.success) {
-      deps.logger.warn({ event: 'invalid_input', task: 'vision', ipHash, errorType: 'INVALID_INPUT' });
-      return c.json(
-        { code: 'INVALID_INPUT', message: VISION_INPUT_MESSAGE },
-        ERROR_HTTP_STATUS.INVALID_INPUT as 400
-      );
     }
 
     const { image } = parsed.data;

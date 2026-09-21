@@ -294,6 +294,24 @@ describe('POST /api/llm', () => {
     expect(calls).toHaveLength(2);
   });
 
+  it('无效入参不占用全局每日额度：额度只统计真正发起模型调用的请求', async () => {
+    const { app, calls } = buildApp({ usage: { alertThreshold: 2, dailyCap: 2 } });
+    const invalid = { task: 'greeting', resume: '太短', jd: SAMPLE_JD };
+
+    // 换 IP 连发一批 400：它们不产生模型成本，因此也不该占掉当日额度
+    for (let index = 0; index < 5; index += 1) {
+      expect((await post(app, invalid, `6.6.6.${index}`)).status).toBe(400);
+    }
+
+    const body = { task: 'greeting', resume: SAMPLE_RESUME, jd: SAMPLE_JD };
+    expect((await post(app, body, '6.6.7.1')).status).toBe(200);
+    expect((await post(app, body, '6.6.7.2')).status).toBe(200);
+
+    // 第三次真实生成才触顶
+    expect((await post(app, body, '6.6.7.3')).status).toBe(429);
+    expect(calls).toHaveLength(2);
+  });
+
   it('单日用量跨过告警阈值时写入脱敏告警日志', async () => {
     const logs: string[] = [];
     const { app } = buildApp({ usage: { alertThreshold: 1, dailyCap: 10 }, logs });

@@ -99,7 +99,26 @@ export function registerLlmRoute(app: Hono, deps: LlmRouteDeps): void {
       );
     }
 
-    // 全局单日用量：跨过硬上限直接拒绝，跨过告警阈值写一条告警日志（PRD 4.1）
+    let payload: unknown;
+    try {
+      payload = await c.req.json();
+    } catch {
+      payload = null;
+    }
+
+    const parsed = LlmRequestSchema.safeParse(payload);
+    if (!parsed.success) {
+      deps.logger.warn({ event: 'invalid_input', ipHash, errorType: 'INVALID_INPUT' });
+      return c.json(
+        { code: 'INVALID_INPUT', message: ERROR_MESSAGES.INVALID_INPUT },
+        ERROR_HTTP_STATUS.INVALID_INPUT as 400
+      );
+    }
+
+    // 全局单日用量：跨过硬上限直接拒绝，跨过告警阈值写一条告警日志（PRD 4.1）。
+    // 位置放在入参校验之后，额度只统计「真正会发起模型调用的请求」：校验不过的请求不占用当日额度。
+    // 否则任何人都能用一批 400 请求把公开部署的当日额度清零——按 IP 的限额挡不住换 IP 的调用方，
+    // 而这类请求本身不产生任何模型成本，计数在里面只会让护栏变成可用性缺口。
     if (deps.usage) {
       const usage = await deps.usage.check();
       if (usage.exceeded) {
@@ -117,22 +136,6 @@ export function registerLlmRoute(app: Hono, deps: LlmRouteDeps): void {
           elapsedMs: (await deps.usage.snapshot()).count
         });
       }
-    }
-
-    let payload: unknown;
-    try {
-      payload = await c.req.json();
-    } catch {
-      payload = null;
-    }
-
-    const parsed = LlmRequestSchema.safeParse(payload);
-    if (!parsed.success) {
-      deps.logger.warn({ event: 'invalid_input', ipHash, errorType: 'INVALID_INPUT' });
-      return c.json(
-        { code: 'INVALID_INPUT', message: ERROR_MESSAGES.INVALID_INPUT },
-        ERROR_HTTP_STATUS.INVALID_INPUT as 400
-      );
     }
 
     const { task, resume, jd } = parsed.data;
