@@ -86,6 +86,13 @@ test('已完成的能力都有对应证据行，没有实测数据的标为待�
   assert.ok(scoring.includes('不做二次加工'), '评分者给的原始输入要原样记录');
   assert.ok(scoring.includes('更正记录'), '作废过的那一版必须留痕，不能悄悄抹掉');
   assert.ok(scoring.includes('自证倾向'), '评分者即产品作者这条偏见必须写明');
+
+  // 浅案例：准入规则必须先定死，否则容易写成漂亮的空壳
+  const shallow = fs.readFileSync(path.join(__dirname, '..', 'docs', '浅案例_第二个项目_V0.1.md'), 'utf8');
+  assert.ok(shallow.includes('必须是真实做过的'), '浅案例要写清准入规则');
+  assert.ok(shallow.includes('必须有可验证的结果或明确没有结果'), '结果要可验证，或明确写没有');
+  assert.ok(shallow.includes('不许编'), '没有结果时不得编造');
+  assert.ok(shallow.includes('最关键的一处取舍'), '浅案例的核心是取舍，不能空着');
 });
 
 test('我的角色已有认领记录，且每条认领都配了追问准备', () => {
