@@ -66,6 +66,13 @@ test('「我的角色」显示认领进度：13 行认领完毕 + 四件事已�
   assert.ok(page.includes('每日额度不是本人决定的'), '未参与的那一项要写清楚');
 });
 
+test('页面交代了 AI 出错时用户看到什么，且写清没做的部分', () => {
+  assert.ok(page.includes('出问题的时候，用户看到什么'), '页面应有 AI 体验的边界');
+  assert.ok(page.includes('没做的部分与原因'), '每条边界都要写清没做的原因');
+  assert.ok(page.includes('限制次数'), '成本取舍要写明控成本靠限次而不是降质');
+  assert.ok(page.includes('生成超时'), '失败路径要写清用户实际看到什么');
+});
+
 test('引用的图片与视频都真实存在', () => {
   const assets = [...page.matchAll(/src="([^"]+)"/g)]
     .map((match) => match[1])

@@ -59,6 +59,15 @@ test('已完成的能力都有对应证据行，没有实测数据的标为待�
     assert.ok(doc.includes(row), '评测体系应包含：' + row);
   });
   assert.ok(doc.includes('[待验证]'), '没有实测数据的能力应标为待验证');
+
+  // AI 体验的边界设计：三条边界要么有实现，要么写明没做与原因
+  const boundary = doc.split('### AI 体验的边界设计')[1]?.split('## 四、')[0] ?? '';
+  assert.ok(boundary.length > 0, '应有「AI 体验的边界设计」一节');
+  ['bad case', '降级', '成本'].forEach((key) => {
+    assert.ok(boundary.includes(key), '边界设计应覆盖：' + key);
+  });
+  assert.ok(boundary.includes('没做') && boundary.includes('原因'), '没做的部分必须写明原因');
+  assert.ok(boundary.includes('代价'), '不提供降级路径的代价要写明');
 });
 
 test('我的角色已有认领记录，且每条认领都配了追问准备', () => {
