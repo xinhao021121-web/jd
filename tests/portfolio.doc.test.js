@@ -71,20 +71,21 @@ test('已完成的能力都有对应证据行，没有实测数据的标为待�
 
   // 人评一侧：必须说明它是方法演示，而不是用户评价
   assert.ok(doc.includes('主观质量（人评）'), '评测体系应有人评一格');
-  assert.ok(doc.includes('主观质量评分_V1.0.md'), '人评一格应指向评分标准文档');
+  assert.ok(doc.includes('主观质量评分_V1.1.md'), '人评一格应指向评分标准文档');
   assert.ok(
     doc.includes('不是外部证据') || doc.includes('方法演示'),
     '人评不得被写成用户评价'
   );
 
   // 评分结果本身：均分、最低分与「与产品承诺冲突」这条都要写出来
-  const scoring = fs.readFileSync(path.join(__dirname, '..', 'docs', '主观质量评分_V1.0.md'), 'utf8');
-  assert.ok(scoring.includes('2.13 / 5'), '评分结果应写明均分');
+  const scoring = fs.readFileSync(path.join(__dirname, '..', 'docs', '主观质量评分_V1.1.md'), 'utf8');
+  assert.ok(scoring.includes('3.46 / 5'), '评分结果应写明总均分');
+  assert.ok(scoring.includes('3.00') && scoring.includes('3.75'), '应写明各维度均分');
   assert.ok(scoring.includes('最低分'), '应指出最低分样本');
-  assert.ok(scoring.includes('冲突'), '均分与产品「可以直接发送」承诺的冲突必须写明，不能藏');
   assert.ok(scoring.includes('不是外部证据'), '应标明它不是外部证据');
   assert.ok(scoring.includes('不做二次加工'), '评分者给的原始输入要原样记录');
-  assert.ok(scoring.includes('最好一条'), '评分口径（每组取最好一条）必须写明，否则会被读成整体分');
+  assert.ok(scoring.includes('更正记录'), '作废过的那一版必须留痕，不能悄悄抹掉');
+  assert.ok(scoring.includes('自证倾向'), '评分者即产品作者这条偏见必须写明');
 });
 
 test('我的角色已有认领记录，且每条认领都配了追问准备', () => {
@@ -96,3 +97,4 @@ test('我的角色已有认领记录，且每条认领都配了追问准备', ()
   assert.ok(section.includes('已认领的四条：追问准备'), '认领之后应给出追问准备');
   assert.ok(section.includes('放弃了什么'), '追问准备应覆盖「放弃了什么」');
 });
+
