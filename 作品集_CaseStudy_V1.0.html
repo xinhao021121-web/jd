@@ -69,6 +69,13 @@
         border: 1px dashed #f79009; background: #fffaeb; border-radius: 12px; padding: 16px 20px;
       }
       .todo h3 { color: #b54708; }
+      .evidence {
+        background: #fff; border: 1px solid var(--line);
+        border-left: 4px solid #f79009; border-radius: 12px; padding: 20px 22px;
+        margin-top: 32px;
+      }
+      .evidence h2 { border: 0; padding-top: 0; }
+      .evidence p:last-child { margin-bottom: 0; }
       .shot { width: 100%; border: 1px solid var(--line); border-radius: 12px; display: block; }
       .figs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 6px; }
       footer { margin-top: 52px; border-top: 1px solid var(--line); padding-top: 16px; color: var(--muted); font-size: 13px; }
@@ -106,7 +113,26 @@
         <div><b>1.7 s</b><span>完整生成耗时（8 组样本实测，线上含公网往返 2.9 s）</span></div>
         <div><b>0 例</b><span>编造（8 组样本 × 2 轮，数字与技能全部可溯源）</span></div>
         <div><b>92.41%</b><span>测试覆盖率（阈值 80% 写在配置里）</span></div>
-        <div><b>523 项</b><span>自动化测试（单测 292 + 文档一致性 212 + 端到端 19）</span></div>
+        <div><b>524 项</b><span>自动化测试（单测 292 + 文档一致性 213 + 端到端 19）</span></div>
+      </section>
+
+      <section class="evidence">
+        <h2>证据边界</h2>
+        <p>
+          上面四个数字都是实测的。但<b>用户侧证据目前只有我自己的场景</b>——这一条决定了它们能证明什么、不能证明什么。
+        </p>
+        <table>
+          <tr><th>证据类型</th><th>状态</th></tr>
+            <tr><td>工程与评测数据</td><td><b>实测</b>：524 项测试、覆盖率、限流压测、模型选型、规则基线对照，全部可复现</td></tr>
+          <tr><td>自访谈</td><td>1 份，受访者是我本人——属于自身场景的加强版，<b>不计入用户证据</b></td></tr>
+          <tr><td>第三方用户证据</td><td><b>0</b>：没有第三方访谈、问卷，公开讨论材料也尚未整理</td></tr>
+        </table>
+        <p>
+          <b>所以「用户是否真的需要它」这一层，目前仍是推演。</b>痛点描述已经用自访谈把两处口径写细，但它证明的是「我这么用」，不是「这类人都这么用」。
+        </p>
+        <p>
+          <b>补齐计划</b>：招募文案、访谈提纲、执行清单与归纳口径都已就绪，缺的只是约到 3 位第三方受访者；结论会回写到这里。
+        </p>
       </section>
 
       <section>
@@ -262,7 +288,7 @@
         </p>
         <p>
           <span class="tag">在线可体验</span>
-          <span class="tag">523 项自动化测试</span>
+          <span class="tag">524 项自动化测试</span>
           <span class="tag">可回滚</span>
           <span class="tag">数据不出本机</span>
         </p>

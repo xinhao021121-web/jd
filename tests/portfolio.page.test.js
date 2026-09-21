@@ -27,9 +27,23 @@ test('六个部分齐全，按问题 → 判断 → 取舍 → 验证 → 结果
   });
 });
 
-test('标注依据强度，不把推演写成已验证的事实', () => {
+test('证据边界做成独立区块，紧跟数字条之后', () => {
+  assert.ok(page.includes('证据边界'), '应有证据边界区块');
+  assert.ok(page.includes('不计入用户证据'), '应写明自访谈不计入用户证据');
+  assert.ok(page.includes('目前仍是推演'), '应明说用户需求这一层仍是推演');
+  assert.ok(page.includes('补齐计划'), '应写明补齐计划');
+
+  // 位置：数字条之后、正文第一节之前
+  const facts = page.indexOf('class="facts"');
+  const evidence = page.indexOf('class="evidence"');
+  const firstSection = page.indexOf('一、问题与目标用户');
+  assert.ok(facts > 0 && evidence > facts, '证据边界应排在数字条之后');
+  assert.ok(firstSection > evidence, '证据边界应排在正文第一节之前');
+});
+
+test('原依据强度标注仍然保留在第一节', () => {
+  assert.ok(page.includes('依据强度'), '第一节应保留依据强度标注');
   assert.ok(page.includes('第三方用户证据仍为零'), '应写明第三方用户证据为零');
-  assert.ok(page.includes('依据强度'), '应标注依据强度');
 });
 
 test('保留「我的角色」待认领提示，避免读者默认全文由 AI 产出', () => {
