@@ -10,7 +10,7 @@ const assert = require('node:assert');
 
 const ROOT = path.join(__dirname, '..');
 const DOCS_DIR = path.join(ROOT, 'docs');
-const DOC_PATH = path.join(DOCS_DIR, '用户访谈提纲_V1.0.md');
+const DOC_PATH = path.join(DOCS_DIR, '用户访谈提纲_V1.1.md');
 const doc = fs.readFileSync(DOC_PATH, 'utf8');
 
 test('标注版本，并指向差距诊断 G1', () => {
@@ -20,15 +20,16 @@ test('标注版本，并指向差距诊断 G1', () => {
   assert.ok(doc.includes('定性证据'), '应声明这是定性证据，不是统计结论');
 });
 
-test('六条假设齐全，每条都有对应题目与可判定的标准', () => {
+test('八条假设齐全，每条都有对应题目与可判定的标准', () => {
   // 只看第二节的假设清单，附录 B 的判定汇总表也是 H 开头的行
   const section = doc.split('## 二、假设清单')[1]?.split('## 三、')[0] ?? '';
-  const rows = section.split('\n').filter((line) => /^\|\s*H\d\s*\|/.test(line));
+  // H\d+ 而不是 H\d：H11 是两位数，用单字符匹配会把它漏掉
+  const rows = section.split('\n').filter((line) => /^\|\s*H\d+\s*\|/.test(line));
 
-  assert.equal(rows.length, 6, '假设清单应有 6 行，实际 ' + rows.length + ' 行');
-  for (let index = 1; index <= 6; index += 1) {
+  assert.equal(rows.length, 8, '假设清单应有 8 行（H1–H6 加 H7、H11），实际 ' + rows.length + ' 行');
+  ['1', '2', '3', '4', '5', '6', '7', '11'].forEach((index) => {
     assert.ok(doc.includes('| H' + index + ' |'), '应包含假设 H' + index);
-  }
+  });
 
   rows.forEach((row) => {
     const cells = row.split('|').map((cell) => cell.trim());
@@ -46,7 +47,10 @@ test('十道题齐全，行为事实题与观点题的边界写清', () => {
   }
 
   const followUps = doc.match(/\*\*对应\*\*/g) ?? [];
-  assert.equal(followUps.length, 10, '每道题都应有对应假设与设计意图，实际 ' + followUps.length + ' 处');
+  assert.ok(
+    followUps.length >= 10,
+    '每道题都应有对应假设与设计意图（追问项可能额外标注），实际 ' + followUps.length + ' 处'
+  );
 
   assert.ok(doc.includes('全程问行为，不问观点'), '应写明行为优先的原则');
   assert.ok(doc.includes('筛选题'), '应保留用于过滤非目标人群的筛选题');
