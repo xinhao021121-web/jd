@@ -42,9 +42,11 @@ test('结论不超出证据：写明倍率、性能门槛与 pro 的样本量限
   assert.ok(doc.includes('判不了「像不像真人写的」'), '应声明自检不覆盖主观质量');
 });
 
-test('单价不被当成已知事实：折算方式与账单核对的要求都写清', () => {
-  assert.ok(doc.includes('单价必须来自账单'), '应写明单价需从账单核对');
-  assert.ok(doc.includes('不是账单核对值'), '示例单价必须标注为非核对值');
+test('单价来源与边界都写清：公开价可查，账单价为准', () => {
+  assert.ok(doc.includes('官方公开价'), '应写明用的是官方公开价而不是自拟价格');
+  assert.ok(doc.includes('api-docs.deepseek.com'), '应给出定价页出处，便于复核');
+  assert.ok(doc.includes('必须以账单为准'), '应写明真实单价以账单为准');
+  assert.ok(doc.includes('不是账单核对值'), '按公开价折算的数字必须标注为非核对值');
   assert.ok(doc.includes('--price-in='), '应给出带单价折算的复现命令');
   assert.ok(doc.includes('DAILY_CALL_CAP'), '应把成本硬顶与既有配额口径挂钩');
 });
