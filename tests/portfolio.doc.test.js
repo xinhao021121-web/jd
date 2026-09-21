@@ -76,6 +76,14 @@ test('已完成的能力都有对应证据行，没有实测数据的标为待�
     doc.includes('不是外部证据') || doc.includes('方法演示'),
     '人评不得被写成用户评价'
   );
+
+  // 评分结果本身：均分、最低分与「与产品承诺冲突」这条都要写出来
+  const scoring = fs.readFileSync(path.join(__dirname, '..', 'docs', '主观质量评分_V1.0.md'), 'utf8');
+  assert.ok(scoring.includes('2.13 / 5'), '评分结果应写明均分');
+  assert.ok(scoring.includes('最低分'), '应指出最低分样本');
+  assert.ok(scoring.includes('冲突'), '均分与产品「可以直接发送」承诺的冲突必须写明，不能藏');
+  assert.ok(scoring.includes('不是外部证据'), '应标明它不是外部证据');
+  assert.ok(scoring.includes('不做二次加工'), '评分者给的原始输入要原样记录');
 });
 
 test('我的角色已有认领记录，且每条认领都配了追问准备', () => {
