@@ -83,32 +83,29 @@ test('复核了 V1.0 的核销结论，并写明声明不做不等于核销', ()
 });
 
 test('八节留白处数与主文档、作品集页的实际状态一致（填完必须回改两份物料）', () => {
-  const { blankCells, unchecked, total } = countBlankSlots();
+  const { blankCells, unchecked, total: pending } = countBlankSlots();
   const n1 = gapRows.find((cells) => cells[1] === 'N1');
   assert.ok(n1, '差距清单应有 N1');
 
   assert.ok(
-    n1[3].includes(total + ' 处留白'),
-    'N1 的现状证据应写「' + total + ' 处留白」，与实际不符（第八节可能已被填写，需同步本文档）'
-  );
-  assert.ok(
-    n1[3].includes(unchecked + ' 个复选框'),
-    'N1 应写明 8.3 还有 ' + unchecked + ' 个未勾选复选框，实际 ' + unchecked + ' 个'
-  );
-  assert.ok(
-    blankCells > 0 || total === 0,
-    'N1 的表格空行口径应与主文档一致（表格空 ' + blankCells + ' 行）'
+    n1[3].includes(pending + ' 处留白'),
+    'N1 的现状证据应写「' + pending + ' 处留白」，实际是表格空 ' + blankCells + ' 行 + 未勾选 ' + unchecked + ' 项'
   );
 
-  // 作品集页把进度写给读者看，这里的数字同样不能自己走样
-  assert.ok(
-    page.includes(blankCells + ' 行未认领'),
-    '作品集页应写「' + blankCells + ' 行未认领」，与实际不符'
-  );
-  assert.ok(
-    page.includes(unchecked + ' 栏未勾选'),
-    '作品集页应写「' + unchecked + ' 栏未勾选」，与实际不符'
-  );
+  // 作品集页把进度写给读者看，这里的说法同样不能自己走样：
+  // 还有留白就报数字，清零了就明说清零
+  if (pending === 0) {
+    assert.ok(page.includes('认领完毕'), '留白清零后，作品集页应写明已认领完毕');
+  } else {
+    assert.ok(
+      page.includes(blankCells + ' 行未认领'),
+      '作品集页应写「' + blankCells + ' 行未认领」，与实际不符'
+    );
+    assert.ok(
+      page.includes(unchecked + ' 栏未勾选'),
+      '作品集页应写「' + unchecked + ' 栏未勾选」，与实际不符'
+    );
+  }
 });
 
 test('补齐路径按投入产出排序，每步都有完成标志', () => {
@@ -118,10 +115,13 @@ test('补齐路径按投入产出排序，每步都有完成标志', () => {
   const markers = doc.match(/\*\*完成标志\*\*/g) ?? [];
   assert.equal(markers.length, 5, '每步各应有一个完成标志，实际 ' + markers.length + ' 个');
 
-  // 第 0 步必须是「纯填写」的那一步：投入产出比最高，且不需要等任何人
+  // 第 0 步是「纯填写」的那一步：投入产出比最高，且不需要等任何人
   const first = doc.split('### 第 0 步')[1]?.split('### 第 1 步')[0] ?? '';
-  assert.ok(first.includes('半天'), '第 0 步应标注为半天量级');
   assert.ok(first.includes('留白'), '第 0 步应是把第八节留白填完');
+  assert.ok(
+    first.includes('已完成') || first.includes('半天'),
+    '第 0 步应写明它是已完成，还是仍在待办'
+  );
 });
 
 test('校招版追问预演保留 6 条，且与差距编号挂钩', () => {
