@@ -13,19 +13,28 @@ import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'no
 import { fileURLToPath } from 'node:url';
 
 const root = new URL('../', import.meta.url);
-const sourceHtml = fileURLToPath(new URL('作品集_CaseStudy_V1.0.html', root));
 const publicDir = fileURLToPath(new URL('apps/web/public/', root));
 const assetsDir = `${publicDir}portfolio-assets/`;
+
+/** 源文件 → 部署后的路径。首页是给招聘方的入口，案例页从它进入。 */
+const pages = [
+  { source: '作品集_首页_V1.0.html', target: 'portfolio-home.html' },
+  { source: '作品集_CaseStudy_V1.0.html', target: 'portfolio.html' }
+];
 
 const SOURCE_PREFIX = 'docs/assets/';
 const TARGET_PREFIX = 'portfolio-assets/';
 
 function main(): void {
-  const html = readFileSync(sourceHtml, 'utf8');
+  const html = pages.map((page) => readFileSync(fileURLToPath(new URL(page.source, root)), 'utf8'));
 
-  // 从 HTML 现取引用清单，避免手写一份会过期的素材列表
+  // 从各页 HTML 现取引用清单，避免手写一份会过期的素材列表
   const referenced = [
-    ...new Set([...html.matchAll(/docs\/assets\/([^"'\s)]+)/g)].map((match) => match[1]!))
+    ...new Set(
+      html.flatMap((content) =>
+        [...content.matchAll(/docs\/assets\/([^"'\s)]+)/g)].map((match) => match[1]!)
+      )
+    )
   ];
   if (!referenced.length) {
     throw new Error('HTML 里没有找到 docs/assets/ 引用，检查源文件是否被改过');
@@ -45,10 +54,18 @@ function main(): void {
     }
   });
 
-  writeFileSync(`${publicDir}portfolio.html`, html.split(SOURCE_PREFIX).join(TARGET_PREFIX), 'utf8');
+  pages.forEach((page, index) => {
+    writeFileSync(
+      `${publicDir}${page.target}`,
+      html[index]!.split(SOURCE_PREFIX).join(TARGET_PREFIX),
+      'utf8'
+    );
+  });
 
-  console.log(`作品集已同步到 apps/web/public/：1 个页面 + ${referenced.length - missing} 个素材`);
-  console.log('部署后访问：https://<你的域名>/portfolio.html');
+  console.log(
+    `作品集已同步到 apps/web/public/：${pages.length} 个页面 + ${referenced.length - missing} 个素材`
+  );
+  console.log('部署后访问：https://<你的域名>/portfolio-home.html（入口）与 /portfolio.html（案例）');
 }
 
 main();

@@ -2,7 +2,7 @@
 
 面向求职者的轻量工具：维护一份长期简历，针对具体岗位 JD 生成可直接发送的打招呼话术，以及逐条可采纳的简历改写建议。
 
-只看一页的话，打开 [作品集_CaseStudy_V1.0.html](作品集_CaseStudy_V1.0.html)（含 66 秒主流程录屏）；只看一份文档的话，看 [docs/作品集主文档_V1.3.md](docs/作品集主文档_V1.3.md)：三分钟读完产品判断、评测体系与已知不足。
+给招聘方的入口是 [作品集_首页_V1.0.html](作品集_首页_V1.0.html)（自我介绍、求职方向、项目索引与联系方式），完整案例在 [作品集_CaseStudy_V1.0.html](作品集_CaseStudy_V1.0.html)（含 66 秒主流程录屏）；只看一份文档的话，看 [docs/作品集主文档_V1.3.md](docs/作品集主文档_V1.3.md)：三分钟读完产品判断、评测体系与已知不足。
 
 产品口径见 [直聘打招呼助手_PRD_V0.2.md](直聘打招呼助手_PRD_V0.2.md)，增量设计见四份增补：[PRD V0.3](直聘打招呼助手_PRD_V0.3_增补.md)（导入能力）、[PRD V0.4](直聘打招呼助手_PRD_V0.4_增补.md)（Word 保真导出）、[PRD V0.5](直聘打招呼助手_PRD_V0.5_增补.md)（话术历史）、[PRD V0.6](直聘打招呼助手_PRD_V0.6_增补.md)（界面布局与交互收口）；实现口径见 [docs/技术方案_V0.1.md](docs/技术方案_V0.1.md) 与五份增补：[V0.2](docs/技术方案_V0.2_增补.md)（导入能力）、[V0.3](docs/技术方案_V0.3_增补.md)（本地自检与提示词收缩）、[V0.4](docs/技术方案_V0.4_增补.md)（Word 保真导出）、[V0.5](docs/技术方案_V0.5_增补.md)（话术历史）、[V0.6](docs/技术方案_V0.6_增补.md)（界面布局的响应式口径）。
 
@@ -176,9 +176,9 @@ pnpm --filter @zhipin/api start  # 服务端常驻进程，读取环境变量
 
 ### 作品集页（可选）
 
-仓库根目录的 `作品集_CaseStudy_V1.0.html` 是给评审人看的那一页。`pnpm portfolio:sync` 会把它和素材同步进 `apps/web/public/`，随下次部署一起上线：
+仓库根目录有两页：`作品集_首页_V1.0.html` 是给招聘方的**入口**，`作品集_CaseStudy_V1.0.html` 是完整案例。`pnpm portfolio:sync` 会把两页与素材同步进 `apps/web/public/`，随下次部署一起上线：
 
-- 访问地址：`https://<你的域名>/portfolio.html`；
+- 访问地址：`https://<你的域名>/portfolio-home.html`（入口）与 `https://<你的域名>/portfolio.html`（案例）；
 - `pnpm build` 与 `pnpm deploy:cf` 已内置这一步，不用单独跑；
 - 源文件在仓库根目录，同步产物在 `apps/web/public/`（已加入 `.gitignore`，不要手改产物）；
 - PDF 版：`pnpm portfolio:pdf` 用无头 Chromium 按页面的 print 样式导出到 `docs/assets/`，页面顶部有下载入口。

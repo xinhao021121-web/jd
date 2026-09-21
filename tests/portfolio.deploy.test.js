@@ -12,6 +12,15 @@ const assert = require('node:assert');
 
 const ROOT = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(ROOT, '作品集_CaseStudy_V1.0.html'), 'utf8');
+const home = fs.readFileSync(path.join(ROOT, '作品集_首页_V1.0.html'), 'utf8');
+
+test('首页承担入口职责：自我介绍 + 求职方向 + 项目索引 + 联系方式', () => {
+  assert.ok(home.includes('求职方向：AI 产品经理'), '首页要点明求职方向');
+  assert.ok(home.includes('我是谁'), '首页要有自我介绍，读者才知道这人是谁');
+  assert.ok(home.includes('作品'), '首页要有项目索引');
+  assert.ok(home.includes('portfolio.html'), '首页要能进到完整案例');
+  assert.ok(home.includes('mailto:') || home.includes('github.com'), '首页要给出联系方式');
+});
 
 test('源页面引用的素材全部存在', () => {
   const referenced = [
