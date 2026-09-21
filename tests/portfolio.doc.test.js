@@ -68,6 +68,14 @@ test('已完成的能力都有对应证据行，没有实测数据的标为待�
   });
   assert.ok(boundary.includes('没做') && boundary.includes('原因'), '没做的部分必须写明原因');
   assert.ok(boundary.includes('代价'), '不提供降级路径的代价要写明');
+
+  // 人评一侧：必须说明它是方法演示，而不是用户评价
+  assert.ok(doc.includes('主观质量（人评）'), '评测体系应有人评一格');
+  assert.ok(doc.includes('主观质量评分_V1.0.md'), '人评一格应指向评分标准文档');
+  assert.ok(
+    doc.includes('不是外部证据') || doc.includes('方法演示'),
+    '人评不得被写成用户评价'
+  );
 });
 
 test('我的角色已有认领记录，且每条认领都配了追问准备', () => {
