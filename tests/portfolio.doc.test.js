@@ -84,6 +84,7 @@ test('已完成的能力都有对应证据行，没有实测数据的标为待�
   assert.ok(scoring.includes('冲突'), '均分与产品「可以直接发送」承诺的冲突必须写明，不能藏');
   assert.ok(scoring.includes('不是外部证据'), '应标明它不是外部证据');
   assert.ok(scoring.includes('不做二次加工'), '评分者给的原始输入要原样记录');
+  assert.ok(scoring.includes('最好一条'), '评分口径（每组取最好一条）必须写明，否则会被读成整体分');
 });
 
 test('我的角色已有认领记录，且每条认领都配了追问准备', () => {
