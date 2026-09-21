@@ -83,8 +83,9 @@ test('页面上的测试条数与覆盖率与主文档同源', () => {
   assert.ok(page.includes(`${coverage[1]}%`), `页面应写出与主文档一致的覆盖率 ${coverage[1]}%`);
 });
 
-test('评测体系如实标注外部盲测尚未回收', () => {
-  assert.ok(page.includes('待回收'), '应标注盲测待回收');
+test('如实标注外部盲测与主观质量是决定不做，而不是写成「待回收」', () => {
+  assert.ok(page.includes('未做，且不计划做'), '应写清是决定不做，不是待做');
+  assert.ok(!page.includes('待回收'), '不应留下「还在等」的印象');
   assert.ok(page.includes('合规率'), '应使用合规率而不是合格率');
   assert.ok(!page.includes('合格率'), '页面不应再出现「合格率」');
 });
