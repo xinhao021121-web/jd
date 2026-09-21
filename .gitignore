@@ -10,4 +10,6 @@ playwright-report/
 coverage/
 coverage-json/
 reports/
+# 作品集页面的同步产物（源文件在仓库根目录，由 pnpm portfolio:sync 生成）
+apps/web/public/
 *.log

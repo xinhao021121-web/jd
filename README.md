@@ -174,6 +174,15 @@ pnpm --filter @zhipin/api start  # 服务端常驻进程，读取环境变量
 
 一个 Worker 同时托管前端静态产物与 `/api/llm`：前端与 API 同域，密钥存 Worker Secret，限流与每日配额由 Durable Object 保存，跨请求、跨重新部署都不会重置。
 
+### 作品集页（可选）
+
+仓库根目录的 `作品集_CaseStudy_V1.0.html` 是给评审人看的那一页。`pnpm portfolio:sync` 会把它和素材同步进 `apps/web/public/`，随下次部署一起上线：
+
+- 访问地址：`https://<你的域名>/portfolio.html`；
+- `pnpm build` 与 `pnpm deploy:cf` 已内置这一步，不用单独跑；
+- 源文件在仓库根目录，同步产物在 `apps/web/public/`（已加入 `.gitignore`，不要手改产物）；
+- PDF 版：`pnpm portfolio:pdf` 用无头 Chromium 按页面的 print 样式导出到 `docs/assets/`，页面顶部有下载入口。
+
 ```bash
 pnpm deploy:cf                            # 构建前端 + 部署
 npx wrangler secret put DEEPSEEK_API_KEY  # 首次部署后写入密钥，不进仓库

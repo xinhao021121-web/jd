@@ -76,6 +76,7 @@
       }
       .evidence h2 { border: 0; padding-top: 0; }
       .evidence p:last-child { margin-bottom: 0; }
+      .video-note { display: none; }
       .shot { width: 100%; border: 1px solid var(--line); border-radius: 12px; display: block; }
       .figs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 6px; }
       footer { margin-top: 52px; border-top: 1px solid var(--line); padding-top: 16px; color: var(--muted); font-size: 13px; }
@@ -86,7 +87,18 @@
       @media print {
         body { background: #fff; }
         section { break-inside: avoid; }
+        /* A4 的 CSS 宽度约 703px，会命中下面的 720px 断点，
+           所以打印时把多列布局显式还原回来 */
+        .facts { grid-template-columns: repeat(4, 1fr); }
+        .grid2, .figs { grid-template-columns: 1fr 1fr; }
+        table { break-inside: avoid; }
+        /* 证据表首列写的是「第三方用户证据」这类词，不给它 nowrap 会被挤成两行 */
+        .evidence th:first-child, .evidence td:first-child { white-space: nowrap; }
         video { display: none; }
+        .video-note {
+          display: block; color: var(--muted); font-size: 13px;
+          border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px;
+        }
       }
     </style>
   </head>
@@ -101,9 +113,11 @@
         </p>
         <p class="meta">
           在线体验：<a href="https://zhipin.xinhao02.ccwu.cc" target="_blank" rel="noreferrer">zhipin.xinhao02.ccwu.cc</a>
+          ｜ <a href="docs/assets/作品集_CaseStudy_V1.0.pdf">PDF 版</a>
           ｜ 单人项目（产品判断 + 实现 + 评测）｜ 数据截至 2026/09/21
         </p>
         <video controls preload="metadata" poster="docs/assets/02-generate.png" src="docs/assets/demo-flow.webm"></video>
+        <p class="video-note">（67 秒主流程录屏在 HTML 版与在线地址里：zhipin.xinhao02.ccwu.cc）</p>
         <p class="caption">
           66 秒主流程：保存简历 → 生成话术与匹配分析 → 复制（自动入历史）→ 按 JD 改简历 → 存为定制简历。
         </p>
@@ -113,7 +127,7 @@
         <div><b>1.7 s</b><span>完整生成耗时（8 组样本实测，线上含公网往返 2.9 s）</span></div>
         <div><b>0 例</b><span>编造（8 组样本 × 2 轮，数字与技能全部可溯源）</span></div>
         <div><b>92.41%</b><span>测试覆盖率（阈值 80% 写在配置里）</span></div>
-        <div><b>526 项</b><span>自动化测试（单测 292 + 文档一致性 215 + 端到端 19）</span></div>
+        <div><b>530 项</b><span>自动化测试（单测 292 + 文档一致性 219 + 端到端 19）</span></div>
       </section>
 
       <section class="evidence">
@@ -123,7 +137,7 @@
         </p>
         <table>
           <tr><th>证据类型</th><th>状态</th></tr>
-            <tr><td>工程与评测数据</td><td><b>实测</b>：526 项测试、覆盖率、限流压测、模型选型、规则基线对照，全部可复现</td></tr>
+            <tr><td>工程与评测数据</td><td><b>实测</b>：530 项测试、覆盖率、限流压测、模型选型、规则基线对照，全部可复现</td></tr>
           <tr><td>自访谈</td><td>1 份，受访者是我本人——属于自身场景的加强版，<b>不计入用户证据</b></td></tr>
           <tr><td>第三方用户证据</td><td><b>0</b>：没有第三方访谈、问卷，公开讨论材料也尚未整理</td></tr>
         </table>
@@ -317,7 +331,7 @@
         </p>
         <p>
           <span class="tag">在线可体验</span>
-          <span class="tag">526 项自动化测试</span>
+          <span class="tag">530 项自动化测试</span>
           <span class="tag">可回滚</span>
           <span class="tag">数据不出本机</span>
         </p>
