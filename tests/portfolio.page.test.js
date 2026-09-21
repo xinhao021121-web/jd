@@ -38,7 +38,8 @@ test('主动回应「加重招聘方负担」的质疑，而不是等面试官�
 test('证据边界做成独立区块，紧跟数字条之后', () => {
   assert.ok(page.includes('证据边界'), '应有证据边界区块');
   assert.ok(page.includes('不计入用户证据'), '应写明自访谈不计入用户证据');
-  assert.ok(page.includes('目前仍是推演'), '应明说用户需求这一层仍是推演');
+  assert.ok(page.includes('仍然没有第三方证据'), '应明说用户需求这一层还没有第三方证据');
+  assert.ok(page.includes('不是「这类人都这么用」'), '应说明自身场景不能外推到其他人');
   assert.ok(page.includes('补齐计划'), '应写明补齐计划');
 
   // 位置：数字条之后、正文第一节之前
