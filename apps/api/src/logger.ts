@@ -10,6 +10,11 @@ export interface LogRecord {
   /** 图片识别只记录字节数，不记录图片内容与识别文本 */
   imageBytes?: number;
   elapsedMs?: number;
+  /**
+   * 只出现在 usage_alert 上：当日的累计调用数。
+   * 早先借用了 elapsedMs 承载这个值，读日志的人会把它当成耗时，因此拆成独立字段。
+   */
+  count?: number;
   errorType?: string;
   attempts?: number;
 }

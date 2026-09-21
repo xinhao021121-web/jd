@@ -135,7 +135,7 @@ export function registerLlmRoute(app: Hono, deps: LlmRouteDeps): void {
           event: 'usage_alert',
           ipHash,
           errorType: 'DAILY_CALL_ALERT',
-          elapsedMs: (await deps.usage.snapshot()).count
+          count: (await deps.usage.snapshot()).count
         });
       }
     }

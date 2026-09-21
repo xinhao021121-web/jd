@@ -36,6 +36,8 @@ test('监控一节写明日志字段与不落正文的边界', () => {
   ['ipHash', 'usage_alert', 'rate_limited', '不含简历与 JD 正文'].forEach((keyword) => {
     assert.ok(runbook.includes(keyword), '监控一节应包含：' + keyword);
   });
+  assert.ok(runbook.includes('count'), '日志字段表应含有当日累计调用数 count');
+  assert.ok(runbook.includes('当日累计调用数'), '应写明 count 的含义，避免被当成耗时读');
   assert.ok(runbook.includes('tail.developers.workers.dev'), '应记录实时日志在本机网络不可用这一实测结论');
 });
 

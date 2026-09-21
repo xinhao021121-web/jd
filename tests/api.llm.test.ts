@@ -366,6 +366,9 @@ describe('POST /api/llm', () => {
 
     const alert = logs.map((line) => JSON.parse(line)).find((item) => item.event === 'usage_alert');
     expect(alert).toMatchObject({ errorType: 'DAILY_CALL_ALERT' });
+    // 当日累计调用数是独立字段，不借用 elapsedMs——读日志的人不会把它当成耗时
+    expect(alert.count).toBe(1);
+    expect(alert.elapsedMs).toBeUndefined();
     expect(logs.join('\n')).not.toContain('订单中心');
   });
 

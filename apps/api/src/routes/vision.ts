@@ -110,7 +110,7 @@ export function registerVisionRoute(app: Hono, deps: VisionRouteDeps): void {
           task: 'vision',
           ipHash,
           errorType: 'DAILY_CALL_ALERT',
-          elapsedMs: (await deps.usage.snapshot()).count
+          count: (await deps.usage.snapshot()).count
         });
       }
     }
