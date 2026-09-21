@@ -16,8 +16,10 @@ const ROOT = path.join(__dirname, '..');
 const DOCS_DIR = path.join(ROOT, 'docs');
 const DOC_PATH = path.join(DOCS_DIR, '作品集差距诊断_V2.0.md');
 const PORTFOLIO_PATH = path.join(DOCS_DIR, '作品集主文档_V1.3.md');
+const PAGE_PATH = path.join(ROOT, '作品集_CaseStudy_V1.0.html');
 const doc = fs.readFileSync(DOC_PATH, 'utf8');
 const portfolio = fs.readFileSync(PORTFOLIO_PATH, 'utf8');
+const page = fs.readFileSync(PAGE_PATH, 'utf8');
 
 /** 差距清单的行：以 | N<数字> | 开头 */
 const gapRows = doc
@@ -80,7 +82,7 @@ test('复核了 V1.0 的核销结论，并写明声明不做不等于核销', ()
   assert.ok(doc.includes('只降低严重度，不改变状态'), '应写明「声明不做」的复核口径');
 });
 
-test('八节留白处数与主文档的实际状态一致（填完必须回改本文档）', () => {
+test('八节留白处数与主文档、作品集页的实际状态一致（填完必须回改两份物料）', () => {
   const { blankCells, unchecked, total } = countBlankSlots();
   const n1 = gapRows.find((cells) => cells[1] === 'N1');
   assert.ok(n1, '差距清单应有 N1');
@@ -91,11 +93,21 @@ test('八节留白处数与主文档的实际状态一致（填完必须回改�
   );
   assert.ok(
     n1[3].includes(unchecked + ' 个复选框'),
-    'N1 应写明 8.3 有 ' + unchecked + ' 个未勾选复选框，实际 ' + unchecked + ' 个'
+    'N1 应写明 8.3 还有 ' + unchecked + ' 个未勾选复选框，实际 ' + unchecked + ' 个'
   );
   assert.ok(
     blankCells > 0 || total === 0,
     'N1 的表格空行口径应与主文档一致（表格空 ' + blankCells + ' 行）'
+  );
+
+  // 作品集页把进度写给读者看，这里的数字同样不能自己走样
+  assert.ok(
+    page.includes(blankCells + ' 行未认领'),
+    '作品集页应写「' + blankCells + ' 行未认领」，与实际不符'
+  );
+  assert.ok(
+    page.includes(unchecked + ' 栏未勾选'),
+    '作品集页应写「' + unchecked + ' 栏未勾选」，与实际不符'
   );
 });
 
