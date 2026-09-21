@@ -12,11 +12,14 @@ const ROOT = path.join(__dirname, '..');
 const DOCS_DIR = path.join(ROOT, 'docs');
 const doc = fs.readFileSync(path.join(DOCS_DIR, '用户访谈记录_V1.0.md'), 'utf8');
 
-test('标注版本与进度，并声明样本未达标', () => {
+test('标注版本与进度，并声明这是自访谈、不计入第三方人数', () => {
   assert.ok(/版本号：V1\.\d/.test(doc), '应标注版本号');
-  assert.ok(doc.includes('进度：1 / 3 人'), '应写出当前进度');
-  assert.ok(doc.includes('样本未达标'), '应显式声明样本量未达验收口径');
-  assert.ok(doc.includes('不得在对外材料里当作结论使用'), '应限制未达标样本的使用方式');
+  assert.ok(doc.includes('第三方访谈 0 / 3 人'), '应写出第三方访谈进度');
+  assert.ok(doc.includes('自访谈 1 份'), '应写明另有 1 份自访谈');
+  assert.ok(doc.includes('不计入这个人数'), '应声明自访谈不计入 G1 人数');
+  assert.ok(doc.includes('自证偏差'), '应点明自访谈的自证偏差');
+  assert.ok(doc.includes('只对作者本人成立'), '应限制结论的适用范围');
+  assert.ok(doc.includes('不是用户证据'), '应明确自访谈不是用户证据');
 });
 
 test('记录受访者画像与筛选结论', () => {
@@ -49,7 +52,7 @@ test('带出的产品线索标注为待验证', () => {
 
 test('专家访谈与下一步都在文档里', () => {
   assert.ok(doc.includes('样本局限'), '应写明样本局限');
-  assert.ok(doc.includes('自访谈'), '应写明受访者若为作者本人的处理方式');
+  assert.ok(doc.includes('**本人**'), '应记录受访者就是项目作者本人');
   assert.ok(doc.includes('再找 2–4 人'), '应给出下一步');
   assert.ok(doc.includes('不要与外部盲测的 3–5 人重合'), '应保持两组证据的独立性');
 });

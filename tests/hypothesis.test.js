@@ -56,7 +56,7 @@ test('模拟推演文件本身带「非证据」标注，且指向假设库', ()
   assert.ok(mock.includes('这不是用户证据'), '模拟材料应带非证据标注');
   assert.ok(mock.includes('不得作为「用户访谈结论」引用'), '应禁止作为访谈结论引用');
   assert.ok(mock.includes('待验证假设_V0.1.md'), '应指向提炼后的假设库');
-  assert.ok(mock.includes('真实访谈目前只有 1 份'), '应指向当前的真实证据量');
+  assert.ok(mock.includes('第三方访谈目前为 **0 份**'), '应指向当前的第三方证据量');
 });
 
 test('引用的仓库路径都真实存在', () => {
