@@ -30,6 +30,11 @@ test('运维手册给出可执行的回滚步骤与演练记录', () => {
   assert.ok(runbook.includes('index-YsoFx2Ce.js'), '演练记录应写出回滚前后的静态产物 hash');
   assert.ok(runbook.includes('index-BtcSOYvN.js'), '演练记录应写出回滚后的静态产物 hash');
   assert.ok(runbook.includes('回滚可用'), '应给出演练结论');
+
+  // 演练记录会随之后的发布过期，因此必须另有一段「现行状态」作为回滚验收的基线
+  const current = runbook.split('### 现行状态')[1] ?? '';
+  assert.ok(current, '应记录现行状态，否则回滚验收会拿旧 hash 当基线');
+  assert.ok(/\/assets\/index-[\w-]+\.js/.test(current), '现行状态应写出首页引用的静态产物 hash');
 });
 
 test('监控一节写明日志字段与不落正文的边界', () => {
