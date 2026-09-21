@@ -14,17 +14,25 @@ const DOCS_DIR = path.join(ROOT, 'docs');
 const page = fs.readFileSync(path.join(ROOT, '作品集_CaseStudy_V1.0.html'), 'utf8');
 const master = fs.readFileSync(path.join(DOCS_DIR, '作品集主文档_V1.3.md'), 'utf8');
 
-test('六个部分齐全，按问题 → 判断 → 取舍 → 验证 → 结果 → 复盘组织', () => {
+test('七个部分齐全，按问题 → 判断 → 取舍 → 验证 → 结果 → 定位 → 复盘组织', () => {
   [
     '一、问题与目标用户',
     '二、四条关键判断',
     '三、被放弃的方案',
     '四、评测体系',
     '五、结果',
-    '六、复盘'
+    '六、定位与边界',
+    '七、复盘'
   ].forEach((heading) => {
     assert.ok(page.includes(heading), '页面应保留小节：' + heading);
   });
+});
+
+test('主动回应「加重招聘方负担」的质疑，而不是等面试官提出来', () => {
+  assert.ok(page.includes('这个质疑有一半成立'), '应承认质疑的合理部分');
+  assert.ok(page.includes('不自动发送'), '应给出硬约束');
+  assert.ok(page.includes('技能匹配型写一条仍要 1–2 分钟用于审核') || page.includes('这不是零成本群发'), '应给出使用成本层面的观察');
+  assert.ok(page.includes('没有验证的部分'), '应标注哪部分还没有数据');
 });
 
 test('证据边界做成独立区块，紧跟数字条之后', () => {
@@ -47,7 +55,7 @@ test('原依据强度标注仍然保留在第一节', () => {
 });
 
 test('保留「我的角色」待认领提示，避免读者默认全文由 AI 产出', () => {
-  assert.ok(page.includes('七、我的角色'), '应有我的角色一节');
+  assert.ok(page.includes('八、我的角色'), '应有我的角色一节');
   assert.ok(page.includes('待本人认领后填写'), '应显式标注待认领');
 });
 
