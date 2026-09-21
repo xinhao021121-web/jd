@@ -12,6 +12,7 @@ const assert = require('node:assert');
 
 const DOCS_DIR = path.join(__dirname, '..', 'docs');
 const doc = fs.readFileSync(path.join(DOCS_DIR, '公开讨论调研_V0.1.md'), 'utf8');
+const materials = fs.readFileSync(path.join(DOCS_DIR, '公开讨论材料_V1.0.md'), 'utf8');
 
 test('标注版本与对应差距，并写明证据层级', () => {
   assert.ok(/版本号：V0\.\d/.test(doc), '应标注版本号');
@@ -27,7 +28,8 @@ test('如实记录实测可访问性，包括抓不到的渠道', () => {
   });
   assert.ok(doc.includes('403'), '应写明被拒的状态码');
   assert.ok(doc.includes('JS 渲染'), '应写明抓不到的原因');
-  assert.ok(doc.includes('不可用'), '应写明浏览器自动化不可用');
+  assert.ok(doc.includes('复测更正'), '浏览器自动化的结论若被推翻，应写明是复测更正而不是悄悄改掉');
+  assert.ok(doc.includes('公开讨论材料_V1.0.md'), '应指向实际回收的材料');
   assert.ok(doc.includes('内容富矿在小红书与牛客'), '应指出真正的内容来源');
 });
 
@@ -51,6 +53,14 @@ test('引用规范禁止越界，并强制写局限', () => {
   assert.ok(doc.includes('不写用户名'), '应要求匿名化');
   assert.ok(doc.includes('不整段复制'), '应限制摘录长度');
   assert.ok(doc.includes('必须写局限'), '应强制写自选择偏差');
+
+  // 执行版（材料表）同样要守规矩，否则规范只停在纸面上
+  assert.ok(materials.includes('2026/09/21'), '材料表应逐条带检索时间');
+  assert.ok(materials.includes('不得被写成「访谈」'), '材料表应重申它不是访谈');
+  assert.ok(materials.includes('样本自选'), '材料表应写明样本自选的局限');
+  assert.ok(materials.includes('不记用户名'), '材料表应写明已匿名化处理');
+  assert.ok(!/牛客\d{6,}号/.test(materials), '材料表不得出现用户名（含平台默认昵称）');
+  assert.ok(materials.includes('未找到'), '找不到材料的假设要如实记「未找到」，不凑数');
 });
 
 test('材料到假设的映射覆盖高风险假设', () => {
