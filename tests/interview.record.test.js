@@ -25,18 +25,20 @@ test('记录受访者画像与筛选结论', () => {
   assert.ok(doc.includes('是否符合筛选'), '应给出筛选结论');
 });
 
-test('六条假设逐条判定，且允许「不成立」', () => {
+test('六条假设逐条判定，且不把口径差异写成「被推翻」', () => {
   for (let index = 1; index <= 6; index += 1) {
     assert.ok(doc.includes('| H' + index + ' |'), '应包含假设 H' + index);
   }
-  assert.ok(doc.includes('不成立'), '应保留证伪结果，而不是只记录成立的部分');
-  assert.ok(doc.includes('原因猜错了'), '应显式写出被推翻的假设');
+  assert.ok(doc.includes('成立，并补上一类原因'), 'H4 应记录「原有原因成立 + 补一层」，不是替换');
+  assert.ok(doc.includes('口径不同、不矛盾'), '耗时口径应写成两个口径，而不是冲突');
+  assert.ok(!doc.includes('原因猜错了'), '不应把口径差异写成「猜错了」');
 });
 
-test('与既有文档的冲突单独成节，不悄悄改掉', () => {
-  assert.ok(doc.includes('与既有文档冲突的地方'), '应有冲突小节');
-  assert.ok(doc.includes('5–10 分钟'), '应记下被修正的旧数字');
-  assert.ok(doc.includes('已按实测改写'), '应写明旧表述的处置方式');
+test('口径澄清单独成节，并保留初稿误读的更正痕迹', () => {
+  assert.ok(doc.includes('与既有文档的口径澄清'), '应有口径澄清小节');
+  assert.ok(doc.includes('5–10 分钟'), '应保留「从零撰写」这个口径');
+  assert.ok(doc.includes('更正记录留在这里'), '应保留更正痕迹，不悄悄抹掉');
+  assert.ok(doc.includes('没有推翻主文档的任何判断'), '应写明本次访谈与既有判断的关系');
 });
 
 test('带出的产品线索标注为待验证', () => {
@@ -47,6 +49,7 @@ test('带出的产品线索标注为待验证', () => {
 
 test('专家访谈与下一步都在文档里', () => {
   assert.ok(doc.includes('样本局限'), '应写明样本局限');
+  assert.ok(doc.includes('自访谈'), '应写明受访者若为作者本人的处理方式');
   assert.ok(doc.includes('再找 2–4 人'), '应给出下一步');
   assert.ok(doc.includes('不要与外部盲测的 3–5 人重合'), '应保持两组证据的独立性');
 });
