@@ -84,6 +84,24 @@ test('引用的图片与视频都真实存在', () => {
   });
 
   assert.ok(page.includes('demo-flow.webm'), '应嵌入主流程录屏');
+
+  // 录屏时长必须与实测值一致，且三处口径不能互相矛盾（N7）
+  const secondsInPage = [...page.matchAll(/(\d+) 秒(?:主流程|录屏)/g)].map((m) => m[1]);
+  assert.ok(secondsInPage.length >= 1, '页面应写明录屏时长');
+  assert.ok(
+    new Set(secondsInPage).size === 1,
+    '同一页里的录屏时长必须一致，实际出现：' + [...new Set(secondsInPage)].join(' / ')
+  );
+  assert.equal(secondsInPage[0], '67', '实测时长为 67.24 秒，页面应写 67 秒');
+
+  const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
+  const secondsInReadme = [...readme.matchAll(/(\d+) 秒(?:主流程|录屏)/g)].map((m) => m[1]);
+  assert.ok(secondsInReadme.length >= 1, 'README 应写明录屏时长');
+  assert.equal(
+    secondsInReadme[0],
+    secondsInPage[0],
+    'README 与作品集页的录屏时长口径必须一致'
+  );
 });
 
 test('页面上的测试条数与覆盖率与主文档同源', () => {
