@@ -66,7 +66,7 @@ test('样本约束与主文档口径一致，且不承诺统计结论', () => {
   assert.ok(doc.includes('不成立的假设要留在文档里'), '应要求保留证伪结果');
 
   const portfolio = fs.readFileSync(path.join(DOCS_DIR, '作品集主文档_V1.3.md'), 'utf8');
-  assert.ok(portfolio.includes('尚无访谈或问卷'), '主文档此时仍应标注用户证据缺失');
+  assert.ok(portfolio.includes('用户访谈记录_V1.0.md'), '主文档应指向访谈记录');
   assert.ok(doc.includes('尚无访谈或问卷'), '提纲应写明要替换的那句话');
 });
 

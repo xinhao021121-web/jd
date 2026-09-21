@@ -96,11 +96,12 @@ test('文档里引用的 Markdown 链接都真实存在', () => {
 test('与作品集主文档的已知不足保持同一口径', () => {
   const portfolio = fs.readFileSync(path.join(DOCS_DIR, '作品集主文档_V1.3.md'), 'utf8');
 
-  ['尚无访谈或问卷', '外部盲测', '单位经济性'].forEach((keyword) => {
+  ['外部盲测', '单位经济性'].forEach((keyword) => {
     assert.ok(portfolio.includes(keyword), '主文档应保留已知不足：' + keyword);
     assert.ok(doc.includes(keyword), '差距诊断应沿用同一口径：' + keyword);
   });
 
+  assert.ok(portfolio.includes('用户访谈记录_V1.0.md'), '主文档应指向访谈记录');
   assert.ok(doc.includes('reports/blind-test/results/'), '应指出外部盲测结果为空');
   assert.ok(doc.includes('packages/core/src/metrics.ts'), '应指出指标口径的落点');
   assert.ok(doc.includes('pnpm test:counts'), '应给出核对命令');
