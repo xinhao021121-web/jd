@@ -24,6 +24,7 @@ import {
   type StreamEvent
 } from '@zhipin/shared';
 import { LlmUpstreamError } from '@zhipin/llm';
+import { clientIpFromHeaders } from '../client-ip';
 import type { RateLimiter } from '../ratelimit';
 import { hashIp, type Logger } from '../logger';
 import { AsyncEventQueue } from '../streaming';
@@ -71,11 +72,12 @@ const SSE_HEADERS = {
   'X-Accel-Buffering': 'no'
 };
 
-/** 默认取 X-Forwarded-For 的第一跳，便于在反向代理后按真实 IP 限流 */
+/**
+ * 默认的 IP 来源：Cloudflare 上取 `CF-Connecting-IP`（调用方伪造不了），
+ * 其他部署形态依次回退到 `X-Forwarded-For` 第一跳与 `X-Real-IP`。
+ */
 function defaultClientIp(c: Context): string {
-  const forwarded = c.req.header('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0]!.trim();
-  return c.req.header('x-real-ip') ?? 'unknown';
+  return clientIpFromHeaders((name) => c.req.header(name));
 }
 
 export function registerLlmRoute(app: Hono, deps: LlmRouteDeps): void {

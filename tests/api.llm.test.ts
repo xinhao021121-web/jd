@@ -208,6 +208,53 @@ describe('POST /api/llm', () => {
     expect(calls).toHaveLength(2);
   });
 
+  it('伪造 X-Forwarded-For 不能拆开限流桶：取键优先用 CF-Connecting-IP', async () => {
+    const { app } = buildApp({ perMinute: 2 });
+    const body = { task: 'greeting', resume: SAMPLE_RESUME, jd: SAMPLE_JD };
+
+    const postWithHeaders = (init: Record<string, string>) =>
+      app.request('/api/llm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...init },
+        body: JSON.stringify(body)
+      });
+
+    // 同一个 CF-Connecting-IP，每次换一个伪造的 XFF：第三跳必须共用同一个桶
+    expect(
+      (await postWithHeaders({ 'cf-connecting-ip': '198.51.100.9', 'x-forwarded-for': 'fake-a' }))
+        .status
+    ).toBe(200);
+    expect(
+      (await postWithHeaders({ 'cf-connecting-ip': '198.51.100.9', 'x-forwarded-for': 'fake-b' }))
+        .status
+    ).toBe(200);
+    expect(
+      (await postWithHeaders({ 'cf-connecting-ip': '198.51.100.9', 'x-forwarded-for': 'fake-c' }))
+        .status
+    ).toBe(429);
+
+    // 换一个 CF-Connecting-IP 就是另一个桶，说明限额确实按它分
+    expect(
+      (await postWithHeaders({ 'cf-connecting-ip': '198.51.100.10', 'x-forwarded-for': 'fake-a' }))
+        .status
+    ).toBe(200);
+  });
+
+  it('没有任何来源头时归入同一个桶：直连 Node 端口时按 IP 限额会退化成全局限额', async () => {
+    const { app } = buildApp({ perMinute: 1 });
+    const body = { task: 'greeting', resume: SAMPLE_RESUME, jd: SAMPLE_JD };
+
+    const postWithoutIpHeaders = () =>
+      app.request('/api/llm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+    expect((await postWithoutIpHeaders()).status).toBe(200);
+    expect((await postWithoutIpHeaders()).status).toBe(429);
+  });
+
   it('模型鉴权失败返回 502，响应里不含密钥', async () => {
     const { app, logs } = buildApp({ behavior: 'upstream-error' });
     const response = await post(app, { task: 'greeting', resume: SAMPLE_RESUME, jd: SAMPLE_JD });

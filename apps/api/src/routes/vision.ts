@@ -14,6 +14,7 @@ import {
   VISION_INPUT_MESSAGE,
   VISION_TIMEOUT_MS
 } from '@zhipin/shared';
+import { clientIpFromHeaders } from '../client-ip';
 import { hashIp, type Logger } from '../logger';
 import type { RateLimiter } from '../ratelimit';
 import type { UsageGuard } from '../usage';
@@ -52,11 +53,9 @@ export interface VisionRouteDeps {
   clientIp?: (c: Context) => string;
 }
 
-/** 默认取 X-Forwarded-For 的第一跳，与 /api/llm 保持同一口径 */
+/** 与 /api/llm 共用同一份取键实现：CF-Connecting-IP → XFF 第一跳 → X-Real-IP → unknown */
 function defaultClientIp(c: Context): string {
-  const forwarded = c.req.header('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0]!.trim();
-  return c.req.header('x-real-ip') ?? 'unknown';
+  return clientIpFromHeaders((name) => c.req.header(name));
 }
 
 export function registerVisionRoute(app: Hono, deps: VisionRouteDeps): void {
