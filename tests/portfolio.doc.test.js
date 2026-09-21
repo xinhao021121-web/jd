@@ -60,3 +60,13 @@ test('已完成的能力都有对应证据行，没有实测数据的标为待�
   });
   assert.ok(doc.includes('[待验证]'), '没有实测数据的能力应标为待验证');
 });
+
+test('我的角色已有认领记录，且每条认领都配了追问准备', () => {
+  const section = doc.split('## 八、我的角色')[1] ?? '';
+
+  // 只数「你的确认」列里被认领的行（行尾就是加粗的三个字），不含填写指引里的示例
+  const claimed = (section.match(/\| \*\*本人决定\*\* \|$/gm) ?? []).length;
+  assert.ok(claimed >= 4, '应至少有四条本人认领，实际 ' + claimed + ' 条');
+  assert.ok(section.includes('已认领的四条：追问准备'), '认领之后应给出追问准备');
+  assert.ok(section.includes('放弃了什么'), '追问准备应覆盖「放弃了什么」');
+});
