@@ -33,7 +33,7 @@ import {
   type GreetingHistoryRecord
 } from './storage';
 
-export const VIEW_NAMES = ['resume', 'custom', 'archive', 'generate', 'history'] as const;
+export const VIEW_NAMES = ['resume', 'custom', 'archive', 'generate', 'history', 'privacy'] as const;
 export type ViewName = (typeof VIEW_NAMES)[number];
 
 export type StreamStatus = 'idle' | 'streaming' | 'done' | 'error' | 'aborted';

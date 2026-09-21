@@ -5,7 +5,8 @@ const NAV_ITEMS: { view: ViewName; label: string; icon: string }[] = [
   { view: 'custom', label: '按 JD 改简历', icon: '🛠' },
   { view: 'archive', label: '定制简历', icon: '🗂' },
   { view: 'generate', label: '生成打招呼', icon: '💬' },
-  { view: 'history', label: '话术历史', icon: '🕘' }
+  { view: 'history', label: '话术历史', icon: '🕘' },
+  { view: 'privacy', label: '数据与隐私', icon: '🔒' }
 ];
 
 /** 后续规划分组：本版本占位，避免主流程加入未验证的入口（PRD 2.4） */

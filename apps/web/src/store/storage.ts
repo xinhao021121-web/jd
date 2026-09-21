@@ -23,6 +23,21 @@ export const STORAGE_KEYS = {
 
 export const MAX_STORED_EVENTS = 500;
 
+/** 首次生成前的授权告知：只在第一次生成时问一次，答过就记住 */
+export const CONSENT_KEY = 'zhipin-assistant:v1:consent';
+
+export function hasGenerationConsent(storage: Storage): boolean {
+  return storage.getItem(CONSENT_KEY) === 'granted';
+}
+
+export function recordGenerationConsent(storage: Storage): void {
+  try {
+    storage.setItem(CONSENT_KEY, 'granted');
+  } catch {
+    /* 隐私模式或容量不足时写不进去，下次再问一次即可 */
+  }
+}
+
 export const CustomResumeRecordSchema = z.object({
   id: z.string().min(1),
   name: z.string(),
@@ -201,7 +216,11 @@ export function writeSlice(storage: Storage, slice: PersistedSlice): void {
 }
 
 export function clearSlice(storage: Storage): void {
-  Object.values(STORAGE_KEYS).forEach((key) => storage.removeItem(key));
+  [...Object.values(STORAGE_KEYS), CONSENT_KEY].forEach((key) => {
+    storage.removeItem(key);
+    // 解析失败时留下的 `${key}:invalid` 备份也是本机数据，不清掉就等于「清除」清不干净
+    storage.removeItem(`${key}:invalid`);
+  });
 }
 
 /** 供 zustand persist 使用的存储适配器：把切片拆成文档约定的多个键 */

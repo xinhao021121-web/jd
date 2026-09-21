@@ -8,7 +8,10 @@ const sample = (name: string): string => path.join(SAMPLE_DIR, name);
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem('zhipin-assistant:v1:consent', 'granted');
+  });
   await page.reload();
 });
 

@@ -4,7 +4,12 @@ import { SAMPLE_JD, SAMPLE_RESUME } from '../fixtures';
 test.beforeEach(async ({ page }) => {
   // 每个用例从干净的本地存储开始
   await page.goto('/');
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => {
+    localStorage.clear();
+    // 首次生成前的授权只在真实首次访问时弹；这里预置成已授权，
+    // 授权流程本身由 privacy.spec.ts 覆盖
+    localStorage.setItem('zhipin-assistant:v1:consent', 'granted');
+  });
   await page.reload();
 });
 

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ABORTED_NOTICE,
   ERROR_MESSAGES,
@@ -12,6 +12,11 @@ import { JdField } from '../components/JdField';
 import { toast } from '../components/Toast';
 import { Card, ChipRow, Notice, PageTitle } from '../components/ui';
 import { canGenerate, useAppStore, type GreetingItem } from '../store/store';
+import {
+  getBrowserStorage,
+  hasGenerationConsent,
+  recordGenerationConsent
+} from '../store/storage';
 import { downloadJson } from '../utils/download';
 import { countChars } from '../utils/format';
 
@@ -128,6 +133,28 @@ export function GenerateView(): JSX.Element {
   const events = useAppStore((state) => state.events);
   const metrics = useMemo(() => calcMetrics(events), [events]);
   const offSpec = useMemo(() => offSpecGreetingIndexes(greeting.items), [greeting.items]);
+  // 首次生成前问一次授权（PRD 4.1）；答过就记在本机，之后不再打扰
+  const [consentPending, setConsentPending] = useState(false);
+
+  const startGeneration = (): void => {
+    void generateGreeting({ regenerate: greeting.items.length > 0 });
+  };
+
+  const onGenerateClick = (): void => {
+    const storage = getBrowserStorage();
+    if (storage && !hasGenerationConsent(storage)) {
+      setConsentPending(true);
+      return;
+    }
+    startGeneration();
+  };
+
+  const acceptConsent = (): void => {
+    const storage = getBrowserStorage();
+    if (storage) recordGenerationConsent(storage);
+    setConsentPending(false);
+    startGeneration();
+  };
 
   const onExportUsage = () => {
     downloadJson(`直聘助手_使用数据_${new Date().toISOString().slice(0, 10)}.json`, {
@@ -157,7 +184,7 @@ export function GenerateView(): JSX.Element {
             type="button"
             className="btn-primary"
             disabled={!ready || streaming}
-            onClick={() => void generateGreeting({ regenerate: greeting.items.length > 0 })}
+            onClick={onGenerateClick}
           >
             {streaming ? '生成中…' : greeting.items.length ? '重新生成 3 条话术' : '生成 3 条话术'}
           </button>
@@ -174,6 +201,27 @@ export function GenerateView(): JSX.Element {
             </span>
           )}
         </div>
+
+        {consentPending && (
+          <div
+            id="consentBar"
+            className="mt-3 rounded-xl bg-primary-soft px-4 py-3 text-[13px] leading-6 text-[#1f52d6]"
+            role="note"
+          >
+            <p>
+              生成会把<b>简历与岗位 JD 发送给模型服务商（DeepSeek）</b>用于生成内容；服务端只转发，不保存正文。
+              你的简历、JD 与存档只留在本机，可随时在「数据与隐私」里清除。
+            </p>
+            <div className="mt-2 flex gap-2">
+              <button id="acceptConsent" type="button" className="btn-primary" onClick={acceptConsent}>
+                我了解，开始生成
+              </button>
+              <button type="button" className="btn-ghost" onClick={() => setConsentPending(false)}>
+                先不生成
+              </button>
+            </div>
+          </div>
+        )}
       </Card>
 
       <div className="mt-4 space-y-4">
