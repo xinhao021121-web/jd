@@ -32,6 +32,11 @@ class_name = "Counters"
 pattern = "zhipin.xinhao02.ccwu.cc"
 custom_domain = true
 
+# 境内可达的备用域名（ccwu.cc 在境内被整体阻断）
+[[routes]]
+pattern = "zhipin.rainylli02xin11hao21.dpdns.org"
+custom_domain = true
+
 # 免费计划的 Durable Object 必须使用 SQLite 存储后端
 [[migrations]]
 tag = "v1"

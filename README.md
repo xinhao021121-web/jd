@@ -10,7 +10,7 @@
 
 ## 线上地址
 
-https://zhipin.xinhao02.ccwu.cc —— 前端静态产物与 `/api/llm`、`/api/vision` 由同一个 Cloudflare Worker 提供，同域、无 CORS，密钥只存在 Worker Secret 里。
+https://zhipin.rainylli02xin11hao21.dpdns.org —— 前端静态产物与 `/api/llm`、`/api/vision` 由同一个 Cloudflare Worker 提供，同域、无 CORS，密钥只存在 Worker Secret 里。
 
 > 国内访问注意：`*.workers.dev` 被 DNS 污染，必须走自有域名；自定义域名的可达性随 Cloudflare 出口 IP 变化，发布前应实测（详见「部署」一节）。
 
