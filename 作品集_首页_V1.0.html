@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- 作品集首页 V2.0 · 统一入口：问需 / 直聘打招呼助手 / 跨境电商 AI 广告素材生成系统 · 2026-09-28 -->
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
@@ -22,6 +23,7 @@
       .wrap { max-width: 860px; margin: 0 auto; padding: 56px 24px 72px; }
       h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; }
       .role { color: var(--brand); font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+      .positioning { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
       .meta { color: var(--muted); font-size: 13px; margin: 0; }
       h2 { font-size: 17px; margin: 44px 0 14px; }
       p { margin: 0 0 12px; }
@@ -65,18 +67,21 @@
       <header>
         <h1>李昕昊</h1>
         <p class="role">求职方向：AI 产品经理（应届生）</p>
+        <p class="positioning">环境设计背景，做家装与空间场景的 AI 产品</p>
         <p class="meta">武汉 ｜ 期望岗位：AI 产品经理 / 产品经理</p>
       </header>
 
       <section>
         <h2>我是谁</h2>
         <p>
-          从室内设计转行做 AI 产品，2026 年投递过 100+ 个岗位——<b>我自己就是目标用户</b>：在这条求职链路上，
-          我既是做产品的人，也是被这条链路折腾的人。
+          环境设计出身，做过 22 个住宅项目的设计师助理——量房、出平面、跑现场。
+          <b>装修这门生意里那些说不清、问不全、最后返工的麻烦，我是站在现场看到的</b>，所以第一个产品做在这条链路上。
         </p>
         <p>
-          所以我的做法是：<b>遇到问题先量它，再动手做</b>。下面这个产品就是这么来的——不是为了练手，
-          是因为我每天都要用。
+          2026 年我自己投递过 100+ 个岗位，<b>我又是求职这条链路的用户</b>，于是每天都要做的事，变成了第二个产品。
+        </p>
+        <p>
+          两条线共用一个做法：<b>遇到问题先量它，再动手做</b>；做出来要能点开、能验证，并且说清哪里还没做到。
         </p>
       </section>
 
@@ -84,8 +89,35 @@
         <h2>作品</h2>
 
         <div class="card">
+          <h3>问需 · 装修需求采集系统</h3>
+          <p class="sub">
+            给装修公司的需求采集与解读工具：房主填需求单 → 设计师出门前拿到一份沟通清单 → 现场照着问、带一份记录回来
+          </p>
+          <ul class="tags">
+            <li>三端落地</li>
+            <li>真实设计师访谈</li>
+            <li>规则与模型的边界</li>
+            <li>外发脱敏</li>
+            <li>质量评测与成本</li>
+          </ul>
+          <ul class="stats">
+            <li>已上线，三个端都能点开：<b>采集端（小程序 / H5）、解读端（桌面工作台）、现场端（可离线 PWA）</b></li>
+            <li>需求不是猜的：<b>三场设计师访谈</b>产出必问口径与「遗漏台账 5 类」，需求优先级写在这些证据上</li>
+            <li>硬边界：<b>不可让渡的规则不交给模型</b>——采集端只用确定性规则，清单条目逐条标注来源（规则托底 / 你来定 / 模型推导）</li>
+            <li>数据边界：字段级三级外发脱敏与外发审计，住址、电话等字段在离开内网前按策略替换</li>
+          </ul>
+          <p class="links">
+            <a href="https://wenxu.xinhao02.ccwu.cc/">打开产品入口页 →</a>
+            <a href="https://github.com/xinhao021121-web/zhuangxiu-demand">源码 →</a>
+            <a href="https://github.com/xinhao021121-web/zhuangxiu-demand/blob/main/research/%E9%97%AE%E9%9C%80_%E7%A0%94%E7%A9%B6%E7%BB%93%E8%AE%BA_V1.md">访谈结论 →</a>
+          </p>
+        </div>
+
+        <div class="card">
           <h3>直聘打招呼助手</h3>
-          <p class="sub">给求职者的工具：粘贴一段 JD，用已存的简历生成 3 条可直接发送的打招呼话术，以及逐条可采纳的简历改写建议</p>
+          <p class="sub">
+            给求职者的工具：粘贴一段 JD，用已存的简历生成 3 条可直接发送的打招呼话术，以及逐条可采纳的简历改写建议
+          </p>
           <ul class="tags">
             <li>AI 能力边界</li>
             <li>评测体系</li>
@@ -95,49 +127,56 @@
           <ul class="stats">
             <li>已上线，国内直连可用：<b>每 5 秒首字、一次生成约 0.0038 元</b>（token 实测 + 官方公开价折算）</li>
             <li>硬边界：<b>编造即失败</b>——话术与建议里的经历、技能、数字全部可溯源到简历原文</li>
-            <li>人评 8 组真实输出：<b>敢直接发 3.75 / 5、无夸大 3.63 / 5</b>，短板也很清楚：像不像真人写的只有 3.00</li>
+            <li>人评 8 组真实输出：<b>敢直接发 3.75 / 5、无夸大 3.63 / 5</b>；短板也照实写：像不像真人写的只有 3.00</li>
           </ul>
           <p class="links">
-            <a href="portfolio.html">读完整案例 →</a>
             <a href="https://zhipin.xinhao02.ccwu.cc">直接体验 →</a>
+            <a href="portfolio.html">读完整案例 →</a>
           </p>
         </div>
 
         <div class="card">
-          <h3>其他 AI 产品项目</h3>
-          <p class="sub">尚未写成案例，这里先如实列出名字</p>
+          <h3>跨境电商 AI 广告素材生成系统</h3>
+          <p class="sub">
+            面向跨境电商卖家的 AI 广告创意工作台：商品分析 → 策略 → 文案 → 视觉 → 合规 → 质量，六段由分工明确的 Agent 完成，输出一份结构化创意方案
+          </p>
           <ul class="tags">
-            <li>筑云 HomeOS</li>
-            <li>跨境电商 AI 广告素材生成系统</li>
+            <li>Multi-Agent 编排</li>
+            <li>结构化 Schema</li>
+            <li>RAG 知识库</li>
+            <li>合规与质量复核</li>
           </ul>
+          <ul class="stats">
+            <li>可运行 MVP：React 工作台 + Express 服务；<b>Main Agent 编排 6 个专业 Agent</b>，用 RunContext 逐阶段传递结构化上下文</li>
+            <li>真实链路跑通过一次：<b>便携咖啡机 / 美国 / Meta</b>，输入输出样例已保存；Demo 与 Real 双模式，面试可现场演示</li>
+            <li>边界如实：<b>图片生成目前是 Mock、也没做用户访谈</b>，这两项没有写成已完成</li>
+          </ul>
+          <p class="links">
+            <a href="docs/assets/cross-border-demo.html">打开演示工作台 →</a>
+          </p>
           <p class="note">
-            涉及 Agent 与多 Agent 工作流、RAG、LLM 应用与产品架构设计。<b>这两项还没有做成可读的案例</b>——
-            与其写成漂亮的空壳，不如先只列名字。
+            单文件演示，打开即用，展示的是一次真实运行保存下来的样例；真实链路需要本地起服务端，面试时可现场演示。
           </p>
         </div>
       </section>
 
       <section>
         <h2>我怎么工作</h2>
+        <p>三条原则，都能在上面三个项目里看到出处：</p>
         <p>
-          三条原则，都能在上面那个案例里看到出处：<b>不可让渡的规则不交给模型</b>（放在本地确定性代码里）、
-          <b>先建评测再调提示词</b>（否则改坏了不知道）、<b>说清边界比说漂亮话有用</b>（没有数据的部分如实标出来）。
+          <b>不可让渡的规则不交给模型</b>——放在本地确定性代码里；
+          <b>先建评测再调提示词</b>——否则改坏了不知道；
+          <b>说清边界比说漂亮话有用</b>——没有数据的部分如实标出来。
         </p>
-      </section>
-
-      <section>
-        <h2>联系我</h2>
-        <p>
-          邮箱：<a href="mailto:222037514+xinhao021121-web@users.noreply.github.com">222037514+xinhao021121-web@users.noreply.github.com</a><br />
-          GitHub：<a href="https://github.com/xinhao021121-web">xinhao021121-web</a>
+        <p class="note">
+          本页只列可核对的结论。每个项目里哪些判断由我做出、哪些还没验证，都写在各自的案例与文档里；
+          没有第三方用户数据的部分，不会写成本人已验证。
         </p>
-        <p class="note">手机与微信不在这里公开，邮件或 GitHub 私信联系即可。</p>
       </section>
 
       <footer>
-        <p>
-          完整案例（含评测体系、失败路径、已知不足与「哪些判断来自我」）：<a href="portfolio.html">portfolio.html</a>
-        </p>
+        联系我：邮箱 <a href="mailto:lxh2226@outlook.com">lxh2226@outlook.com</a> ｜
+        GitHub <a href="https://github.com/xinhao021121-web">xinhao021121-web</a>
       </footer>
     </div>
   </body>
