@@ -62,6 +62,10 @@ function main(): void {
     );
   });
 
+  // 首页同时落到 index.html：简历上印的是裸域名（xinhao-portfolio.pages.dev），
+  // 只有 portfolio-home.html 的话根路径会 404。
+  writeFileSync(`${publicDir}index.html`, html[0]!.split(SOURCE_PREFIX).join(TARGET_PREFIX), 'utf8');
+
   console.log(
     `作品集已同步到 apps/web/public/：${pages.length} 个页面 + ${referenced.length - missing} 个素材`
   );
