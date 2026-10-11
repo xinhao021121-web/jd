@@ -120,3 +120,11 @@ test('如实标注外部盲测与主观质量是决定不做，而不是写成�
   assert.ok(page.includes('合规率'), '应使用合规率而不是合格率');
   assert.ok(!page.includes('合格率'), '页面不应再出现「合格率」');
 });
+
+test('对外给出的在线地址是境内可达域名，不是已阻断的 ccwu.cc', () => {
+  assert.ok(!page.includes('ccwu.cc'), 'ccwu.cc 在境内被整体阻断，不应作为对外给出的在线地址');
+  assert.ok(
+    page.includes('zhipin.rainylli02xin11hao21.dpdns.org'),
+    '应给出境内实测可达的线上地址'
+  );
+});

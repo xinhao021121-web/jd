@@ -22,6 +22,19 @@ test('首页承担入口职责：自我介绍 + 求职方向 + 项目索引 + �
   assert.ok(home.includes('mailto:') || home.includes('github.com'), '首页要给出联系方式');
 });
 
+test('产品入口链接指向境内可直连的地址，不再使用已被阻断的 ccwu.cc', () => {
+  const links = [...home.matchAll(/href="(https?:\/\/[^"]+)"/g)].map((match) => match[1]);
+  assert.ok(links.length > 0, '首页应有对外链接');
+
+  // ccwu.cc 在境内被整体阻断（TCP 通、TLS 阶段被重置），不能作为给招聘方的入口
+  const blocked = links.filter((url) => new URL(url).host.endsWith('ccwu.cc'));
+  assert.deepEqual(blocked, [], 'ccwu.cc 不应作为首页入口：' + blocked.join('、'));
+
+  assert.ok(
+    links.some((url) => new URL(url).host === 'xinhao021121-web.github.io'),
+    '问需的产品入口应指向境内实测可达的 GitHub Pages 地址'
+  );
+});
 test('源页面引用的素材全部存在', () => {
   const referenced = [
     ...new Set([...source.matchAll(/docs\/assets\/([^"'\s)]+)/g)].map((match) => match[1]))
