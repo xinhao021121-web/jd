@@ -35,12 +35,23 @@ test('产品入口链接指向境内可直连的地址，不再使用已被阻�
     '问需的产品入口应指向境内实测可达的 GitHub Pages 地址'
   );
 });
-test('三个项目的线上入口命名统一为「产品页入口」', () => {
+test('入口命名统一：只用「产品页入口 / 案例 / 源码」三种叫法', () => {
   const labels = [...home.matchAll(/<a href="[^"]+"[^>]*>([^<]+)<\/a>/g)].map((match) => match[1].trim());
-  const entryCount = labels.filter((label) => label === '产品页入口 →').length;
-  assert.equal(entryCount, 3, '三个项目卡片都应有统一的「产品页入口」链接，实际 ' + entryCount + ' 个');
+  const entryLabels = labels.filter((label) => label.endsWith('→'));
 
-  ['打开产品入口页', '直接体验', '打开演示工作台'].forEach((legacy) => {
+  const allowed = new Set(['产品页入口 →', '案例 →', '源码 →']);
+  const unknown = entryLabels.filter((label) => !allowed.has(label));
+  assert.deepEqual(unknown, [], '入口只能使用统一词表，多余的叫法：' + unknown.join('、'));
+
+  assert.equal(
+    labels.filter((label) => label === '产品页入口 →').length,
+    3,
+    '三个项目卡片都要有「产品页入口」'
+  );
+  assert.ok(labels.includes('案例 →'), '至少一个项目要有「案例」入口');
+  assert.ok(labels.includes('源码 →'), '有公开源码的项目要有「源码」入口');
+
+  ['打开产品入口页', '直接体验', '打开演示工作台', '读完整案例', '访谈结论'].forEach((legacy) => {
     assert.ok(!home.includes(legacy), '旧的入口文案应已统一：' + legacy);
   });
 });
