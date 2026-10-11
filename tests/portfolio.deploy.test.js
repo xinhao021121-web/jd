@@ -39,7 +39,7 @@ test('入口命名统一：只用「产品页入口 / 案例 / 源码」三种�
   const labels = [...home.matchAll(/<a href="[^"]+"[^>]*>([^<]+)<\/a>/g)].map((match) => match[1].trim());
   const entryLabels = labels.filter((label) => label.endsWith('→'));
 
-  const allowed = new Set(['产品页入口 →', '案例 →', '源码 →']);
+  const allowed = new Set(['产品页入口 →', '案例 →', '源码 →', '研究结论 →']);
   const unknown = entryLabels.filter((label) => !allowed.has(label));
   assert.deepEqual(unknown, [], '入口只能使用统一词表，多余的叫法：' + unknown.join('、'));
 
@@ -48,8 +48,13 @@ test('入口命名统一：只用「产品页入口 / 案例 / 源码」三种�
     3,
     '三个项目卡片都要有「产品页入口」'
   );
-  assert.ok(labels.includes('案例 →'), '至少一个项目要有「案例」入口');
-  assert.ok(labels.includes('源码 →'), '有公开源码的项目要有「源码」入口');
+  assert.ok(labels.includes('案例 →'), '直聘项目要有「案例」入口');
+  assert.ok(labels.includes('研究结论 →'), '问需项目要有「研究结论」入口');
+  assert.equal(
+    labels.filter((label) => label === '源码 →').length,
+    3,
+    '三个项目都应有「源码」入口'
+  );
 
   ['打开产品入口页', '直接体验', '打开演示工作台', '读完整案例', '访谈结论'].forEach((legacy) => {
     assert.ok(!home.includes(legacy), '旧的入口文案应已统一：' + legacy);
