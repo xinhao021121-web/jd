@@ -35,6 +35,15 @@ test('产品入口链接指向境内可直连的地址，不再使用已被阻�
     '问需的产品入口应指向境内实测可达的 GitHub Pages 地址'
   );
 });
+test('三个项目的线上入口命名统一为「产品页入口」', () => {
+  const labels = [...home.matchAll(/<a href="[^"]+"[^>]*>([^<]+)<\/a>/g)].map((match) => match[1].trim());
+  const entryCount = labels.filter((label) => label === '产品页入口 →').length;
+  assert.equal(entryCount, 3, '三个项目卡片都应有统一的「产品页入口」链接，实际 ' + entryCount + ' 个');
+
+  ['打开产品入口页', '直接体验', '打开演示工作台'].forEach((legacy) => {
+    assert.ok(!home.includes(legacy), '旧的入口文案应已统一：' + legacy);
+  });
+});
 test('源页面引用的素材全部存在', () => {
   const referenced = [
     ...new Set([...source.matchAll(/docs\/assets\/([^"'\s)]+)/g)].map((match) => match[1]))
