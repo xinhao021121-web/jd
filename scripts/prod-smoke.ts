@@ -13,7 +13,7 @@
 import { chromium } from '@playwright/test';
 import { SAMPLE_JD, SAMPLE_RESUME } from '../tests/fixtures';
 
-const BASE_URL = process.env.PROD_BASE_URL ?? 'https://zhipin.xinhao02.ccwu.cc';
+const BASE_URL = process.env.PROD_BASE_URL ?? 'https://zhipin.rainylli02xin11hao21.dpdns.org';
 const staticOnly = process.argv.includes('--static-only');
 
 interface Check {

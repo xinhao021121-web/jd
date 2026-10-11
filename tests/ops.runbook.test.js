@@ -72,3 +72,26 @@ test('评审记录引用的小时级证据文件与文档都真实存在', () =>
   );
   assert.ok(pkg.scripts['test:counts'], '测试条数校验脚本应存在');
 });
+
+test('默认线上地址统一为境内可达域名，不再使用被阻断的旧域名', () => {
+  const legacy = 'zhipin.xinhao02.ccwu.cc';
+  const current = 'zhipin.rainylli02xin11hao21.dpdns.org';
+  const files = [
+    'docs/运维与回滚_V1.0.md',
+    'docs/评审记录_V1.0.md',
+    'docs/作品集主文档_V1.3.md',
+    'docs/作品集差距诊断_V2.0.md',
+    'scripts/prod-smoke.ts',
+    'scripts/blind-test.ts',
+    'scripts/record-demo.ts'
+  ];
+
+  files.forEach((file) => {
+    const content = read(file);
+    assert.ok(!content.includes(legacy), file + ' 不应再出现被阻断的旧域名');
+    assert.ok(content.includes(current), file + ' 应写出现行可用的线上地址');
+  });
+
+  // wrangler.toml 里保留旧域名的路由绑定是配置事实，不属于「默认地址」
+  assert.ok(wrangler.includes(legacy), 'wrangler.toml 的域名路由不受这条约束');
+});

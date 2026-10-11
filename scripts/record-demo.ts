@@ -26,7 +26,7 @@ function argValue(name: string, fallback: string): string {
 }
 
 async function main(): Promise<void> {
-  const url = argValue('url', 'https://zhipin.xinhao02.ccwu.cc');
+  const url = argValue('url', 'https://zhipin.rainylli02xin11hao21.dpdns.org');
   const out = argValue('out', 'docs/assets/demo-flow.webm');
   const samplesPath = argValue(
     'samples',

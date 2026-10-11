@@ -40,7 +40,7 @@ function buildKit(): void {
   const count = Number(argValue('count', '8'));
   const url = argValue(
     'url',
-    process.env.BLIND_TEST_URL ?? 'https://zhipin.xinhao02.ccwu.cc'
+    process.env.BLIND_TEST_URL ?? 'https://zhipin.rainylli02xin11hao21.dpdns.org'
   );
 
   const all = JSON.parse(readFileSync(samplesPath, 'utf8')) as KitSample[];
