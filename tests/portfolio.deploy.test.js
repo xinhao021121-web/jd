@@ -35,11 +35,19 @@ test('产品入口链接指向境内可直连的地址，不再使用已被阻�
     '问需的产品入口应指向境内实测可达的 GitHub Pages 地址'
   );
 });
-test('入口命名统一：只用「产品页入口 / 案例 / 源码」三种叫法', () => {
+test('入口命名统一：只用词表里约定的几种叫法', () => {
   const labels = [...home.matchAll(/<a href="[^"]+"[^>]*>([^<]+)<\/a>/g)].map((match) => match[1].trim());
   const entryLabels = labels.filter((label) => label.endsWith('→'));
 
-  const allowed = new Set(['产品页入口 →', '案例 →', '源码 →', '研究结论 →']);
+  // 米家那一条是分析型项目：没有线上产品页、没有源码，只有竞品分析与 PRD 两份文档
+  const allowed = new Set([
+    '产品页入口 →',
+    '案例 →',
+    '源码 →',
+    '研究结论 →',
+    '竞品分析 →',
+    'PRD →'
+  ]);
   const unknown = entryLabels.filter((label) => !allowed.has(label));
   assert.deepEqual(unknown, [], '入口只能使用统一词表，多余的叫法：' + unknown.join('、'));
 

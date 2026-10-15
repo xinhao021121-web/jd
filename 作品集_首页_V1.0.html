@@ -20,20 +20,20 @@
         color: var(--ink);
         font: 15px/1.75 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
       }
-      .wrap { max-width: 860px; margin: 0 auto; padding: 56px 24px 72px; }
+      .wrap { max-width: 860px; margin: 0 auto; padding: 44px 24px 72px; }
       h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; }
       .role { color: var(--brand); font-size: 15px; font-weight: 600; margin: 0 0 4px; }
       .positioning { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
       .meta { color: var(--muted); font-size: 13px; margin: 0; }
-      h2 { font-size: 17px; margin: 44px 0 14px; }
+      h2 { font-size: 17px; margin: 30px 0 12px; }
       p { margin: 0 0 12px; }
       a { color: var(--brand); }
       .card {
         border: 1px solid var(--line);
         border-radius: 12px;
         background: #fff;
-        padding: 20px 22px;
-        margin-bottom: 14px;
+        padding: 18px 20px;
+        margin-bottom: 10px;
       }
       .card h3 { margin: 0 0 6px; font-size: 16px; }
       .card .sub { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
@@ -62,6 +62,7 @@
       }
       @media print {
         .wrap { padding-bottom: 24px; }
+        footer { margin-top: 18px; }
       }
     </style>
   </head>
@@ -158,15 +159,26 @@
             <a href="docs/assets/cross-border-demo.html">产品页入口 →</a>
             <a href="https://github.com/xinhao021121-web/cross-border-ai-ad-generator">源码 →</a>
           </p>
-          <p class="note">
-            单文件演示，打开即用，展示的是一次真实运行保存下来的样例；真实链路要本地起服务端。
+        </div>
+
+        <div class="card">
+          <h3>米家 App 智能场景体验优化</h3>
+          <p class="sub">
+            智能家居方向：横向对比米家、华为智慧生活、Apple Home，找出「自动化配置门槛高」与「重复操作没人识别」两类问题
+          </p>
+          <ul class="stats">
+            <li>产出：<b>竞品分析报告</b>（三家对比与机会点排序）与 <b>PRD</b>（产品架构、用户流程、原型），AI 自动化场景助手定为 P0</li>
+          </ul>
+          <p class="links">
+            <a href="https://lcnil5f2quw4.feishu.cn/wiki/ZhVewnbioiuQv9kciPscv9urnoU">竞品分析 →</a>
+            <a href="https://lcnil5f2quw4.feishu.cn/wiki/Mwx7wP6lki7rxhkMvNEcnvbQnHg">PRD →</a>
           </p>
         </div>
       </section>
 
       <section>
         <h2>做产品的几个习惯</h2>
-        <p>这几条在上面三个项目里都能翻到出处：</p>
+        <p>这几条在前三个项目里都能翻到出处：</p>
         <p>
           能靠规则定死的事就不交给模型。评测先建起来再动提示词，否则改坏了也看不出来。没有数据的部分不写成结论，直接在页面上标出来。
         </p>
